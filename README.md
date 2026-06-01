@@ -97,6 +97,12 @@ cookeat/
 │   ├── recipes/             # 레시피 목록 및 상세
 │   ├── board/               # 커뮤니티 게시판
 │   └── mypage/              # 마이페이지
+│   └── user/                # 유저페이지
+│       └── user/component   # 유저페이지/컴포넌트
+│   └── seller/              # 판매자페이지
+│       └── seller/component # 판매자페이지/컴포넌트
+│   └── admin/               # 어드민페이지
+│       └── admin/component  # 어드민페이지/컴포넌트
 ├── components/              # 공용 컴포넌트
 ├── store/                   # Zustand 스토어
 ├── lib/                     # 유틸 함수 및 API 클라이언트
