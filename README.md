@@ -64,7 +64,6 @@
 ### 🎨 UI/UX
 
 - 모바일 반응형 디자인
-- 다크 모드 지원
 
 ---
 
@@ -81,7 +80,6 @@
 ### 📦 주요 라이브러리
 
 > 추가 예정
-> 추가 예
 
 ---
 
@@ -108,8 +106,17 @@ cookeat/
 ├── store/                    # Zustand 스토어
 ├── lib/                      # 유틸 함수 및 API 클라이언트
 ├── types/                    # TypeScript 타입 정의
-├── next.config.ts
-└── package.json
+├── docs/                     # 프로젝트 문서
+│   ├── api.md                # API 문서 목차
+│   ├── api/                  # API 도메인별 상세 명세
+│   ├── daily_log/            # 팀원별 데일리 로그
+│   │   ├── 홍정빈/
+│   │   ├── 엄인호/
+│   │   ├── 최유종/
+│   │   └── 추유나/
+│   └── reviews               # 리뷰 문서 폴더
+├── next.config.ts            # next config 파일
+└── package.json              # pakage 정보 파일
 ```
 
 ---
