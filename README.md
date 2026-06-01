@@ -70,17 +70,18 @@
 
 ## 🛠 기술 스택
 
-| 분류           | 기술                     |
-| :------------- | :----------------------- |
-| **UI**         | React 19, TypeScript 5   |
-| **프레임워크** | Next.js 16 (App Router)  |
-| **스타일**     | Tailwind CSS v4          |
-| **상태 관리**  | Zustand v5               |
-| **빌드 도구**  | Next.js 내장 (Turbopack) |
+| 구분           | 기술                       |
+| :------------- | :------------------------- |
+| **Frontend**   | Next.js, React, TypeScript |
+| **상태 관리**  | Zustand                    |
+| **스타일링**   | Tailwind CSS               |
+| **API / 통신** | Next.js API Routes         |
+| **배포**       | Vercel                     |
 
 ### 📦 주요 라이브러리
 
 > 추가 예정
+> 추가 예
 
 ---
 
@@ -88,25 +89,25 @@
 
 ```text
 cookeat/
-├── public/                  # 정적 에셋 (이미지, 아이콘 등)
-├── app/                     # Next.js App Router
-│   ├── layout.tsx           # 루트 레이아웃
-│   ├── page.tsx             # 홈 페이지
-│   ├── globals.css          # 전역 스타일
-│   ├── (auth)/              # 로그인 / 회원가입
-│   ├── recipes/             # 레시피 목록 및 상세
-│   ├── board/               # 커뮤니티 게시판
-│   └── mypage/              # 마이페이지
-│   └── user/                # 유저페이지
-│       └── user/component   # 유저페이지/컴포넌트
-│   └── seller/              # 판매자페이지
-│       └── seller/component # 판매자페이지/컴포넌트
-│   └── admin/               # 어드민페이지
-│       └── admin/component  # 어드민페이지/컴포넌트
-├── components/              # 공용 컴포넌트
-├── store/                   # Zustand 스토어
-├── lib/                     # 유틸 함수 및 API 클라이언트
-├── types/                   # TypeScript 타입 정의
+├── public/                   # 정적 에셋 (이미지, 아이콘 등)
+├── app/                      # Next.js App Router
+│   ├── layout.tsx            # 루트 레이아웃
+│   ├── page.tsx              # 홈 페이지
+│   ├── globals.css           # 전역 스타일
+│   ├── (auth)/               # 로그인 / 회원가입
+│   ├── recipes/              # 레시피 목록 및 상세
+│   ├── board/                # 커뮤니티 게시판
+│   └── mypage/               # 마이페이지
+│   └── user/                 # 유저페이지
+│       └── user/components   # 유저페이지/컴포넌트
+│   └── seller/               # 판매자페이지
+│       └── seller/components # 판매자페이지/컴포넌트
+│   └── admin/                # 어드민페이지
+│       └── admin/components  # 어드민페이지/컴포넌트
+├── components/               # 공용 컴포넌트
+├── store/                    # Zustand 스토어
+├── lib/                      # 유틸 함수 및 API 클라이언트
+├── types/                    # TypeScript 타입 정의
 ├── next.config.ts
 └── package.json
 ```
