@@ -74,7 +74,9 @@
 | **Frontend**   | Next.js, React, TypeScript |
 | **상태 관리**  | Zustand                    |
 | **스타일링**   | Tailwind CSS               |
-| **API / 통신** | Next.js API Routes         |
+| **API / 통신** | Axios                      |
+| **백엔드**     | Next Api Route             |
+| **DB**         | SupaBase                   |
 | **배포**       | Vercel                     |
 
 ### 📦 주요 라이브러리
