@@ -91,34 +91,35 @@
 cookeat/
 ├── public/                   # 정적 에셋 (이미지, 아이콘 등)
 ├── app/                      # Next.js App Router
-│   ├── layout.tsx            # 루트 레이아웃
-│   ├── page.tsx              # 홈 페이지
-│   ├── globals.css           # 전역 스타일
-│   ├── (auth)/               # 로그인 / 회원가입
-│   ├── recipes/              # 레시피 목록 및 상세
-│   ├── board/                # 커뮤니티 게시판
-│   └── mypage/               # 마이페이지
-│   └── user/                 # 유저페이지
-│       └── user/components   # 유저페이지/컴포넌트
-│   └── seller/               # 판매자페이지
-│       └── seller/components # 판매자페이지/컴포넌트
-│   └── admin/                # 어드민페이지
-│       └── admin/components  # 어드민페이지/컴포넌트
-├── components/               # 공용 컴포넌트
-├── store/                    # Zustand 스토어
-├── lib/                      # 유틸 함수 및 API 클라이언트
-├── types/                    # TypeScript 타입 정의
+│   ├── (auth)/               # 로그인·회원가입 라우트 그룹
+│   │   ├── login/
+│   │   └── register/
+│   │       └── complete/
+│   ├── (main)/               # 메인 라우트 그룹
+│   ├── api/                  # API 라우트
+│   │   └── auth/             # 인증 API (로그인·회원가입·닉네임확인·프로필)
+│   ├── auth/                 # OAuth 콜백·소셜 로그인 프로필 완성
+│   └── admin/                # 어드민 페이지
+├── components/
+│   ├── (auth)/               # 인증 관련 컴포넌트
+│   ├── Header/               # 헤더·사이드바 컴포넌트
+│   └── ui/                   # shadcn/ui 기본 컴포넌트
+├── hooks/
+│   └── auth/                 # 인증 훅 (로그인·회원가입·닉네임확인)
+├── services/
+│   └── auth/                 # 인증 서비스 레이어 및 타입 정의
+├── store/                    # Zustand 스토어 (인증·헤더 UI)
+├── lib/                      # API 클라이언트·Supabase 인스턴스·유틸
 ├── docs/                     # 프로젝트 문서
-│   ├── api.md                # API 문서 목차
 │   ├── api/                  # API 도메인별 상세 명세
 │   ├── daily_log/            # 팀원별 데일리 로그
 │   │   ├── 홍정빈/
 │   │   ├── 엄인호/
 │   │   ├── 최유종/
 │   │   └── 추유나/
-│   └── reviews               # 리뷰 문서 폴더
-├── next.config.ts            # next config 파일
-└── package.json              # pakage 정보 파일
+│   └── reviews/              # 리뷰 문서
+├── next.config.ts
+└── package.json
 ```
 
 ---
