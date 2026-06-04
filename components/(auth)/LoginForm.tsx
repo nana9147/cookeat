@@ -1,49 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useLoginForm } from '@/hooks/auth/useLoginForm';
 import LoginOptions from './LoginOptions';
-import PasswordInput from './PasswordInput';
+import LoginFields from './LoginFields';
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [keepLogin, setKeepLogin] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`로그인 성공! 메인페이지로 이동합니다.`);
-  };
+  const { email, setEmail, password, setPassword, showPassword, setShowPassword, keepLogin, setKeepLogin, canSubmit, submitError, isLoading, handleSubmit } = useLoginForm();
 
   return (
-    <form className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-dark-text">이메일</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="이메일을 입력해주세요"
-          className="h-11 px-4 rounded-lg border border-border text-sm outline-none focus:border-primary transition-colors"
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-dark-text">비밀번호</label>
-        <PasswordInput
-          value={password}
-          onChange={setPassword}
-          show={showPassword}
-          onToggle={() => setShowPassword((v) => !v)}
-          placeholder="비밀번호를 입력해주세요"
-        />
-      </div>
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <LoginFields
+        email={email} onEmailChange={setEmail}
+        password={password} onPasswordChange={setPassword}
+        showPassword={showPassword} onTogglePassword={() => setShowPassword((v) => !v)}
+      />
       <LoginOptions keepLogin={keepLogin} onKeepLoginChange={setKeepLogin} />
-      <button
-        type="submit"
-        className="h-11 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors"
-        onClick={handleSubmit}
-      >
-        로그인
+      {submitError && <p className="text-xs text-red">{submitError}</p>}
+      <button type="submit" disabled={!canSubmit || isLoading} className="h-11 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        {isLoading ? '처리 중...' : '로그인'}
       </button>
     </form>
   );
