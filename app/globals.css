@@ -28,9 +28,9 @@
 }
 
 @theme {
-  --breakpoint-mobile: 390px;
-  --breakpoint-tablet: 768px;
-  --breakpoint-desktop: 1440px;
+  --breakpoint-mobile: 24.375rem; /* 390px */
+  --breakpoint-tablet: 48rem;     /* 768px */
+  --breakpoint-desktop: 90rem;    /* 1440px */
 }
 
 @theme inline {
