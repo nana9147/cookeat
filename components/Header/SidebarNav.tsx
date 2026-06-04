@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { useHeaderUIStore } from '@/store/header/headerStore';
+import { useHeaderUIStore } from '@/store/headerStore';
 
 const navLinks = [
   { href: '/', label: '홈' },

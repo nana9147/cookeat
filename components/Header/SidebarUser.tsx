@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { useHeaderUIStore } from '@/store/header/headerStore';
+import { useHeaderUIStore } from '@/store/headerStore';
 import { CartIcon, UserIcon } from './HeaderIcons';
 
 interface Props {
@@ -13,13 +13,21 @@ export default function SidebarUser({ token }: Props) {
     <div className="px-6 py-5 border-b border-border">
       {token ? (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-dark-text">
+          <Link
+            href="/mypage"
+            onClick={closeSidebar}
+            className="flex items-center gap-3 text-dark-text hover:text-primary transition-colors"
+          >
             <UserIcon />
             <span className="text-sm font-medium">마이페이지</span>
-          </div>
-          <button className="text-dark-text hover:text-primary transition-colors">
+          </Link>
+          <Link
+            href="/cart"
+            onClick={closeSidebar}
+            className="text-dark-text hover:text-primary transition-colors"
+          >
             <CartIcon />
-          </button>
+          </Link>
         </div>
       ) : (
         <Link

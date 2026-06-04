@@ -13,7 +13,8 @@ const AUTH_PATHS = ['/login', '/register'];
 
 export default function Header() {
   const pathname = usePathname();
-  const token = useAuthStore((state) => state.token);
+  const token = useAuthStore((state) => state.accessToken);
+  const hydrated = useAuthStore((state) => state._hydrated);
 
   if (AUTH_PATHS.includes(pathname)) return null;
 
@@ -33,7 +34,7 @@ export default function Header() {
           </Link>
           <HeaderNav />
           <HeaderSearch />
-          <HeaderActions token={token} />
+          <HeaderActions token={hydrated ? token : null} />
         </div>
       </header>
       <Sidebar />
