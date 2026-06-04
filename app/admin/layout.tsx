@@ -7,6 +7,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from '@/components/ui/sidebar';
+import Header from './components/Header/Header';
 
 const menuItems = [
   '대시보드',
@@ -24,23 +25,26 @@ const menuItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-1">
-      <SidebarProvider style={{ minHeight: 'calc(100svh - 6.25rem)' }}>
-        <Sidebar collapsible="none" style={{ top: '6.25rem', height: 'calc(100svh - 6.25rem)' }}>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item}>
-                    <SidebarMenuButton>{item}</SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-        <main className="flex flex-1 flex-col">{children}</main>
-      </SidebarProvider>
-    </div>
+    <>
+      <Header />
+      <div className="flex flex-1">
+        <SidebarProvider style={{ minHeight: '76px' }}>
+          <Sidebar collapsible="none" style={{ top: '6.25rem', height: 'calc(100svh - 6.25rem)' }}>
+            <SidebarContent>
+              <SidebarGroup>
+                <SidebarMenu>
+                  {menuItems.map((item) => (
+                    <SidebarMenuItem key={item}>
+                      <SidebarMenuButton className="mb-1">{item}</SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+            </SidebarContent>
+          </Sidebar>
+          <main className="flex flex-1 flex-col">{children}</main>
+        </SidebarProvider>
+      </div>
+    </>
   );
 }
