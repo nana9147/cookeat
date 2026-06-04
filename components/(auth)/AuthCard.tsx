@@ -15,9 +15,16 @@ export default function AuthCard({ activeTab, children }: Props) {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-[#F5F0E8] px-4 py-12">
       {/* 로고 및 서비스 소개 */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-4">
         <Link href="/">
-          <Image src="/assets/cookeat.png" alt="Cookeat" width={300} height={280} className="mx-auto w-25 h-auto" loading="eager" />
+          <Image
+            src="/assets/cookeat.png"
+            alt="Cookeat"
+            width={300}
+            height={280}
+            className="mx-auto w-25 h-auto"
+            loading="eager"
+          />
           <h1 className="text-h1 font-bold text-primary">Cookeat</h1>
         </Link>
         <p className="text-m text-gray-text mt-1">다양한 레시피를 쿠킷에서 찾아보세요</p>
