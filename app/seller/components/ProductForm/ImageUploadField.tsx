@@ -1,0 +1,247 @@
+'use client';
+
+import { useRef, useState, DragEvent, ChangeEvent } from 'react';
+import { Image } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import { SortableContext, useSortable, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import type { ImageFile, SortableImageProps } from '@/types/seller/product';
+
+function SortableImage({ image, index, onRemove, onMoveFirst }: SortableImageProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: image.id,
+    disabled: index === 0, // 대표 이미지는 드래그 불가
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group aspect-square">
+      <img
+        src={image.preview}
+        alt={`상품 이미지 ${index + 1}`}
+        className="w-full h-full object-cover rounded-md border border-gray-200"
+      />
+
+      {/* 대표 이미지 배지 */}
+      {index === 0 && (
+        <span className="absolute top-1 left-1 bg-green-700 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+          대표
+        </span>
+      )}
+
+      {/* 서브 이미지 드래그 핸들 */}
+      {index !== 0 && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-1 right-1 z-10 bg-black/40 rounded p-0.5 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-3.5 h-3.5 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 8h16M4 16h16"
+            />
+          </svg>
+        </div>
+      )}
+
+      {/* 호버 시 버튼 */}
+      <div className="absolute inset-0 bg-black/40 rounded-md opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+        {index !== 0 && (
+          <button
+            type="button"
+            onClick={() => onMoveFirst(image.id)}
+            className="text-xs text-white bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
+          >
+            대표로 설정
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onRemove(image.id)}
+          className="text-xs text-white bg-red-500/80 hover:bg-red-500 px-2 py-1 rounded transition-colors"
+        >
+          삭제
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function ImageUploadField() {
+  const [images, setImages] = useState<ImageFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_COUNT = 10;
+  const MAX_SIZE_MB = 5;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    })
+  );
+
+  const processFiles = (files: File[]) => {
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
+    const validFiles = imageFiles.filter((f) => {
+      if (f.size > MAX_SIZE_MB * 1024 * 1024) {
+        alert(`${f.name} 파일이 ${MAX_SIZE_MB}MB를 초과해요.`);
+        return false;
+      }
+      return true;
+    });
+
+    setImages((prev) => {
+      const remaining = MAX_COUNT - prev.length;
+      if (remaining <= 0) {
+        alert(`이미지는 최대 ${MAX_COUNT}장까지 등록할 수 있어요.`);
+        return prev;
+      }
+      const sliced = validFiles.slice(0, remaining);
+      const newImages = sliced.map((file) => ({
+        id: `${file.name}-${Date.now()}-${Math.random()}`,
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+      return [...prev, ...newImages];
+    });
+  };
+
+  const handleClick = () => inputRef.current?.click();
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) processFiles(Array.from(e.target.files));
+    e.target.value = '';
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => setIsDragging(false);
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files) processFiles(Array.from(e.dataTransfer.files));
+  };
+
+  const handleRemove = (id: string) => {
+    setImages((prev) => {
+      const target = prev.find((img) => img.id === id);
+      if (target) URL.revokeObjectURL(target.preview);
+      return prev.filter((img) => img.id !== id);
+    });
+  };
+
+  const handleMoveFirst = (id: string) => {
+    setImages((prev) => {
+      const index = prev.findIndex((img) => img.id === id);
+      if (index <= 0) return prev;
+      const next = [...prev];
+      const [item] = next.splice(index, 1);
+      next.unshift(item);
+      return next;
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setImages((prev) => {
+      const oldIndex = prev.findIndex((img) => img.id === active.id);
+      const newIndex = prev.findIndex((img) => img.id === over.id);
+
+      // 대표 이미지(0번) 자리로는 이동 불가
+      if (newIndex === 0) return prev;
+
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-6 flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-gray-700">상품 이미지</h2>
+        <span className="text-xs text-gray-400">
+          {images.length} / {MAX_COUNT}
+        </span>
+      </div>
+
+      {/* 업로드 영역 */}
+      {images.length < MAX_COUNT && (
+        <div
+          onClick={handleClick}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg py-10 cursor-pointer transition-colors ${
+            isDragging
+              ? 'border-green-500 bg-green-50'
+              : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
+          }`}
+        >
+          <Image className="text-gray-400 w-8 h-8" />
+          <p className="text-sm text-gray-500">
+            이미지를 드래그하거나 <span className="text-green-700 font-medium">클릭</span>하여
+            업로드하세요
+          </p>
+          <p className="text-xs text-gray-400">
+            최대 {MAX_COUNT}장 · 장당 {MAX_SIZE_MB}MB 이하 · JPG, PNG, WEBP
+          </p>
+        </div>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* 썸네일 목록 */}
+      {images.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-5 gap-3">
+              {images.map((img, index) => (
+                <SortableImage
+                  key={img.id}
+                  image={img}
+                  index={index}
+                  onRemove={handleRemove}
+                  onMoveFirst={handleMoveFirst}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+    </div>
+  );
+}
