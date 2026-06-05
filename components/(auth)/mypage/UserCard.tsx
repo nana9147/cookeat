@@ -6,6 +6,7 @@
 
 import { PointIcon, StarIcon, OrderIcon, RecipeIcon, LikeIcon, ViewIcon } from './UserIcons';
 import MypageCategory from './MypageCategory';
+import { useUserInfo } from '@/hooks/user/useUserInfo';
 
 const stats = [
   { icon: <OrderIcon />, label: '총 주문' },
@@ -15,16 +16,21 @@ const stats = [
 ];
 
 export default function UserCard({ children }: { children: React.ReactNode }) {
+  const { nickname, email, profileImage, point } = useUserInfo();
+
   return (
     <div className="mx-auto w-full max-w-360 space-y-3 px-4 py-6 tablet:px-12 desktop:px-40">
       {/* 사용자 정보 */}
       <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-6 tablet:flex-row tablet:items-center">
-        <div className="size-16 shrink-0 rounded-full bg-primary" />
+        {profileImage
+          ? <img src={profileImage} alt="프로필" className="size-16 shrink-0 rounded-full object-cover" />
+          : <div className="size-16 shrink-0 rounded-full bg-primary" />
+        }
         <div className="space-y-1 text-center tablet:text-left">
-          <h2 className="font-bold text-dark-text">사용자 이름</h2>
-          <p className="text-xs text-gray-text">이메일</p>
+          <h2 className="font-bold text-dark-text">{nickname || '-'}</h2>
+          <p className="text-xs text-gray-text">{email || '-'}</p>
           <div className="flex justify-center gap-2 tablet:justify-start">
-            <span className="flex items-center gap-1 rounded-full bg-beige px-3 py-0.5 text-xs text-dark-text"><PointIcon />포인트</span>
+            <span className="flex items-center gap-1 rounded-full bg-beige px-3 py-0.5 text-xs text-dark-text"><PointIcon />{point.toLocaleString()}P</span>
             <span className="flex items-center gap-1 rounded-full bg-beige px-3 py-0.5 text-xs text-dark-text"><StarIcon />등급</span>
           </div>
         </div>
