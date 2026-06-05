@@ -14,30 +14,37 @@ interface UserInfo {
 
 export function useUserInfo() {
   const { user, accessToken } = useAuthStore();
-  const [info, setInfo] = useState<UserInfo>({
-    nickname: user?.nickname ?? '',
-    email: user?.email ?? '',
-    phone: '',
-    profileImage: user?.profileImage ?? null,
-    point: 0,
-    isSocial: user?.isSocial ?? false,
-  });
+  const [point, setPoint] = useState(0);
+  const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [phone, setPhone] = useState('');
+  const [isSocial, setIsSocial] = useState(false);
+
+  useEffect(() => {
+    if (user?.email) setEmail(user.email);
+    if (user?.nickname) setNickname(user.nickname);
+    if (user?.isSocial !== undefined) setIsSocial(user.isSocial);
+  }, [user]);
 
   useEffect(() => {
     if (!accessToken) return;
     fetch('/api/auth/profile', { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.json())
-      .then((data) =>
-        setInfo((prev) => ({
-          ...prev,
-          point: data.point ?? prev.point,
-          email: data.email || prev.email,
-          nickname: data.nickname || prev.nickname,
-          phone: data.phone ?? '',
-          isSocial: data.isSocial ?? prev.isSocial,
-        }))
-      );
+      .then((data) => {
+        setPoint(data.point ?? 0);
+        if (data.email) setEmail(data.email);
+        if (data.nickname) setNickname(data.nickname);
+        setPhone(data.phone ?? '');
+        setIsSocial(data.isSocial ?? false);
+      });
   }, [accessToken]);
 
-  return info;
+  return {
+    nickname,
+    email,
+    phone,
+    profileImage: user?.profileImage ?? null,
+    point,
+    isSocial,
+  } satisfies UserInfo;
 }

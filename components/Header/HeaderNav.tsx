@@ -22,7 +22,7 @@ export default function HeaderNav() {
             href={href}
             className="relative flex flex-col items-center gap-1 text-dark-text text-h5 font-medium hover:text-primary transition-colors"
           >
-            <h2 className={`text-h4 ${isActive ? 'font-bold' : 'font-medium'}`}>{label}</h2>
+            <h2 className={`text-h4 ${isActive ? 'font-bold' : 'font-medium'}`} suppressHydrationWarning>{label}</h2>
             {isActive && (
               <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-primary rounded-full" />
             )}

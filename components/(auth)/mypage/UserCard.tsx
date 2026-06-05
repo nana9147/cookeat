@@ -27,7 +27,7 @@ export default function UserCard({ children }: { children: React.ReactNode }) {
           : <div className="size-16 shrink-0 rounded-full bg-primary" />
         }
         <div className="space-y-1 text-center tablet:text-left">
-          <h2 className="font-bold text-dark-text">{nickname || '-'}</h2>
+          <h2 className="font-bold text-dark-text" suppressHydrationWarning>{nickname || '-'}</h2>
           <p className="text-xs text-gray-text">{email || '-'}</p>
           <div className="flex justify-center gap-2 tablet:justify-start">
             <span className="flex items-center gap-1 rounded-full bg-beige px-3 py-0.5 text-xs text-dark-text"><PointIcon />{point.toLocaleString()}P</span>
