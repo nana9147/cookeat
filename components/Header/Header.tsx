@@ -22,15 +22,15 @@ export default function Header() {
     <>
       <header className="bg-background h-25 border-b border-border">
         <div className="max-w-360 mx-auto px-25 h-full flex items-center gap-8">
-          <Link href="/" className="text-primary font-bold text-xl shrink-0">
+          <Link href="/" className="flex items-center gap-2 text-primary font-bold text-xl shrink-0">
             <Image
               src="/assets/cookeat.png"
               alt="Cookeat"
               width={300}
               height={280}
-              className="inline-block mr-2 w-10 h-auto"
+              className="w-10 h-auto"
             />
-            Cookeat
+            <h1 className="text-h1 font-bold">Cookeat</h1>
           </Link>
           <HeaderNav />
           <HeaderSearch />
