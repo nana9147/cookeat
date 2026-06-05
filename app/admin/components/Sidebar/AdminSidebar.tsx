@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -11,21 +12,21 @@ import {
 } from '@/components/ui/sidebar';
 
 const menuItems = [
-  '대시보드',
-  '회원관리',
-  '판매자관리',
-  '상품관리',
-  '주문관리',
-  '정산관리',
-  '레시피/포인트',
-  '카테고리',
-  '리뷰/신고',
-  '고객센터',
-  '통계/분석',
+  { label: '대시보드', href: '/admin' },
+  { label: '회원관리', href: '/admin/members' },
+  { label: '판매자관리', href: '/admin/sellers' },
+  { label: '상품관리', href: '/admin/products' },
+  { label: '주문관리', href: '/admin/orders' },
+  { label: '정산관리', href: '/admin/settlements' },
+  { label: '레시피/포인트', href: '/admin/recipes' },
+  { label: '카테고리', href: '/admin/categories' },
+  { label: '리뷰/신고', href: '/admin/reviews' },
+  { label: '고객센터', href: '/admin/support' },
+  { label: '통계/분석', href: '/admin/analytics' },
 ];
 
 export default function AdminSidebar() {
-  const [active, setActive] = useState('대시보드');
+  const pathname = usePathname();
 
   return (
     <Sidebar
@@ -37,12 +38,12 @@ export default function AdminSidebar() {
         <SidebarGroup>
           <SidebarMenu>
             {menuItems.map((item) => (
-              <SidebarMenuItem key={item}>
+              <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                  className={`mb-1 mt-1 h-11 ${active === item ? 'bg-primary text-white' : ''}`}
-                  onClick={() => setActive(item)}
+                  asChild
+                  className={`mb-1 mt-1 h-11 ${pathname === item.href ? 'bg-primary text-white hover:bg-primary hover:text-white' : ''}`}
                 >
-                  {item}
+                  <Link href={item.href}>{item.label}</Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
