@@ -18,9 +18,12 @@ export default function HeaderActions({ token }: Props) {
           <button className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors">
             <CartIcon />
           </button>
-          <button className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors">
+          <Link
+            href="/mypage"
+            className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors"
+          >
             <UserIcon />
-          </button>
+          </Link>
         </>
       ) : (
         <Link

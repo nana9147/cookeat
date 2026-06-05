@@ -1,5 +1,5 @@
-import AuthCard from '@/components/(auth)/AuthCard';
-import RegisterForm from '@/components/(auth)/RegisterForm';
+import AuthCard from '@/components/(auth)/login/AuthCard';
+import RegisterForm from '@/components/(auth)/login/RegisterForm';
 
 export default function RegisterPage() {
   return (
