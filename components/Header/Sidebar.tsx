@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/authStore';
-import { useHeaderUIStore } from '@/store/header/headerStore';
+import { useHeaderUIStore } from '@/store/headerStore';
 import SidebarHeader from './SidebarHeader';
 import SidebarUser from './SidebarUser';
 import SidebarSearch from './SidebarSearch';
@@ -9,7 +9,7 @@ import SidebarNav from './SidebarNav';
 
 export default function Sidebar() {
   const { isSidebarOpen, closeSidebar } = useHeaderUIStore();
-  const token = useAuthStore((state) => state.token);
+  const token = useAuthStore((state) => state.accessToken);
 
   return (
     <>

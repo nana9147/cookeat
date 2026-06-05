@@ -1,6 +1,6 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import '../node_modules/tw-animate-css/dist/tw-animate.css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -61,8 +61,8 @@
 
 @theme {
   --breakpoint-mobile: 24.375rem; /* 390px */
-  --breakpoint-tablet: 48rem;     /* 768px */
-  --breakpoint-desktop: 90rem;    /* 1440px */
+  --breakpoint-tablet: 48rem; /* 768px */
+  --breakpoint-desktop: 90rem; /* 1440px */
 }
 
 @theme inline {
