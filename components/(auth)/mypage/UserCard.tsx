@@ -14,7 +14,7 @@ const stats = [
   { icon: <ViewIcon />, label: '누적 조회' },
 ];
 
-export default function UserCard() {
+export default function UserCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-360 space-y-3 px-4 py-6 tablet:px-12 desktop:px-40">
       {/* 사용자 정보 */}
@@ -47,7 +47,7 @@ export default function UserCard() {
           <MypageCategory />
         </aside>
         <main className="min-h-96 flex-1 rounded-2xl bg-white p-6">
-          <h3 className="font-bold text-dark-text">주문/배송 내역</h3>
+          {children}
         </main>
       </div>
     </div>
