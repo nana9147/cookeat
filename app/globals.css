@@ -28,6 +28,11 @@
   /* Accent */
   --yellow: #e8a33d;
   --red: #e0463b;
+
+  /* Footer */
+  --footer-bg: #2a3d2f;
+  --footer-text: #dce7da;
+  --footer-sub: #b7c7b5;
   --background: #fbf7ee;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -86,6 +91,11 @@
   /* Accent */
   --color-yellow: var(--yellow);
   --color-red: var(--red);
+
+  /* Footer */
+  --color-footer-bg: var(--footer-bg);
+  --color-footer-text: var(--footer-text);
+  --color-footer-sub: var(--footer-sub);
 
   /* Font */
   --font-sans: var(--font-sans);
