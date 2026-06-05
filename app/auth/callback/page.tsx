@@ -35,6 +35,7 @@ export default function AuthCallbackPage() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       const { complete } = await res.json();
+      if (complete) alert('로그인되었습니다.');
       router.replace(!complete ? '/auth/profile' : '/');
     }
 

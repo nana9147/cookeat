@@ -46,6 +46,7 @@ export default function ProfilePage() {
     setError(null)
     try {
       await authService.updateProfile(nickname.trim(), phone.trim())
+      alert('로그인되었습니다.')
       router.replace('/')
     } catch {
       setError('저장 중 오류가 발생했습니다.')
