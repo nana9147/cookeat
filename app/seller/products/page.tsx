@@ -74,7 +74,7 @@ export default function ProductsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="bg-background p-8">
       {/* 헤더 */}
       <div className="mb-8 pr-5 flex items-center justify-between">
         <h1 className="text-h2 font-bold text-dark-text">상품 관리</h1>

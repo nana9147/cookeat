@@ -57,7 +57,7 @@ const settlementInfo: SettlementInfo = {
 
 export default function SellerPage() {
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="bg-background p-8">
       {/* 헤더 */}
       <div className="mb-8">
         <h1 className="text-h2 font-bold text-dark-text">판매 현황</h1>
