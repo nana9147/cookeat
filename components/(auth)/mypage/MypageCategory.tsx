@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { sections } from './categoryData';
+import { sections } from './CategoryData';
 
 export default function MypageCategory() {
   const pathname = usePathname();
