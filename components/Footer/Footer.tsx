@@ -4,11 +4,11 @@ import { RecipeIcon, ShoppingIcon, BenefitIcon, CommunityIcon } from './FooterIc
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-footer-bg shrink-0">
+    <footer className="w-full bg-primary shrink-0">
       <div className="max-w-360 mx-auto px-25 flex flex-col gap-4 py-6 desktop:flex-row desktop:items-center desktop:justify-between desktop:h-24 desktop:py-0 desktop:gap-7">
         <div className="flex items-center gap-4 desktop:gap-8">
-          <h2 className="text-footer-text font-bold text-h5 tablet:text-h3">Cookeat</h2>
-          <p className="hidden desktop:block text-footer-text text-sm">© 2026 Cookeat. All rights reserved.</p>
+          <h2 className="text-white font-bold text-h5 tablet:text-h3">Cookeat</h2>
+          <p className="hidden desktop:block text-footer-sub text-sm">© 2026 Cookeat. All rights reserved.</p>
         </div>
 
         <div className="flex flex-col gap-2 desktop:flex-row desktop:items-center desktop:gap-7">
@@ -30,7 +30,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <p className="desktop:hidden text-footer-text text-xs">
+        <p className="desktop:hidden text-footer-sub text-xs">
           © 2026 Cookeat.<br className="tablet:hidden" /> All rights reserved.
         </p>
       </div>
