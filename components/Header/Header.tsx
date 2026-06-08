@@ -30,7 +30,7 @@ export default function Header() {
               height={280}
               className="w-10 h-auto"
             />
-            <h1 className="text-h1 font-bold">Cookeat</h1>
+            <h1 className="text-h1 font-bold" suppressHydrationWarning>Cookeat</h1>
           </Link>
           <HeaderNav />
           <HeaderSearch />
