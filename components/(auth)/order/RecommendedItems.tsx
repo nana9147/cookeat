@@ -14,7 +14,7 @@ export default function RecommendedItems() {
         </h3>
         <button className="text-sm text-gray-text hover:text-dark-text">더보기</button>
       </div>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 tablet:grid-cols-4 gap-3">
         {SIMILAR_ITEMS.map((item) => (
           <div
             key={item.id}
