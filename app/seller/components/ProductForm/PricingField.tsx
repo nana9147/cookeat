@@ -7,28 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import type { PricingFieldProps } from '@/types/seller/product';
 
-export default function PricingField({
-  price,
-  stock,
-  discountType,
-  discountValue,
-  minQuantity,
-  maxQuantity,
-  onPriceChange,
-  onStockChange,
-  onDiscountTypeChange,
-  onDiscountValueChange,
-  onMinQuantityChange,
-  onMaxQuantityChange,
-}: PricingFieldProps) {
+export default function PricingField({ data, onChange }: PricingFieldProps) {
   const [showDiscount, setShowDiscount] = useState(false);
 
   const calcDiscountedPrice = () => {
-    const p = Number(price?.replace(/,/g, '') || 0);
-    const v = Number(discountValue?.replace(/,/g, '') || 0);
-    if (!p || !v || discountType === 'none') return null;
-    if (discountType === 'amount') return Math.max(0, p - v).toLocaleString();
-    if (discountType === 'rate') return Math.max(0, Math.round(p * (1 - v / 100))).toLocaleString();
+    const p = Number(data.price?.replace(/,/g, '') || 0);
+    const v = Number(data.discountValue?.replace(/,/g, '') || 0);
+    if (!p || !v || data.discountType === 'none') return null;
+    if (data.discountType === 'amount') return Math.max(0, p - v).toLocaleString();
+    if (data.discountType === 'rate')
+      return Math.max(0, Math.round(p * (1 - v / 100))).toLocaleString();
   };
 
   const discountedPrice = calcDiscountedPrice();
@@ -48,8 +36,8 @@ export default function PricingField({
             <div className="relative">
               <Input
                 type="number"
-                value={price}
-                onChange={(e) => onPriceChange(e.target.value)}
+                value={data.price}
+                onChange={(e) => onChange('price', e.target.value)}
                 placeholder="0"
                 min={0}
                 step={100}
@@ -64,8 +52,8 @@ export default function PricingField({
             </label>
             <Input
               type="number"
-              value={stock}
-              onChange={(e) => onStockChange(e.target.value)}
+              value={data.stock}
+              onChange={(e) => onChange('stock', e.target.value)}
               placeholder="0"
               min={0}
               className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -84,7 +72,7 @@ export default function PricingField({
               size="sm"
               onClick={() => {
                 setShowDiscount(true);
-                if (discountType === 'none') onDiscountTypeChange('amount');
+                if (data.discountType === 'none') onChange('discountType', 'amount');
               }}
             >
               할인 설정
@@ -95,8 +83,8 @@ export default function PricingField({
               size="sm"
               onClick={() => {
                 setShowDiscount(false);
-                onDiscountTypeChange('none');
-                onDiscountValueChange('');
+                onChange('discountType', 'none');
+                onChange('discountValue', '');
               }}
             >
               할인 미설정
@@ -118,10 +106,10 @@ export default function PricingField({
                         type="radio"
                         name="discountType"
                         value={type}
-                        checked={discountType === type}
+                        checked={data.discountType === type}
                         onChange={() => {
-                          onDiscountTypeChange(type);
-                          onDiscountValueChange('');
+                          onChange('discountType', type);
+                          onChange('discountValue', '');
                         }}
                         className="accent-green-600"
                       />
@@ -137,30 +125,30 @@ export default function PricingField({
                 <div className="relative">
                   <Input
                     type="number"
-                    value={discountValue}
+                    value={data.discountValue}
                     onChange={(e) => {
                       const v = Number(e.target.value);
-                      const p = Number(price);
-                      if (discountType === 'amount' && p && v > p) {
+                      const p = Number(data.price);
+                      if (data.discountType === 'amount' && p && v > p) {
                         alert('할인 금액이 판매가보다 클 수 없어요.');
-                        onDiscountValueChange('');
+                        onChange('discountValue', '');
                         return;
                       }
-                      if (discountType === 'rate' && v > 100) {
+                      if (data.discountType === 'rate' && v > 100) {
                         alert('할인율은 100%를 초과할 수 없어요.');
-                        onDiscountValueChange('');
+                        onChange('discountValue', '');
                         return;
                       }
-                      onDiscountValueChange(e.target.value);
+                      onChange('discountValue', e.target.value);
                     }}
-                    placeholder={!price ? '판매가를 먼저 입력해주세요' : '0'}
-                    disabled={!price}
+                    placeholder={!data.price ? '판매가를 먼저 입력해주세요' : '0'}
+                    disabled={!data.price}
                     min={0}
-                    max={discountType === 'rate' ? 100 : Number(price) || undefined}
+                    max={data.discountType === 'rate' ? 100 : Number(data.price) || undefined}
                     className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
                   />
                   <span className="absolute right-3 top-1.5 text-sm text-gray-400">
-                    {discountType === 'rate' ? '%' : '원'}
+                    {data.discountType === 'rate' ? '%' : '원'}
                   </span>
                 </div>
                 {discountedPrice && (
@@ -181,8 +169,8 @@ export default function PricingField({
             <label className="block text-sm font-medium text-gray-700 mb-1">최소 구매 수량</label>
             <Input
               type="number"
-              value={minQuantity}
-              onChange={(e) => onMinQuantityChange(e.target.value)}
+              value={data.minQuantity}
+              onChange={(e) => onChange('minQuantity', e.target.value)}
               placeholder="1"
               min={1}
               className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -192,8 +180,8 @@ export default function PricingField({
             <label className="block text-sm font-medium text-gray-700 mb-1">최대 구매 수량</label>
             <Input
               type="number"
-              value={maxQuantity}
-              onChange={(e) => onMaxQuantityChange(e.target.value)}
+              value={data.maxQuantity}
+              onChange={(e) => onChange('maxQuantity', e.target.value)}
               placeholder="제한 없음"
               min={1}
               className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

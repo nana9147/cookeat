@@ -7,7 +7,7 @@ export interface AddressItem {
   detailAddress: string;
 }
 
-export type ShippingFeeType = 'free' | 'paid' | 'conditional';
+export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
 
 export interface ShippingFeeItem {
   id: string;
@@ -17,15 +17,16 @@ export interface ShippingFeeItem {
   freeThreshold?: number; //조건부 무배 기준 금액
 }
 
-export interface ShippingSectionProps {
+export interface ShippingData {
   deliveryMethod: string;
+  shippingFeeType: ShippingFeeType;
   shippingFee: string;
+  freeThreshold: string;
   returnFee: string;
   originAddress: string;
   returnAddress: string;
-  onDeliveryMethodChange: (value: string) => void;
-  onShippingFeeChange: (value: string) => void;
-  onReturnFeeChange: (value: string) => void;
-  onOriginAddressChange: (value: string) => void;
-  onReturnAddressChange: (value: string) => void;
+}
+export interface ShippingSectionProps {
+  data: ShippingData;
+  onChange: (field: keyof ShippingData, value: string) => void;
 }

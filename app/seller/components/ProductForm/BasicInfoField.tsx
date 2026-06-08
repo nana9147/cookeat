@@ -5,18 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { BasicInfoFieldProps, ProductStatus } from '@/types/seller/product';
 
-export default function BasicInfoField({
-  name,
-  category,
-  manufacturer,
-  origin,
-  status,
-  onNameChange,
-  onCategoryChange,
-  onManufacturerChange,
-  onOriginChange,
-  onStatusChange,
-}: BasicInfoFieldProps) {
+export default function BasicInfoField({ data, onChange }: BasicInfoFieldProps) {
   const STATUS_OPTIONS: ProductStatus[] = ['판매대기', '판매중'];
 
   return (
@@ -31,8 +20,8 @@ export default function BasicInfoField({
             카테고리 <span className="text-red-500">*</span>
           </label>
           <Input
-            value={category}
-            onChange={(e) => onCategoryChange(e.target.value)}
+            value={data.category}
+            onChange={(e) => onChange('category', e.target.value)}
             placeholder="카테고리를 입력하세요"
           />
         </div>
@@ -43,12 +32,12 @@ export default function BasicInfoField({
             상품명 <span className="text-red-500">*</span>
           </label>
           <Input
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
+            value={data.name}
+            onChange={(e) => onChange('name', e.target.value)}
             placeholder="상품명을 입력하세요 (30자 이내 권장)"
             maxLength={100}
           />
-          <p className="text-xs text-gray-400 mt-1">{name.length} / 100</p>
+          <p className="text-xs text-gray-400 mt-1">{data.name.length} / 100</p>
         </div>
 
         {/* 제조사 + 원산지 */}
@@ -56,16 +45,16 @@ export default function BasicInfoField({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">제조사</label>
             <Input
-              value={manufacturer}
-              onChange={(e) => onManufacturerChange(e.target.value)}
+              value={data.manufacturer}
+              onChange={(e) => onChange('manufacturer', e.target.value)}
               placeholder="제조사"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">원산지</label>
             <Input
-              value={origin}
-              onChange={(e) => onOriginChange(e.target.value)}
+              value={data.origin}
+              onChange={(e) => onChange('origin', e.target.value)}
               placeholder="예) 국내산, 중국산"
             />
           </div>
@@ -80,9 +69,9 @@ export default function BasicInfoField({
               <Button
                 key={s}
                 type="button"
-                variant={status === s ? 'default' : 'outline'}
+                variant={data.status === s ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => onStatusChange(s)}
+                onClick={() => onChange('status', s)}
               >
                 {s}
               </Button>

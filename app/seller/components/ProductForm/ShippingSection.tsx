@@ -35,33 +35,20 @@ const MOCK_ADDRESSES = [
   },
 ];
 
-export default function ShippingField({
-  deliveryMethod,
-  shippingFee,
-  returnFee,
-  originAddress,
-  returnAddress,
-  onDeliveryMethodChange,
-  onShippingFeeChange,
-  onReturnFeeChange,
-  onOriginAddressChange,
-  onReturnAddressChange,
-}: ShippingSectionProps) {
-  const [feeType, setFeeType] = useState<'무료' | '유료' | '조건부 무료'>('유료');
-  const [freeThreshold, setFreeThreshold] = useState('');
+export default function ShippingSection({ data, onChange }: ShippingSectionProps) {
   const [openModal, setOpenModal] = useState<'origin' | 'return' | null>(null);
 
   const handleSelectAddress = (item: (typeof MOCK_ADDRESSES)[0]) => {
     const fullAddress = `(${item.zipCode}) ${item.baseAddress} ${item.detailAddress}`;
-    if (openModal === 'origin') onOriginAddressChange(fullAddress);
-    if (openModal === 'return') onReturnAddressChange(fullAddress);
+    if (openModal === 'origin') onChange('originAddress', fullAddress);
+    if (openModal === 'return') onChange('returnAddress', fullAddress);
     setOpenModal(null);
   };
 
-  const handleFeeTypeChange = (type: '무료' | '유료' | '조건부 무료') => {
-    setFeeType(type);
-    if (type === '무료') onShippingFeeChange('0');
-    else onShippingFeeChange('');
+  const handleFeeTypeChange = (type: string) => {
+    onChange('shippingFeeType', type);
+    if (type === '무료') onChange('shippingFee', '0');
+    else onChange('shippingFee', '');
   };
 
   return (
@@ -81,9 +68,9 @@ export default function ShippingField({
                 <button
                   key={method}
                   type="button"
-                  onClick={() => onDeliveryMethodChange(method)}
+                  onClick={() => onChange('deliveryMethod', method)}
                   className={`px-4 py-1.5 text-sm rounded-md border transition-colors ${
-                    deliveryMethod === method
+                    data.deliveryMethod === method
                       ? 'border-green-600 bg-green-50 text-green-700 font-medium'
                       : 'border-gray-300 text-gray-600 hover:border-gray-400'
                   }`}
@@ -102,7 +89,7 @@ export default function ShippingField({
             <div className="flex gap-6 items-center flex-wrap ">
               {/* 배송비 유형 select */}
               <select
-                value={feeType}
+                value={data.shippingFeeType}
                 onChange={(e) =>
                   handleFeeTypeChange(e.target.value as '무료' | '유료' | '조건부 무료')
                 }
@@ -115,12 +102,12 @@ export default function ShippingField({
                 ))}
               </select>
 
-              {feeType === '유료' && (
+              {data.shippingFeeType === '유료' && (
                 <div className="relative">
                   <Input
                     type="number"
-                    value={shippingFee}
-                    onChange={(e) => onShippingFeeChange(e.target.value)}
+                    value={data.shippingFee}
+                    onChange={(e) => onChange('shippingFee', e.target.value)}
                     placeholder="배송비를 입력하세요"
                     min={0}
                     className="w-48 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
@@ -129,15 +116,15 @@ export default function ShippingField({
                 </div>
               )}
 
-              {feeType === '조건부 무료' && (
+              {data.shippingFeeType === '조건부 무료' && (
                 <div className="flex flex-col gap-2 mt-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600 w-24 shrink-0">기본 배송비</span>
                     <div className="relative">
                       <Input
                         type="number"
-                        value={shippingFee}
-                        onChange={(e) => onShippingFeeChange(e.target.value)}
+                        value={data.shippingFee}
+                        onChange={(e) => onChange('shippingFee', e.target.value)}
                         placeholder="0"
                         min={0}
                         className="w-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
@@ -150,8 +137,8 @@ export default function ShippingField({
                     <div className="relative">
                       <Input
                         type="number"
-                        value={freeThreshold}
-                        onChange={(e) => setFreeThreshold(e.target.value)}
+                        value={data.freeThreshold}
+                        onChange={(e) => onChange('freeThreshold', e.target.value)}
                         placeholder="0"
                         min={0}
                         className="w-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
@@ -163,7 +150,7 @@ export default function ShippingField({
                 </div>
               )}
 
-              {feeType === '무료' && (
+              {data.shippingFeeType === '무료' && (
                 <span className="text-sm text-green-700 font-medium">전체 무료배송</span>
               )}
             </div>
@@ -177,8 +164,8 @@ export default function ShippingField({
             <div className="relative w-48">
               <Input
                 type="number"
-                value={returnFee}
-                onChange={(e) => onReturnFeeChange(e.target.value)}
+                value={data.returnFee}
+                onChange={(e) => onChange('returnFee', e.target.value)}
                 placeholder="0"
                 min={0}
                 className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
@@ -195,7 +182,7 @@ export default function ShippingField({
             </label>
             <div className="flex gap-2 items-center">
               <Input
-                value={originAddress}
+                value={data.originAddress}
                 readOnly
                 placeholder="출고지를 선택해주세요"
                 className="cursor-pointer"
@@ -219,7 +206,7 @@ export default function ShippingField({
             </label>
             <div className="flex gap-2 items-center">
               <Input
-                value={returnAddress}
+                value={data.returnAddress}
                 readOnly
                 placeholder="반품/교환지를 선택해주세요"
                 className="cursor-pointer"

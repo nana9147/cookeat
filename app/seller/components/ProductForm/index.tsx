@@ -3,22 +3,34 @@
 import { useState } from 'react';
 import BasicInfoField from './BasicInfoField';
 import PricingField from './PricingField';
-import FormActionButtons from './FormActionButtons';
-import type { ProductFormData } from '@/types/seller/product';
-import { initialProductForm } from '@/types/seller/product';
 import ImageUploadField from './ImageUploadField';
 import DescriptionEditor from './DescriptionEditor';
 import ShippingSection from './ShippingSection';
+import FormActionButtons from './FormActionButtons';
+import type { ProductFormData } from '@/types/seller/product';
+import { initialProductForm } from '@/types/seller/product';
 
 export default function ProductForm() {
   const [form, setForm] = useState<ProductFormData>(initialProductForm);
 
-  const handleChange = (field: keyof ProductFormData) => (value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const handleChange = <S extends keyof ProductFormData, K extends keyof ProductFormData[S]>(
+    section: S,
+    field: K,
+    value: ProductFormData[S][K]
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      [section]: { ...prev[section], [field]: value },
+    }));
   };
 
   const handleSubmit = () => {
-    if (!form.name || !form.category || !form.price || !form.stock) {
+    if (
+      !form.basicInfo.name ||
+      !form.basicInfo.category ||
+      !form.pricingInfo.price ||
+      !form.pricingInfo.stock
+    ) {
       alert('필수 항목을 모두 입력해주세요.');
       return;
     }
@@ -29,44 +41,18 @@ export default function ProductForm() {
   return (
     <div className="flex flex-col gap-4">
       <BasicInfoField
-        name={form.name}
-        category={form.category}
-        manufacturer={form.manufacturer}
-        origin={form.origin}
-        status={form.status}
-        onNameChange={handleChange('name')}
-        onCategoryChange={handleChange('category')}
-        onManufacturerChange={handleChange('manufacturer')}
-        onOriginChange={handleChange('origin')}
-        onStatusChange={handleChange('status')}
-      />
-      <PricingField
-        price={form.price}
-        stock={form.stock}
-        discountType={form.discountType}
-        discountValue={form.discountValue}
-        minQuantity={form.minQuantity}
-        maxQuantity={form.maxQuantity}
-        onPriceChange={handleChange('price')}
-        onStockChange={handleChange('stock')}
-        onDiscountTypeChange={(v) => setForm((prev) => ({ ...prev, discountType: v }))}
-        onDiscountValueChange={handleChange('discountValue')}
-        onMinQuantityChange={handleChange('minQuantity')}
-        onMaxQuantityChange={handleChange('maxQuantity')}
+        data={form.basicInfo}
+        onChange={(field, value) => handleChange('basicInfo', field, value)}
       />
       <ImageUploadField />
       <DescriptionEditor />
+      <PricingField
+        data={form.pricingInfo}
+        onChange={(field, value) => handleChange('pricingInfo', field, value)}
+      />
       <ShippingSection
-        deliveryMethod={form.deliveryMethod}
-        shippingFee={form.shippingFee}
-        returnFee={form.returnFee}
-        originAddress={form.originAddress}
-        returnAddress={form.returnAddress}
-        onDeliveryMethodChange={handleChange('deliveryMethod')}
-        onShippingFeeChange={handleChange('shippingFee')}
-        onReturnFeeChange={handleChange('returnFee')}
-        onOriginAddressChange={handleChange('originAddress')}
-        onReturnAddressChange={handleChange('returnAddress')}
+        data={form.shippingInfo}
+        onChange={(field, value) => handleChange('shippingInfo', field, value)}
       />
       <FormActionButtons onSubmit={handleSubmit} />
     </div>
