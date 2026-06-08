@@ -7,6 +7,7 @@ import FormActionButtons from './FormActionButtons';
 import type { ProductFormData } from '@/types/seller/product';
 import { initialProductForm } from '@/types/seller/product';
 import ImageUploadField from './ImageUploadField';
+import DescriptionEditor from './DescriptionEditor';
 
 export default function ProductForm() {
   const [form, setForm] = useState<ProductFormData>(initialProductForm);
@@ -51,6 +52,7 @@ export default function ProductForm() {
         onMaxQuantityChange={handleChange('maxQuantity')}
       />
       <ImageUploadField />
+      <DescriptionEditor />
       <FormActionButtons onSubmit={handleSubmit} />
     </div>
   );
