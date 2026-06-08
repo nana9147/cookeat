@@ -26,9 +26,27 @@ function StarRating({ count }: { count: number }) {
 }
 
 const statCards = [
-  { label: '신고 대기', value: '12건', icon: AlertCircle, iconColor: 'text-red', valueColor: 'text-red' },
-  { label: '악성 리뷰', value: '8건', icon: MessageCircle, iconColor: 'text-yellow', valueColor: 'text-yellow' },
-  { label: '처리 완료', value: '156건', icon: CheckCircle2, iconColor: 'text-primary', valueColor: 'text-primary' },
+  {
+    label: '신고 대기',
+    value: '12건',
+    icon: AlertCircle,
+    iconColor: 'text-red',
+    valueColor: 'text-red',
+  },
+  {
+    label: '악성 리뷰',
+    value: '8건',
+    icon: MessageCircle,
+    iconColor: 'text-yellow',
+    valueColor: 'text-yellow',
+  },
+  {
+    label: '처리 완료',
+    value: '156건',
+    icon: CheckCircle2,
+    iconColor: 'text-primary',
+    valueColor: 'text-primary',
+  },
 ];
 
 interface Review {
@@ -42,9 +60,33 @@ interface Review {
 }
 
 const reviews: Review[] = [
-  { id: 1, productName: '신선한 양파', author: '김쿡잇', rating: 5, date: '2024.05.28', reportCount: 0, state: '정상' },
-  { id: 2, productName: '국내산 대파', author: '이레시피', rating: 4, date: '2024.05.27', reportCount: 0, state: '정상' },
-  { id: 3, productName: '프리미엄 소고기', author: '박요리', rating: 1, date: '2024.05.26', reportCount: 3, state: '신고' },
+  {
+    id: 1,
+    productName: '신선한 양파',
+    author: '김쿡잇',
+    rating: 5,
+    date: '2024.05.28',
+    reportCount: 0,
+    state: '정상',
+  },
+  {
+    id: 2,
+    productName: '국내산 대파',
+    author: '이레시피',
+    rating: 4,
+    date: '2024.05.27',
+    reportCount: 0,
+    state: '정상',
+  },
+  {
+    id: 3,
+    productName: '프리미엄 소고기',
+    author: '박요리',
+    rating: 1,
+    date: '2024.05.26',
+    reportCount: 3,
+    state: '신고',
+  },
 ];
 
 const stateBadge: Record<Review['state'], string> = {
@@ -61,7 +103,7 @@ export default function ReviewsPage() {
         <p className="text-sm text-muted-foreground">전체 리뷰: 3,456개 (신고: 12개)</p>
       </div>
 
-      <div className="grid grid-cols-2 tablet:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4">
         {statCards.map(({ label, value, icon: Icon, iconColor, valueColor }) => (
           <Card key={label}>
             <CardContent className="pt-5">
@@ -99,7 +141,9 @@ export default function ReviewsPage() {
                 <TableCell className="text-muted-foreground">{r.date}</TableCell>
                 <TableCell className="text-red font-medium">{r.reportCount}건</TableCell>
                 <TableCell>
-                  <span className={`rounded px-2 py-0.5 text-xs font-medium ${stateBadge[r.state]}`}>
+                  <span
+                    className={`rounded px-2 py-0.5 text-xs font-medium ${stateBadge[r.state]}`}
+                  >
                     {r.state}
                   </span>
                 </TableCell>
