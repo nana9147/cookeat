@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const { data: { publicUrl } } = supabaseAdmin.storage.from('avatars').getPublicUrl(path)
 
   await supabaseAdmin.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...user.user_metadata, avatar_url: publicUrl },
+    user_metadata: { custom_avatar_url: publicUrl },
   })
 
   return NextResponse.json({ url: publicUrl })

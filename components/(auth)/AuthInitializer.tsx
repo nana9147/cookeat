@@ -20,7 +20,7 @@ export default function AuthInitializer() {
         setAuth(session.access_token, session.refresh_token, {
           userId: u.id,
           nickname: u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.email?.split('@')[0] ?? '',
-          profileImage: u.user_metadata?.avatar_url ?? null,
+          profileImage: u.user_metadata?.custom_avatar_url ?? u.user_metadata?.avatar_url ?? null,
         })
       }
       if (event === 'SIGNED_OUT') clearAuth()

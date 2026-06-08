@@ -19,11 +19,13 @@ export function useUserInfo() {
   const [nickname, setNickname] = useState('');
   const [phone, setPhone] = useState('');
   const [isSocial, setIsSocial] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.email) setEmail(user.email);
     if (user?.nickname) setNickname(user.nickname);
     if (user?.isSocial !== undefined) setIsSocial(user.isSocial);
+    if (user?.profileImage) setProfileImage(user.profileImage);
   }, [user]);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export function useUserInfo() {
         if (data.nickname) setNickname(data.nickname);
         setPhone(data.phone ?? '');
         setIsSocial(data.isSocial ?? false);
+        setProfileImage(data.profileImage ?? null);
       });
   }, [accessToken]);
 
@@ -43,7 +46,7 @@ export function useUserInfo() {
     nickname,
     email,
     phone,
-    profileImage: user?.profileImage ?? null,
+    profileImage,
     point,
     isSocial,
   } satisfies UserInfo;

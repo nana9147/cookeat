@@ -30,7 +30,7 @@ export default function AuthCallbackPage() {
         email: u.email ?? '',
         nickname:
           u.user_metadata?.full_name ?? u.user_metadata?.name ?? u.email?.split('@')[0] ?? '',
-        profileImage: u.user_metadata?.avatar_url ?? null,
+        profileImage: u.user_metadata?.custom_avatar_url ?? u.user_metadata?.avatar_url ?? null,
         isSocial: u.app_metadata?.provider !== 'email',
       });
       const res = await fetch('/api/auth/profile', {

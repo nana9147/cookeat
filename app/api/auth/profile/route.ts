@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     nickname: profile?.nickname ?? '',
     phone: profile?.phone ?? '',
     isSocial: user.app_metadata?.provider !== 'email',
+    profileImage: user.user_metadata?.custom_avatar_url ?? user.user_metadata?.avatar_url ?? null,
   })
 }
 

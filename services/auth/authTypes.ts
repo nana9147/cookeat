@@ -28,7 +28,7 @@ export function toAuthUser(raw: {
     userId: raw.id,
     email: raw.email ?? '',
     nickname: raw.user_metadata?.nickname ?? '',
-    profileImage: raw.user_metadata?.avatar_url ?? null,
+    profileImage: raw.user_metadata?.custom_avatar_url ?? raw.user_metadata?.avatar_url ?? null,
     isSocial: raw.app_metadata?.provider !== 'email',
   };
 }
