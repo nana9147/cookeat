@@ -15,9 +15,12 @@ export default function HeaderActions({ token }: Props) {
     <div className="flex items-center gap-1 ml-auto desktop:ml-0 shrink-0">
       {token ? (
         <>
-          <button className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors">
+          <Link
+            href="/cart"
+            className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors"
+          >
             <CartIcon />
-          </button>
+          </Link>
           <Link
             href="/mypage"
             className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors"
