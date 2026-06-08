@@ -1,17 +1,16 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+
 export default function TempSaveButton() {
   const handleTempSave = () => {
+    // TODO: 임시저장 로직
     alert('임시저장 되었습니다.');
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleTempSave}
-      className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-    >
+    <Button type="button" variant="outline" onClick={handleTempSave}>
       임시저장
-    </button>
+    </Button>
   );
 }

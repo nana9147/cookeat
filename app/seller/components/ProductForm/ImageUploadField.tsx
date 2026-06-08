@@ -2,6 +2,8 @@
 
 import { useRef, useState, DragEvent, ChangeEvent } from 'react';
 import { Image } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DndContext,
   closestCenter,
@@ -17,7 +19,7 @@ import type { ImageFile, SortableImageProps } from '@/types/seller/product';
 function SortableImage({ image, index, onRemove, onMoveFirst }: SortableImageProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: image.id,
-    disabled: index === 0, // 대표 이미지는 드래그 불가
+    disabled: index === 0,
   });
 
   const style = {
@@ -68,21 +70,25 @@ function SortableImage({ image, index, onRemove, onMoveFirst }: SortableImagePro
       {/* 호버 시 버튼 */}
       <div className="absolute inset-0 bg-black/40 rounded-md opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
         {index !== 0 && (
-          <button
+          <Button
             type="button"
+            size="sm"
+            variant="ghost"
             onClick={() => onMoveFirst(image.id)}
-            className="text-xs text-white bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
+            className="text-xs text-white bg-white/20 hover:bg-white/30 hover:text-white"
           >
             대표로 설정
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="destructive"
           onClick={() => onRemove(image.id)}
-          className="text-xs text-white bg-red-500/80 hover:bg-red-500 px-2 py-1 rounded transition-colors"
+          className="text-xs"
         >
           삭제
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -170,78 +176,81 @@ export default function ImageUploadField() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     setImages((prev) => {
       const oldIndex = prev.findIndex((img) => img.id === active.id);
       const newIndex = prev.findIndex((img) => img.id === over.id);
-
-      // 대표 이미지(0번) 자리로는 이동 불가
       if (newIndex === 0) return prev;
-
       return arrayMove(prev, oldIndex, newIndex);
     });
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-700">상품 이미지</h2>
-        <span className="text-xs text-gray-400">
-          {images.length} / {MAX_COUNT}
-        </span>
-      </div>
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle className="flex items-center justify-between">
+          상품 이미지
+          <span className="text-xs text-gray-400 font-normal">
+            {images.length} / {MAX_COUNT}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-5 pt-5">
+        {/* 업로드 영역 */}
+        {images.length < MAX_COUNT && (
+          <div
+            onClick={handleClick}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg py-10 cursor-pointer transition-colors ${
+              isDragging
+                ? 'border-green-500 bg-green-50'
+                : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
+            }`}
+          >
+            <Image className="text-gray-400 w-8 h-8" />
+            <p className="text-sm text-gray-500">
+              이미지를 드래그하거나 <span className="text-green-700 font-medium">클릭</span>하여
+              업로드하세요
+            </p>
+            <p className="text-xs text-gray-400">
+              최대 {MAX_COUNT}장 · 장당 {MAX_SIZE_MB}MB 이하 · JPG, PNG, WEBP
+            </p>
+          </div>
+        )}
 
-      {/* 업로드 영역 */}
-      {images.length < MAX_COUNT && (
-        <div
-          onClick={handleClick}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg py-10 cursor-pointer transition-colors ${
-            isDragging
-              ? 'border-green-500 bg-green-50'
-              : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
-          }`}
-        >
-          <Image className="text-gray-400 w-8 h-8" />
-          <p className="text-sm text-gray-500">
-            이미지를 드래그하거나 <span className="text-green-700 font-medium">클릭</span>하여
-            업로드하세요
-          </p>
-          <p className="text-xs text-gray-400">
-            최대 {MAX_COUNT}장 · 장당 {MAX_SIZE_MB}MB 이하 · JPG, PNG, WEBP
-          </p>
-        </div>
-      )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
-      {/* 썸네일 목록 */}
-      {images.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-5 gap-3">
-              {images.map((img, index) => (
-                <SortableImage
-                  key={img.id}
-                  image={img}
-                  index={index}
-                  onRemove={handleRemove}
-                  onMoveFirst={handleMoveFirst}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      )}
-    </div>
+        {/* 썸네일 목록 */}
+        {images.length > 0 && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-5 gap-3">
+                {images.map((img, index) => (
+                  <SortableImage
+                    key={img.id}
+                    image={img}
+                    index={index}
+                    onRemove={handleRemove}
+                    onMoveFirst={handleMoveFirst}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </CardContent>
+    </Card>
   );
 }
