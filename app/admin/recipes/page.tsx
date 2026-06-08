@@ -6,6 +6,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye } from 'lucide-react';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
 
 type RecipeStatus = '공개' | '비공개' | '신고';
 
@@ -148,33 +156,37 @@ export default function RecipesPage() {
         </Card>
       </div>
 
-      <div className="rounded-lg border overflow-x-auto">
-        <table className="w-full min-w-140 text-sm">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium">레시피명</th>
-              <th className="text-left px-4 py-3 font-medium">작성자</th>
-              <th className="text-right px-4 py-3 font-medium">조회수</th>
-              <th className="text-right px-4 py-3 font-medium">수익</th>
-              <th className="text-center px-4 py-3 font-medium">상태</th>
-              <th className="text-center px-4 py-3 font-medium">관리</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
+      <div className="rounded-lg border overflow-x-auto bg-white">
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow>
+              <TableHead className="text-left px-4 py-3 font-medium">레시피명</TableHead>
+              <TableHead className="text-left px-4 py-3 font-medium">작성자</TableHead>
+              <TableHead className="text-right px-4 py-3 font-medium">조회수</TableHead>
+              <TableHead className="text-right px-4 py-3 font-medium">수익</TableHead>
+              <TableHead className="text-center px-4 py-3 font-medium">상태</TableHead>
+              <TableHead className="text-center px-4 py-3 font-medium">관리</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y">
             {recipes.map((recipe) => (
-              <tr key={recipe.id} className="hover:bg-muted/30 transition-colors">
-                <td className="px-4 py-3 font-medium">{recipe.title}</td>
-                <td className="px-4 py-3 text-muted-foreground">{recipe.author}</td>
-                <td className="px-4 py-3 text-right">{recipe.views.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right">{Math.floor(recipe.points / 10)}백P</td>
-                <td className="px-4 py-3 text-center">
+              <TableRow key={recipe.id} className="hover:bg-muted/30 transition-colors">
+                <TableCell className="px-4 py-3 font-medium">{recipe.title}</TableCell>
+                <TableCell className="px-4 py-3 text-muted-foreground">{recipe.author}</TableCell>
+                <TableCell className="px-4 py-3 text-right">
+                  {recipe.views.toLocaleString()}
+                </TableCell>
+                <TableCell className="px-4 py-3 text-right">
+                  {Math.floor(recipe.points / 10)}백P
+                </TableCell>
+                <TableCell className="px-4 py-3 text-center">
                   <span
                     className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[recipe.status]}`}
                   >
                     {recipe.status}
                   </span>
-                </td>
-                <td className="px-4 py-3 text-center">
+                </TableCell>
+                <TableCell className="px-4 py-3 text-center">
                   <Button
                     size="sm"
                     variant="ghost"
@@ -183,11 +195,11 @@ export default function RecipesPage() {
                   >
                     <Eye size={16} />
                   </Button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <Dialog open={!!selectedRecipes} onOpenChange={() => setSelectedId(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
@@ -279,7 +291,9 @@ export default function RecipesPage() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="destructive" className="flex-1">삭제</Button>
+                <Button variant="destructive" className="flex-1">
+                  삭제
+                </Button>
                 <Button variant="outline" className="flex-1" onClick={() => setSelectedId(null)}>
                   목록
                 </Button>
