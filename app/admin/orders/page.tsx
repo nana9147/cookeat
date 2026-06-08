@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Pencil, Ban, Filter } from 'lucide-react';
+import { Eye, Filter } from 'lucide-react';
 import {
   Table,
   TableBody,
