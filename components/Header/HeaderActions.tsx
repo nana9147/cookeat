@@ -16,7 +16,7 @@ export default function HeaderActions({ token }: Props) {
       {token ? (
         <>
           <Link
-            href="/order"
+            href="/cart"
             className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors"
           >
             <CartIcon />

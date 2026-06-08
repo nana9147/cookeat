@@ -3,9 +3,9 @@
 import { usePathname } from 'next/navigation';
 
 const STEPS = [
-  { label: '장바구니', path: '/order' },
-  { label: '주문서 작성', path: '/order/checkout' },
-  { label: '결제 완료', path: '/order/complete' },
+  { label: '장바구니', path: '/cart' },
+  { label: '주문서 작성', path: '/cart/checkout' },
+  { label: '결제 완료', path: '/cart/complete' },
 ];
 
 export default function CartStepper() {
@@ -13,12 +13,12 @@ export default function CartStepper() {
   const currentStep = STEPS.findIndex((s) => s.path === pathname);
 
   return (
-    <div className="flex items-center justify-center gap-2 py-6">
+    <div className="flex flex-nowrap items-center justify-center gap-1.5 tablet:gap-3 py-4 tablet:py-6">
       {STEPS.map((step, index) => (
-        <div key={step.path} className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
+        <div key={step.path} className="flex items-center gap-1.5 tablet:gap-2">
+          <div className="flex items-center gap-1 tablet:gap-1.5">
             <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${
+              className={`w-5 h-5 tablet:w-6 tablet:h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                 index === currentStep
                   ? 'bg-primary text-white'
                   : 'border border-gray-300 text-gray-400'
@@ -27,7 +27,7 @@ export default function CartStepper() {
               {index + 1}
             </span>
             <span
-              className={`text-h5 ${
+              className={`text-xs tablet:text-sm whitespace-nowrap ${
                 index === currentStep ? 'text-dark-text font-bold' : 'text-gray-400 font-medium'
               }`}
             >
@@ -35,7 +35,7 @@ export default function CartStepper() {
             </span>
           </div>
           {index < STEPS.length - 1 && (
-            <span className="text-gray-300 text-sm">{'>'}</span>
+            <span className="text-gray-300 text-xs">{'>'}</span>
           )}
         </div>
       ))}

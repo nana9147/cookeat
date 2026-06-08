@@ -10,7 +10,7 @@ export default function OrderPay() {
       <p className="text-right text-xs text-gray-text">+ 354P 적립 예정</p>
 
       <Link
-        href="/order/checkout"
+        href="/cart/checkout"
         className="w-full bg-primary hover:bg-primary-hover text-white font-semibold text-base py-4 rounded-xl text-center flex items-center justify-center gap-1 transition-colors"
       >
         주문하기 &gt;
