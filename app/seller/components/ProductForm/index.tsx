@@ -8,6 +8,7 @@ import type { ProductFormData } from '@/types/seller/product';
 import { initialProductForm } from '@/types/seller/product';
 import ImageUploadField from './ImageUploadField';
 import DescriptionEditor from './DescriptionEditor';
+import ShippingSection from './ShippingSection';
 
 export default function ProductForm() {
   const [form, setForm] = useState<ProductFormData>(initialProductForm);
@@ -32,10 +33,12 @@ export default function ProductForm() {
         category={form.category}
         manufacturer={form.manufacturer}
         origin={form.origin}
+        status={form.status}
         onNameChange={handleChange('name')}
         onCategoryChange={handleChange('category')}
         onManufacturerChange={handleChange('manufacturer')}
         onOriginChange={handleChange('origin')}
+        onStatusChange={handleChange('status')}
       />
       <PricingField
         price={form.price}
@@ -53,6 +56,18 @@ export default function ProductForm() {
       />
       <ImageUploadField />
       <DescriptionEditor />
+      <ShippingSection
+        deliveryMethod={form.deliveryMethod}
+        shippingFee={form.shippingFee}
+        returnFee={form.returnFee}
+        originAddress={form.originAddress}
+        returnAddress={form.returnAddress}
+        onDeliveryMethodChange={handleChange('deliveryMethod')}
+        onShippingFeeChange={handleChange('shippingFee')}
+        onReturnFeeChange={handleChange('returnFee')}
+        onOriginAddressChange={handleChange('originAddress')}
+        onReturnAddressChange={handleChange('returnAddress')}
+      />
       <FormActionButtons onSubmit={handleSubmit} />
     </div>
   );

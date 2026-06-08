@@ -10,7 +10,7 @@ export type CategoryName =
   | '오일/소스'
   | '밀키트';
 
-export type ProductStatus = '판매중' | '품절' | '판매종료';
+export type ProductStatus = '판매대기' | '판매중' | '품절' | '판매종료';
 
 export interface Product {
   id: string;
@@ -33,10 +33,12 @@ export interface BasicInfoFieldProps {
   category: string;
   manufacturer: string;
   origin: string;
+  status: ProductStatus;
   onNameChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onManufacturerChange: (value: string) => void;
   onOriginChange: (value: string) => void;
+  onStatusChange: (value: ProductStatus) => void;
 }
 
 // 판매 정보
@@ -64,6 +66,7 @@ export interface ProductFormData {
   name: string;
   manufacturer: string;
   origin: string;
+  status: ProductStatus;
   // 판매 정보
   price: string;
   stock: string;
@@ -71,19 +74,34 @@ export interface ProductFormData {
   discountValue: string;
   minQuantity: string;
   maxQuantity: string;
+  //배송 정보
+  deliveryMethod: string;
+  shippingFee: string;
+  returnFee: string;
+  originAddress: string;
+  returnAddress: string;
 }
 
 export const initialProductForm: ProductFormData = {
+  // 기본 정보
   category: '',
   name: '',
   manufacturer: '',
   origin: '',
+  status: '판매대기',
+  // 판매 정보
   price: '',
   stock: '',
   discountType: 'none',
   discountValue: '',
   minQuantity: '',
   maxQuantity: '',
+  //배송 정보
+  deliveryMethod: '택배',
+  shippingFee: '',
+  returnFee: '',
+  originAddress: '',
+  returnAddress: '',
 };
 
 //이미지
