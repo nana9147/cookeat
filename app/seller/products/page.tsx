@@ -20,6 +20,7 @@ const products: Product[] = [
     linkedRecipeCount: 12,
     status: '판매중',
     imageUrl: 'https://cdn-icons-png.flaticon.com/128/15115/15115165.png',
+    store: '하나로마트',
     createdAt: '2026-06-05',
   },
   {
@@ -31,6 +32,7 @@ const products: Product[] = [
     linkedRecipeCount: 24,
     status: '판매중',
     imageUrl: 'https://cdn-icons-png.flaticon.com/128/7493/7493117.png',
+    store: '하나로마트',
     createdAt: '2026-06-05',
   },
   {
@@ -42,6 +44,7 @@ const products: Product[] = [
     linkedRecipeCount: 35,
     status: '품절',
     imageUrl: 'https://cdn-icons-png.flaticon.com/128/862/862847.png',
+    store: '하나로마트',
     createdAt: '2026-06-05',
   },
   {
@@ -53,6 +56,7 @@ const products: Product[] = [
     linkedRecipeCount: 18,
     status: '판매중',
     imageUrl: 'https://cdn-icons-png.flaticon.com/128/5816/5816136.png',
+    store: '하나로마트',
     createdAt: '2026-06-05',
   },
 ];
