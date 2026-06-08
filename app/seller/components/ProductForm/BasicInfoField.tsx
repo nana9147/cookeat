@@ -2,18 +2,23 @@
 
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { BasicInfoFieldProps } from '@/types/seller/product';
+import { Button } from '@/components/ui/button';
+import type { BasicInfoFieldProps, ProductStatus } from '@/types/seller/product';
 
 export default function BasicInfoField({
   name,
   category,
   manufacturer,
   origin,
+  status,
   onNameChange,
   onCategoryChange,
   onManufacturerChange,
   onOriginChange,
+  onStatusChange,
 }: BasicInfoFieldProps) {
+  const STATUS_OPTIONS: ProductStatus[] = ['판매대기', '판매중'];
+
   return (
     <Card>
       <CardHeader className="border-b">
@@ -63,6 +68,25 @@ export default function BasicInfoField({
               onChange={(e) => onOriginChange(e.target.value)}
               placeholder="예) 국내산, 중국산"
             />
+          </div>
+        </div>
+        {/* 판매 상태 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            판매 상태 <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-2">
+            {STATUS_OPTIONS.map((s) => (
+              <Button
+                key={s}
+                type="button"
+                variant={status === s ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onStatusChange(s)}
+              >
+                {s}
+              </Button>
+            ))}
           </div>
         </div>
       </CardContent>
