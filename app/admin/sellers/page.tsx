@@ -95,7 +95,7 @@ export default function MembersPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border bg-white">
+      <div className="overflow-x-auto rounded-md border bg-white">
         <Table>
           <TableHeader className="bg-beige">
             <TableRow>

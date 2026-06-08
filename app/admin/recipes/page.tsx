@@ -148,8 +148,8 @@ export default function RecipesPage() {
         </Card>
       </div>
 
-      <div className="rounded-lg border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-lg border overflow-x-auto">
+        <table className="w-full min-w-140 text-sm">
           <thead className="bg-muted/50">
             <tr>
               <th className="text-left px-4 py-3 font-medium">레시피명</th>
