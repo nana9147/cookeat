@@ -12,6 +12,8 @@ export type CategoryName =
   | '오일/소스'
   | '밀키트';
 
+export type FoodType = CategoryName | '기타';
+
 export type ProductStatus = '판매대기' | '판매중' | '품절' | '판매종료';
 
 export interface Product {
@@ -75,7 +77,7 @@ export interface SortableImageProps {
 // 정보 제공 고시
 export interface ProductInfoData {
   infoItemName: string; // 품목 또는 명칭
-  infoFoodType: string; // 식품의 유형
+  infoFoodType: FoodType; // 식품의 유형
   infoProducer: string; // 생산자/수입자
   infoOrigin: string; // 원산지
   infoExpirationDate: string; // 제조연월일/유통기한
@@ -84,7 +86,7 @@ export interface ProductInfoData {
 }
 export interface ProductInfoFieldProps {
   data: ProductInfoData;
-  onChange: (field: keyof ProductInfoData, value: string) => void;
+  onChange: <K extends keyof ProductInfoData>(field: K, value: ProductInfoData[K]) => void;
 }
 
 //  상품등록 - 전체 폼 데이터
@@ -126,7 +128,7 @@ export const initialProductForm: ProductFormData = {
   //정보제공고시
   productInfo: {
     infoItemName: '',
-    infoFoodType: '',
+    infoFoodType: '채소',
     infoProducer: '',
     infoOrigin: '',
     infoExpirationDate: '',

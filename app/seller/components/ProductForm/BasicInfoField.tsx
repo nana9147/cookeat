@@ -3,10 +3,27 @@
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { BasicInfoFieldProps, ProductStatus } from '@/types/seller/product';
+import type { BasicInfoFieldProps, CategoryName, ProductStatus } from '@/types/seller/product';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function BasicInfoField({ data, onChange }: BasicInfoFieldProps) {
   const STATUS_OPTIONS: ProductStatus[] = ['판매대기', '판매중'];
+  const CATEGORY_OPTIONS: CategoryName[] = [
+    '채소',
+    '과일·견과',
+    '정육·계란',
+    '수산·해산물',
+    '쌀·잡곡',
+    '유제품',
+    '오일/소스',
+    '밀키트',
+  ];
 
   return (
     <Card>
@@ -19,11 +36,18 @@ export default function BasicInfoField({ data, onChange }: BasicInfoFieldProps) 
           <label className="block text-sm font-medium text-gray-700 mb-1">
             카테고리 <span className="text-red-500">*</span>
           </label>
-          <Input
-            value={data.category}
-            onChange={(e) => onChange('category', e.target.value)}
-            placeholder="카테고리를 입력하세요"
-          />
+          <Select value={data.category} onValueChange={(value) => onChange('category', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="카테고리을 선택하세요" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORY_OPTIONS.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* 상품명 */}

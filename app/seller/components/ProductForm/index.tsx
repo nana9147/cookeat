@@ -9,6 +9,7 @@ import ShippingSection from './ShippingSection';
 import FormActionButtons from './FormActionButtons';
 import type { ProductFormData } from '@/types/seller/product';
 import { initialProductForm } from '@/types/seller/product';
+import ProductInfoField from './ProductInfoField';
 
 export default function ProductForm() {
   const [form, setForm] = useState<ProductFormData>(initialProductForm);
@@ -53,6 +54,10 @@ export default function ProductForm() {
       <ShippingSection
         data={form.shippingInfo}
         onChange={(field, value) => handleChange('shippingInfo', field, value)}
+      />
+      <ProductInfoField
+        data={form.productInfo}
+        onChange={(field, value) => handleChange('productInfo', field, value)}
       />
       <FormActionButtons onSubmit={handleSubmit} />
     </div>
