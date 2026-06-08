@@ -38,7 +38,7 @@ function SortableImage({ image, index, onRemove, onMoveFirst }: SortableImagePro
 
       {/* 대표 이미지 배지 */}
       {index === 0 && (
-        <span className="absolute top-1 left-1 bg-green-700 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+        <span className="absolute top-1 left-1 bg-green-700 text-white text-2xs px-1.5 py-0.5 rounded font-medium">
           대표
         </span>
       )}

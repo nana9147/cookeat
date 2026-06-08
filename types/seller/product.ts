@@ -89,12 +89,23 @@ export interface ProductInfoFieldProps {
   onChange: <K extends keyof ProductInfoData>(field: K, value: ProductInfoData[K]) => void;
 }
 
+//반품정책
+export interface ReturnPolicyData {
+  content: string;
+}
+
+export interface ReturnPolicyFieldProps {
+  data: ReturnPolicyData;
+  onChange: <K extends keyof ReturnPolicyData>(field: K, value: ReturnPolicyData[K]) => void;
+}
+
 //  상품등록 - 전체 폼 데이터
 export interface ProductFormData {
   basicInfo: BasicInfoData;
   pricingInfo: PricingData;
   shippingInfo: ShippingData;
   productInfo: ProductInfoData;
+  returnPolicy: ReturnPolicyData;
 }
 
 export const initialProductForm: ProductFormData = {
@@ -134,5 +145,9 @@ export const initialProductForm: ProductFormData = {
     infoExpirationDate: '',
     infoStorageMethod: '',
     infoWeight: '',
+  },
+  //반품정책
+  returnPolicy: {
+    content: '',
   },
 };
