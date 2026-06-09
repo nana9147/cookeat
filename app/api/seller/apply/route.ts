@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserId, getSellerByUserId, reapplySeller, insertSeller } from './db'
+import { requireAuth } from '@/lib/serverAuth'
+import { getSellerByUserId, reapplySeller, insertSeller } from './db'
 import { validateApplyBody } from './validate'
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '')
-  if (!token) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const authed = await requireAuth(req)
+  if (authed instanceof NextResponse) return authed
 
-  const userId = await getUserId(token)
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-
-  const seller = await getSellerByUserId(userId)
+  const seller = await getSellerByUserId(authed.userId)
   return NextResponse.json({ data: seller })
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '')
-  if (!token) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-
-  const userId = await getUserId(token)
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const authed = await requireAuth(req)
+  if (authed instanceof NextResponse) return authed
 
   const body = await req.json()
   const fieldErrors = validateApplyBody(body)
@@ -29,7 +24,7 @@ export async function POST(req: NextRequest) {
   const { storeName, businessNumber, businessAddress, bankName, bankAccount } = body
   const fields = { storeName, businessNumber, businessAddress, bankName, bankAccount }
 
-  const existing = await getSellerByUserId(userId)
+  const existing = await getSellerByUserId(authed.userId)
 
   if (existing) {
     if (existing.approve_status === 'pending') {
@@ -44,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: { sellerId: existing.seller_id, approveStatus: 'pending' } })
   }
 
-  const { data, error } = await insertSeller(userId, fields)
+  const { data, error } = await insertSeller(authed.userId, fields)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(
     { success: true, data: { sellerId: data.seller_id, approveStatus: 'pending' } },

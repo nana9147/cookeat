@@ -1,18 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
-export async function getUserId(token: string) {
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
-  if (error || !user) return null
-
-  const { data: profile } = await supabaseAdmin
-    .from('users')
-    .select('user_id')
-    .eq('auth_id', user.id)
-    .maybeSingle()
-
-  return profile?.user_id ?? null
-}
-
 export async function getSellerByUserId(userId: number) {
   const { data } = await supabaseAdmin
     .from('sellers')
