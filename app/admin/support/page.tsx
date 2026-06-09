@@ -26,7 +26,7 @@ interface Inquiry {
 
 const categoryBadge: Record<InquiryCategory, string> = {
   배송: 'bg-blue-100 text-blue-700',
-  환불: 'bg-red-100 text-red-700',
+  환불: 'bg-red-100 text-red',
   상품: 'bg-green-100 text-green-700',
   기타: 'bg-gray-100 text-gray-700',
 };
