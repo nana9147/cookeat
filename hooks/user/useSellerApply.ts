@@ -1,0 +1,87 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/store/authStore';
+
+export type ApproveStatus = 'pending' | 'approved' | 'rejected';
+
+export interface SellerApplication {
+  seller_id: number;
+  store_name: string;
+  business_number: string;
+  business_address: string | null;
+  bank_name: string;
+  bank_account: string;
+  approve_status: ApproveStatus;
+  rejected_reason: string | null;
+  created_at: string;
+}
+
+export function useSellerApply() {
+  const { accessToken } = useAuthStore();
+  const [application, setApplication] = useState<SellerApplication | null | undefined>(undefined);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    if (!accessToken) return;
+    fetch('/api/seller/apply', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => r.json())
+      .then((json) => setApplication(json.data ?? null));
+  }, [accessToken]);
+
+  async function submit(fields: {
+    storeName: string;
+    businessNumber: string;
+    businessAddress: string;
+    bankName: string;
+    bankAccount: string;
+  }) {
+    setSubmitError('');
+    setSubmitting(true);
+
+    const res = await fetch('/api/seller/apply', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(fields),
+    });
+
+    const json = await res.json();
+    setSubmitting(false);
+
+    if (!res.ok) {
+      // 필드별 validation 에러는 첫 번째 메시지만 노출
+      if (json.errors) {
+        const first = Object.values(json.errors as Record<string, string>)[0];
+        setSubmitError(first);
+      } else {
+        setSubmitError(json.error ?? '신청 중 오류가 발생했습니다.');
+      }
+      return false;
+    }
+
+    setApplication((prev) =>
+      prev
+        ? { ...prev, approve_status: 'pending', rejected_reason: null }
+        : ({
+            seller_id: json.data.sellerId,
+            store_name: fields.storeName,
+            business_number: fields.businessNumber,
+            business_address: fields.businessAddress || null,
+            bank_name: fields.bankName,
+            bank_account: fields.bankAccount,
+            approve_status: 'pending',
+            rejected_reason: null,
+            created_at: new Date().toISOString(),
+          } as SellerApplication),
+    );
+    return true;
+  }
+
+  return { application, submitting, submitError, submit };
+}
