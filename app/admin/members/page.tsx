@@ -12,6 +12,14 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type Grade = '일반' | 'VIP';
 type Status = '정상' | '정지';
@@ -77,8 +85,20 @@ const statusBadge: Record<Status, string> = {
 
 export default function MembersPage() {
   const [search, setSearch] = useState('');
+  const [memberList, setMemberList] = useState<Member[]>(members);
 
-  const filtered = members.filter((m) => m.name.includes(search) || m.email.includes(search));
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [editMember, setEditMember] = useState<Member | null>(null);
+
+  const handleViewDetail = (member: Member) => {
+    setSelectedMember(member);
+  };
+
+  const handleEdit = (member: Member) => {
+    setEditMember(member);
+  };
+
+  const filtered = memberList.filter((m) => m.name.includes(search) || m.email.includes(search));
 
   return (
     <div className="p-6 space-y-4">
@@ -142,13 +162,27 @@ export default function MembersPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <button className="text-primary" aria-label="상세보기">
+                    <button
+                      className="text-primary"
+                      aria-label="상세보기"
+                      onClick={() => handleViewDetail(member)}
+                    >
                       <Eye size={16} />
                     </button>
-                    <button className="text-gray-text " aria-label="수정">
+                    <button
+                      className="text-gray-text"
+                      aria-label="수정"
+                      onClick={() => handleEdit(member)}
+                    >
                       <Pencil size={16} />
                     </button>
-                    <button className="text-red-500 " aria-label="정지">
+                    <button
+                      className="text-red-500"
+                      aria-label="삭제"
+                      onClick={() =>
+                        setMemberList((prev) => prev.filter((m) => m.id !== member.id))
+                      }
+                    >
                       <Ban size={16} />
                     </button>
                   </div>
@@ -158,6 +192,112 @@ export default function MembersPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>회원 상세 정보</DialogTitle>
+          </DialogHeader>
+          {selectedMember && (
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">이름</span>
+                <span className="font-medium">{selectedMember.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">이메일</span>
+                <span>{selectedMember.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">가입일</span>
+                <span>{selectedMember.joinedAt}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">등급</span>
+                <span
+                  className={`rounded px-2 py-0.5 text-xs font-medium ${gradeBadge[selectedMember.grade]}`}
+                >
+                  {selectedMember.grade}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">주문수</span>
+                <span>{selectedMember.orderCount}건</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">상태</span>
+                <span
+                  className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[selectedMember.status]}`}
+                >
+                  {selectedMember.status}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editMember} onOpenChange={() => setEditMember(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>회원 정보 수정</DialogTitle>
+          </DialogHeader>
+          {editMember && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {editMember.name} ({editMember.email})
+              </p>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">등급</label>
+                <Select
+                  value={editMember.grade}
+                  onValueChange={(value) => setEditMember({ ...editMember, grade: value as Grade })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="일반">일반</SelectItem>
+                    <SelectItem value="VIP">VIP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">상태</label>
+                <Select
+                  value={editMember.status}
+                  onValueChange={(value) =>
+                    setEditMember({ ...editMember, status: value as Status })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="정상">정상</SelectItem>
+                    <SelectItem value="정지">정지</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setEditMember(null)}>
+                  취소
+                </Button>
+                <Button
+                  onClick={() => {
+                    setMemberList((prev) =>
+                      prev.map((m) => (m.id === editMember.id ? editMember : m))
+                    );
+                    setEditMember(null);
+                  }}
+                >
+                  저장
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
