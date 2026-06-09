@@ -167,7 +167,6 @@ export const initialProductForm: ProductFormData = {
   },
   //배송 정보
   shippingInfo: {
-    deliveryMethod: '택배',
     shippingFeeType: '유료',
     shippingFee: '',
     returnFee: '',

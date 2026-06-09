@@ -1,4 +1,15 @@
-// types/seller/shipping.ts
+export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
+
+export type CourierCode =
+  | 'CJ대한통운'
+  | '로젠택배'
+  | '한진택배'
+  | '롯데택배'
+  | '우체국택배'
+  | 'CU 편의점택배'
+  | 'GS25 편의점택배'
+  | 'ETC'; // types/seller/shipping.ts
+
 export interface AddressItem {
   id: string;
   name: string;
@@ -6,8 +17,6 @@ export interface AddressItem {
   baseAddress: string;
   detailAddress: string;
 }
-
-export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
 
 export interface ShippingFeeItem {
   id: string;
@@ -18,7 +27,6 @@ export interface ShippingFeeItem {
 }
 
 export interface ShippingData {
-  deliveryMethod: string;
   shippingFeeType: ShippingFeeType;
   shippingFee: string;
   freeThreshold: string;
