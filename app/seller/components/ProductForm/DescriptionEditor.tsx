@@ -21,8 +21,9 @@ import {
   ListOrdered,
   ImageIcon,
 } from 'lucide-react';
+import { DescriptionEditorProps } from '@/types/seller/product';
 
-export default function DescriptionEditor() {
+export default function DescriptionEditor({ data, onChange }: DescriptionEditorProps) {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -47,7 +48,10 @@ export default function DescriptionEditor() {
         },
       }),
     ],
-    content: '',
+    content: data.content,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
     editorProps: {
       attributes: {
         class:

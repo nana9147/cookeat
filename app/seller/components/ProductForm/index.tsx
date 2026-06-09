@@ -7,13 +7,13 @@ import ImageUploadField from './ImageUploadField';
 import DescriptionEditor from './DescriptionEditor';
 import ShippingSection from './ShippingSection';
 import FormActionButtons from './FormActionButtons';
-import type { ProductFormData } from '@/types/seller/product';
+import type { ProductFormData, ProductFormProps } from '@/types/seller/product';
 import { initialProductForm } from '@/types/seller/product';
 import ProductInfoField from './ProductInfoField';
 import ReturnPolicyField from './ReturnPolicyField';
 
-export default function ProductForm() {
-  const [form, setForm] = useState<ProductFormData>(initialProductForm);
+export default function ProductForm({ mode, initialData }: ProductFormProps) {
+  const [form, setForm] = useState<ProductFormData>(initialData ?? initialProductForm);
 
   const handleChange = <S extends keyof ProductFormData, K extends keyof ProductFormData[S]>(
     section: S,
@@ -36,8 +36,12 @@ export default function ProductForm() {
       alert('필수 항목을 모두 입력해주세요.');
       return;
     }
-    console.log('등록할 상품 데이터:', form);
-    // TODO: API 연동
+    if (mode === 'create') {
+      console.log('등록할 상품 데이터:', form);
+      // TODO: API 연동
+    } else {
+      console.log('수정할 상품 데이터:', form);
+    }
   };
 
   return (
@@ -46,8 +50,24 @@ export default function ProductForm() {
         data={form.basicInfo}
         onChange={(field, value) => handleChange('basicInfo', field, value)}
       />
-      <ImageUploadField />
-      <DescriptionEditor />
+      <ImageUploadField
+        data={form.images}
+        onChange={(images) =>
+          setForm((prev) => ({
+            ...prev,
+            images: { images },
+          }))
+        }
+      />
+      <DescriptionEditor
+        data={form.description}
+        onChange={(content) =>
+          setForm((prev) => ({
+            ...prev,
+            description: { content },
+          }))
+        }
+      />
       <PricingField
         data={form.pricingInfo}
         onChange={(field, value) => handleChange('pricingInfo', field, value)}
@@ -64,7 +84,7 @@ export default function ProductForm() {
         data={form.returnPolicy}
         onChange={(field, value) => handleChange('returnPolicy', field, value)}
       />
-      <FormActionButtons onSubmit={handleSubmit} />
+      <FormActionButtons mode={mode} onSubmit={handleSubmit} />
     </div>
   );
 }
