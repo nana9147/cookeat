@@ -1,6 +1,15 @@
 import {
-  OrdersIcon, CancelIcon, RecipeIcon, PointIcon,
-  UserIcon, LikeIcon, AlarmIcon, QuestionIcon, LogoutIcon, SecessionIcon,
+  OrdersIcon,
+  CancelIcon,
+  RecipeIcon,
+  PointIcon,
+  UserIcon,
+  LikeIcon,
+  AlarmIcon,
+  QuestionIcon,
+  LogoutIcon,
+  SecessionIcon,
+  SellerIcon,
 } from './CategoryIcons';
 
 export const sections = [
@@ -30,6 +39,7 @@ export const sections = [
   {
     title: '',
     items: [
+      { icon: <SellerIcon />, label: '판매자 신청', href: '/mypage/sellerapply' },
       { icon: <LogoutIcon />, label: '로그아웃', href: '/mypage/logout' },
       { icon: <SecessionIcon />, label: '회원탈퇴', href: '/mypage/withdraw' },
     ],

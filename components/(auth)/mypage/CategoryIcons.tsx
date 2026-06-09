@@ -203,6 +203,34 @@ export function LogoutIcon() {
   );
 }
 
+export function SellerIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path
+        d="M4 2H16C17.1046 2 18 2.89543 18 4V16C18 17.1046 17.1046 18 16 18H4C2.89543 18 2 17.1046 2 16V4C2 2.89543 2.89543 2 4 2Z"
+        stroke="currentColor"
+        strokeWidth="1.41667"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M2 8.5 Q 4.67,11 7.33,8.5 Q 10,11 12.67,8.5 Q 15.33,11 18,8.5"
+        stroke="currentColor"
+        strokeWidth="1.41667"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.5 13.5L8.5 16.5L14.5 11"
+        stroke="currentColor"
+        strokeWidth="1.41667"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function SecessionIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
