@@ -21,7 +21,7 @@ export interface RegisterResult {
 export function toAuthUser(raw: {
   id: string;
   email?: string;
-  user_metadata?: { nickname?: string; avatar_url?: string };
+  user_metadata?: { nickname?: string; avatar_url?: string; custom_avatar_url?: string };
   app_metadata?: { provider?: string };
 }): AuthUser {
   return {

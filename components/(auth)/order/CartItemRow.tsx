@@ -1,6 +1,12 @@
 import CircleCheckbox from './CircleCheckbox';
 import type { CartItem } from './cartData';
 
+type Props = {
+  item: CartItem;
+  checked: boolean;
+  onToggle: () => void;
+};
+
 function TagBadge({ tag }: { tag: string }) {
   if (tag === '세벽배송') return <span className="text-xs text-primary">세벽배송</span>;
   return <span className="text-xs font-bold text-red">{tag}</span>;
@@ -8,10 +14,10 @@ function TagBadge({ tag }: { tag: string }) {
 
 const qtyBtn = 'w-6 h-6 rounded border border-border flex items-center justify-center text-gray-text hover:bg-hover text-sm';
 
-export default function CartItemRow({ item }: { item: CartItem }) {
+export default function CartItemRow({ item, checked, onToggle }: Props) {
   return (
-    <div className={`flex items-start gap-2 tablet:gap-3 py-4 ${!item.checked ? 'opacity-50' : ''}`}>
-      <CircleCheckbox checked={item.checked} className="mt-1" />
+    <div className={`flex items-start gap-2 tablet:gap-3 py-4 ${!checked ? 'opacity-50' : ''}`}>
+      <CircleCheckbox checked={checked} onChange={onToggle} className="mt-1" />
 
       <div className="w-12 h-12 tablet:w-14 tablet:h-14 rounded-lg bg-card-bg shrink-0 flex items-center justify-center">
         <svg className="w-5 h-5 tablet:w-6 tablet:h-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
+import { toAuthUser } from '@/services/auth/authTypes'
 
 // 앱 시작 시 Supabase 세션 복원 및 토큰 자동 갱신을 담당하는 초기화 컴포넌트
 export default function AuthInitializer() {
@@ -16,12 +17,7 @@ export default function AuthInitializer() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'TOKEN_REFRESHED' && session) {
-        const u = session.user
-        setAuth(session.access_token, session.refresh_token, {
-          userId: u.id,
-          nickname: u.user_metadata?.nickname ?? u.user_metadata?.full_name ?? u.email?.split('@')[0] ?? '',
-          profileImage: u.user_metadata?.custom_avatar_url ?? u.user_metadata?.avatar_url ?? null,
-        })
+        setAuth(session.access_token, session.refresh_token, toAuthUser(session.user))
       }
       if (event === 'SIGNED_OUT') clearAuth()
     })

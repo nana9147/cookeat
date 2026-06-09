@@ -10,11 +10,10 @@ export default function MypageCategory() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const handleLogout = async () => {
-    // Supabase 세션 만료 → 스토어 초기화 → 홈 이동 순서 보장
     await fetch('/api/auth/logout', { method: 'POST' });
     clearAuth();
     alert('로그아웃되었습니다.');
-    router.push('/');
+    router.replace('/');
   };
 
   return (

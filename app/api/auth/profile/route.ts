@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const { data: profile } = await supabaseAdmin
     .from('users')
     .select('phone, point, nickname')
-    .eq('email', user.email)
+    .eq('auth_id', user.id)
     .maybeSingle()
 
   return NextResponse.json({
@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest) {
     const { error: updateError } = await supabaseAdmin
       .from('users')
       .update({ ...(nickname?.trim() && { nickname: nickname.trim() }), ...(phone?.trim() && { phone: phone.trim() }) })
-      .eq('email', user.email)
+      .eq('auth_id', user.id)
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
   if (currentPassword && newPassword) {
