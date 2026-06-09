@@ -140,6 +140,11 @@ export default function ProductsPage() {
           />
         )}
 
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-gray-500">
+            전체 상품 수 <span className="font-semibold text-gray-800">{filtered.length}</span>개
+          </p>
+        </div>
         {/* 테이블 */}
         <ProductTable products={filtered} />
       </div>
