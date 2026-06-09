@@ -2,12 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { FormActionButtonsProps } from '@/types/seller/product';
 
-interface FormActionButtonsProps {
-  onSubmit: () => void;
-}
-
-export default function FormActionButtons({ onSubmit }: FormActionButtonsProps) {
+export default function FormActionButtons({ mode, onSubmit }: FormActionButtonsProps) {
   const router = useRouter();
 
   return (
@@ -16,7 +13,7 @@ export default function FormActionButtons({ onSubmit }: FormActionButtonsProps) 
         취소
       </Button>
       <Button type="button" onClick={onSubmit}>
-        등록하기
+        {mode === 'create' ? '등록하기' : '수정하기'}
       </Button>
     </div>
   );

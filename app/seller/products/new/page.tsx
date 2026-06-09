@@ -11,7 +11,7 @@ export default function ProductRegisterPage() {
       </div>
 
       {/* 상품 등록 폼 */}
-      <ProductForm />
+      <ProductForm mode="create" />
     </div>
   );
 }

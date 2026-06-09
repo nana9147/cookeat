@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import type { PricingFieldProps } from '@/types/seller/product';
 
 export default function PricingField({ data, onChange }: PricingFieldProps) {
-  const [showDiscount, setShowDiscount] = useState(false);
+  const [showDiscount, setShowDiscount] = useState(data.discountType !== 'none');
 
   const calcDiscountedPrice = () => {
     const p = Number(data.price?.replace(/,/g, '') || 0);
