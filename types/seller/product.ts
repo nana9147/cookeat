@@ -31,6 +31,32 @@ export interface Product {
 
 export type ProductData = Omit<Product, 'id' | 'linkedRecipeCount' | 'createdAt'>;
 
+// 상품 이미지
+export interface ProductImageItem {
+  id: string;
+  preview: string;
+  file?: File; // 신규 업로드는 File, 기존 이미지는 URL만
+}
+
+export interface ImageUploadData {
+  images: ProductImageItem[];
+}
+
+export interface ImageUploadFieldProps {
+  data: ImageUploadData;
+  onChange: (images: ProductImageItem[]) => void;
+}
+
+// 상품 설명
+export interface DescriptionData {
+  content: string;
+}
+
+export interface DescriptionEditorProps {
+  data: DescriptionData;
+  onChange: (content: string) => void;
+}
+
 // 상품등록 - 기본 정보
 export interface BasicInfoData {
   category: string;
@@ -60,15 +86,8 @@ export interface PricingFieldProps {
   onChange: (field: keyof PricingData, value: string) => void;
 }
 
-// 상품등록 - 이미지
-export interface ImageFile {
-  id: string;
-  file: File;
-  preview: string;
-}
-
 export interface SortableImageProps {
-  image: ImageFile;
+  image: ProductImageItem;
   index: number;
   onRemove: (id: string) => void;
   onMoveFirst: (id: string) => void;
@@ -99,10 +118,24 @@ export interface ReturnPolicyFieldProps {
   onChange: <K extends keyof ReturnPolicyData>(field: K, value: ReturnPolicyData[K]) => void;
 }
 
+export interface FormActionButtonsProps {
+  mode: ProductFormMode;
+  onSubmit: () => void;
+}
+
+export type ProductFormMode = 'create' | 'edit';
+
+export interface ProductFormProps {
+  mode: ProductFormMode;
+  initialData?: ProductFormData;
+}
+
 //  상품등록 - 전체 폼 데이터
 export interface ProductFormData {
   basicInfo: BasicInfoData;
   pricingInfo: PricingData;
+  images: ImageUploadData;
+  description: DescriptionData;
   shippingInfo: ShippingData;
   productInfo: ProductInfoData;
   returnPolicy: ReturnPolicyData;
@@ -125,6 +158,12 @@ export const initialProductForm: ProductFormData = {
     discountValue: '',
     minQuantity: '',
     maxQuantity: '',
+  },
+  images: {
+    images: [],
+  },
+  description: {
+    content: '',
   },
   //배송 정보
   shippingInfo: {
