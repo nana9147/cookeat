@@ -162,7 +162,15 @@ npm run dev
 프로젝트 루트에 `.env.local` 파일을 생성하고 아래 값을 설정하세요.
 
 ```env
-NEXT_PUBLIC_BASE_URL=<백엔드 서버 URL>
+# SupaBase
+# Supabase 프로젝트 URL — Settings > API > Project URL
+NEXT_PUBLIC_SUPABASE_URL=
+
+# 브라우저에 노출해도 안전한 공개 키 — Settings > API > Project API keys > anon (public)
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+
+# 서버 전용 관리자 키 (RLS 우회, 절대 클라이언트에 노출 금지) — Settings > API > Project API keys > service_role
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 ---
