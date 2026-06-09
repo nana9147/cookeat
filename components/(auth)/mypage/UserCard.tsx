@@ -4,6 +4,7 @@
 // - 사용자 정보 / 통계 / 카테고리+콘텐츠 3단 구조
 // - 반응형: mobile(세로스택, 통계2×2) → tablet(세로스택, 통계4열) → desktop(사이드바 2컬럼)
 
+import Image from 'next/image';
 import { PointIcon, StarIcon, OrderIcon, RecipeIcon, LikeIcon, ViewIcon } from './UserIcons';
 import MypageCategory from './MypageCategory';
 import { useUserInfo } from '@/hooks/user/useUserInfo';
@@ -23,7 +24,7 @@ export default function UserCard({ children }: { children: React.ReactNode }) {
       {/* 사용자 정보 */}
       <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-6 tablet:flex-row tablet:items-center">
         {profileImage
-          ? <img src={profileImage} alt="프로필" className="size-16 shrink-0 rounded-full object-cover" />
+          ? <Image src={profileImage} alt="프로필" width={64} height={64} className="size-16 shrink-0 rounded-full object-cover" />
           : <div className="size-16 shrink-0 rounded-full bg-primary" />
         }
         <div className="space-y-1 text-center tablet:text-left">
