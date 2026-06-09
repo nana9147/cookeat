@@ -14,7 +14,11 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { ImageFile, SortableImageProps } from '@/types/seller/product';
+import type {
+  ImageUploadFieldProps,
+  ProductImageItem,
+  SortableImageProps,
+} from '@/types/seller/product';
 
 function SortableImage({ image, index, onRemove, onMoveFirst }: SortableImageProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -94,8 +98,7 @@ function SortableImage({ image, index, onRemove, onMoveFirst }: SortableImagePro
   );
 }
 
-export default function ImageUploadField() {
-  const [images, setImages] = useState<ImageFile[]>([]);
+export default function ImageUploadField({ data, onChange }: ImageUploadFieldProps) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -118,20 +121,18 @@ export default function ImageUploadField() {
       return true;
     });
 
-    setImages((prev) => {
-      const remaining = MAX_COUNT - prev.length;
-      if (remaining <= 0) {
-        alert(`이미지는 최대 ${MAX_COUNT}장까지 등록할 수 있어요.`);
-        return prev;
-      }
-      const sliced = validFiles.slice(0, remaining);
-      const newImages = sliced.map((file) => ({
-        id: `${file.name}-${Date.now()}-${Math.random()}`,
-        file,
-        preview: URL.createObjectURL(file),
-      }));
-      return [...prev, ...newImages];
-    });
+    const remaining = MAX_COUNT - data.images.length;
+    if (remaining <= 0) {
+      alert(`이미지는 최대 ${MAX_COUNT}장까지 등록할 수 있어요.`);
+      return;
+    }
+    const sliced = validFiles.slice(0, remaining);
+    const newImages: ProductImageItem[] = sliced.map((file) => ({
+      id: `${file.name}-${Date.now()}-${Math.random()}`,
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    onChange([...data.images, ...newImages]);
   };
 
   const handleClick = () => inputRef.current?.click();
@@ -155,33 +156,27 @@ export default function ImageUploadField() {
   };
 
   const handleRemove = (id: string) => {
-    setImages((prev) => {
-      const target = prev.find((img) => img.id === id);
-      if (target) URL.revokeObjectURL(target.preview);
-      return prev.filter((img) => img.id !== id);
-    });
+    const target = data.images.find((img) => img.id === id);
+    if (target?.preview.startsWith('blob:')) URL.revokeObjectURL(target.preview);
+    onChange(data.images.filter((img) => img.id !== id));
   };
 
   const handleMoveFirst = (id: string) => {
-    setImages((prev) => {
-      const index = prev.findIndex((img) => img.id === id);
-      if (index <= 0) return prev;
-      const next = [...prev];
-      const [item] = next.splice(index, 1);
-      next.unshift(item);
-      return next;
-    });
+    const index = data.images.findIndex((img) => img.id === id);
+    if (index <= 0) return;
+    const next = [...data.images];
+    const [item] = next.splice(index, 1);
+    next.unshift(item);
+    onChange(next);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    setImages((prev) => {
-      const oldIndex = prev.findIndex((img) => img.id === active.id);
-      const newIndex = prev.findIndex((img) => img.id === over.id);
-      if (newIndex === 0) return prev;
-      return arrayMove(prev, oldIndex, newIndex);
-    });
+    const oldIndex = data.images.findIndex((img) => img.id === active.id);
+    const newIndex = data.images.findIndex((img) => img.id === over.id);
+    if (newIndex === 0) return;
+    onChange(arrayMove(data.images, oldIndex, newIndex));
   };
 
   return (
@@ -190,13 +185,13 @@ export default function ImageUploadField() {
         <CardTitle className="flex items-center justify-between">
           상품 이미지
           <span className="text-xs text-gray-400 font-normal">
-            {images.length} / {MAX_COUNT}
+            {data.images.length} / {MAX_COUNT}
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-5 pt-5">
         {/* 업로드 영역 */}
-        {images.length < MAX_COUNT && (
+        {data.images.length < MAX_COUNT && (
           <div
             onClick={handleClick}
             onDragOver={handleDragOver}
@@ -229,15 +224,18 @@ export default function ImageUploadField() {
         />
 
         {/* 썸네일 목록 */}
-        {images.length > 0 && (
+        {data.images.length > 0 && (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
+            <SortableContext
+              items={data.images.map((img) => img.id)}
+              strategy={rectSortingStrategy}
+            >
               <div className="grid grid-cols-5 gap-3">
-                {images.map((img, index) => (
+                {data.images.map((img, index) => (
                   <SortableImage
                     key={img.id}
                     image={img}
