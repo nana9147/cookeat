@@ -1,7 +1,13 @@
 import CartItemRow from './CartItemRow';
 import type { RecipeGroup } from './cartData';
 
-export default function RecipeGroupCard({ group }: { group: RecipeGroup }) {
+type Props = {
+  group: RecipeGroup;
+  selectedIds: number[];
+  onToggle: (id: number) => void;
+};
+
+export default function RecipeGroupCard({ group, selectedIds, onToggle }: Props) {
   return (
     <div className="bg-white border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-4 tablet:px-5 py-3 tablet:py-4 border-b border-border">
@@ -24,7 +30,14 @@ export default function RecipeGroupCard({ group }: { group: RecipeGroup }) {
       </div>
 
       <div className="px-4 tablet:px-5 divide-y divide-border">
-        {group.items.map((item) => <CartItemRow key={item.id} item={item} />)}
+        {group.items.map((item) => (
+          <CartItemRow
+            key={item.id}
+            item={item}
+            checked={selectedIds.includes(item.id)}
+            onToggle={() => onToggle(item.id)}
+          />
+        ))}
       </div>
 
       <div className="flex items-center justify-between px-4 tablet:px-5 py-3 bg-hover border-t border-border">
