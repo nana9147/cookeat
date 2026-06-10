@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { usePagination } from '@/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
+import EmptyRows from '@/components/ui/EmptyRows';
 
 export default function OrderTable({ orders }: { orders: Order[] }) {
   const { currentPage, setCurrentPage, paginated, totalPages, getPageNumbers } = usePagination(
@@ -61,11 +62,7 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
                   </td>
                 </tr>
               ))}
-              {Array.from({ length: 10 - paginated.length }).map((_, i) => (
-                <tr key={`empty-${i}`}>
-                  <td colSpan={7} className="py-[30.5px]" />
-                </tr>
-              ))}
+              <EmptyRows count={10 - paginated.length} colSpan={7} />
             </>
           )}
         </tbody>

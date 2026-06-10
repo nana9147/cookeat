@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePagination } from '@/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
+import EmptyRows from '@/components/ui/EmptyRows';
 import {
   Dialog,
   DialogContent,
@@ -254,11 +255,7 @@ export default function ShippingTable({
                   <td className="px-4 py-3.5 text-center">{renderActionCell(order)}</td>
                 </tr>
               ))}
-              {Array.from({ length: 10 - paginated.length }).map((_, i) => (
-                <tr key={`empty-${i}`}>
-                  <td colSpan={8} className="py-[30.5px]" />
-                </tr>
-              ))}
+              <EmptyRows count={10 - paginated.length} colSpan={8} />
             </>
           )}
         </tbody>

@@ -6,6 +6,7 @@ import { SquarePen, Eye, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePagination } from '@/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
+import EmptyRows from '@/components/ui/EmptyRows';
 
 export default function ProductTable({ products }: { products: Product[] }) {
   const { currentPage, setCurrentPage, paginated, totalPages, getPageNumbers } = usePagination(
@@ -91,11 +92,7 @@ export default function ProductTable({ products }: { products: Product[] }) {
                   </td>
                 </tr>
               ))}
-              {Array.from({ length: 10 - paginated.length }).map((_, i) => (
-                <tr key={`empty-${i}`}>
-                  <td colSpan={7} className="py-[30.5px]" />
-                </tr>
-              ))}
+              <EmptyRows count={10 - paginated.length} colSpan={7} />
             </>
           )}
         </tbody>
