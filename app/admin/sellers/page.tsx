@@ -10,8 +10,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+  SelectItem,
+} from '@/components/ui/select';
 
-type Status = '승인' | '대기';
+type Status = '승인' | '대기' | '거절' | '정지';
 
 interface Seller {
   id: number;
@@ -20,6 +29,9 @@ interface Seller {
   charge: string;
   joinedAt: string;
   productCount: number;
+  address: string;
+  bankName: string;
+  bankAccount: string;
   rating: number;
   status: Status;
 }
@@ -41,6 +53,9 @@ const seller: Seller[] = [
     charge: '15%',
     joinedAt: '2024.05.20',
     productCount: 12,
+    address: '서울시 강남구 테헤란로 456, 7층',
+    bankName: '국민은행',
+    bankAccount: '123-45-67890',
     rating: 4.5,
     status: '승인',
   },
@@ -51,6 +66,9 @@ const seller: Seller[] = [
     charge: '15%',
     joinedAt: '2024.05.20',
     productCount: 12,
+    address: '서울시 강남구 테헤란로 456, 7층',
+    bankName: '국민은행',
+    bankAccount: '123-45-67890',
     rating: 4.5,
     status: '승인',
   },
@@ -61,6 +79,9 @@ const seller: Seller[] = [
     charge: '15%',
     joinedAt: '2024.05.20',
     productCount: 12,
+    address: '서울시 강남구 테헤란로 456, 7층',
+    bankName: '국민은행',
+    bankAccount: '123-45-67890',
     rating: 4.5,
     status: '승인',
   },
@@ -71,6 +92,9 @@ const seller: Seller[] = [
     charge: '15%',
     joinedAt: '2024.05.20',
     productCount: 12,
+    address: '서울시 강남구 테헤란로 456, 7층',
+    bankName: '국민은행',
+    bankAccount: '123-45-67890',
     rating: 4.5,
     status: '승인',
   },
@@ -78,10 +102,29 @@ const seller: Seller[] = [
 
 const statusBadge: Record<Status, string> = {
   승인: 'bg-primary text-white',
-  대기: 'bg-red text-white',
+  거절: 'bg-red text-white',
+  정지: 'bg-red text-white',
+  대기: 'bg-yellow text-white',
 };
 
 export default function MembersPage() {
+  const [sellerList, setSellerList] = useState<Seller[]>(seller);
+  const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
+  const [editSeller, setEditSeller] = useState<Seller | null>(null);
+
+  const handleViewDetail = (seller: Seller) => {
+    setSelectedSeller(seller);
+  };
+
+  const handleEdit = (seller: Seller) => {
+    setEditSeller({ ...seller });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editSeller) return;
+    setSellerList((prev) => prev.map((s) => (s.id === editSeller.id ? editSeller : s)));
+    setEditSeller(null);
+  };
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -110,7 +153,7 @@ export default function MembersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {seller.map((s) => (
+            {sellerList.map((s) => (
               <TableRow key={s.id}>
                 <TableCell className="font-medium">{s.name}</TableCell>
                 <TableCell className="text-muted-foreground">{s.number}</TableCell>
@@ -129,13 +172,27 @@ export default function MembersPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <button className="text-primary" aria-label="상세보기">
+                    <button
+                      className="text-primary"
+                      aria-label="상세보기"
+                      onClick={() => handleViewDetail(s)}
+                    >
                       <Eye size={16} />
                     </button>
-                    <button className="text-gray-text " aria-label="수정">
+                    <button
+                      className="text-gray-text "
+                      aria-label="수정"
+                      onClick={() => handleEdit(s)}
+                    >
                       <Pencil size={16} />
                     </button>
-                    <button className="text-red-500 " aria-label="정지">
+                    <button
+                      className="text-red"
+                      aria-label="정지"
+                      onClick={() =>
+                        setSellerList((prev) => prev.filter((item) => item.id !== s.id))
+                      }
+                    >
                       <Ban size={16} />
                     </button>
                   </div>
@@ -145,6 +202,109 @@ export default function MembersPage() {
           </TableBody>
         </Table>
       </div>
+      <Dialog
+        open={!!selectedSeller}
+        onOpenChange={() => {
+          setSelectedSeller(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>판매자 상세 정보</DialogTitle>
+          </DialogHeader>
+          {selectedSeller && (
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">판매자명</span>
+                <span className="font-medium">{selectedSeller.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">사업자 번호</span>
+                <span>{selectedSeller.number}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">가입일</span>
+                <span>{selectedSeller.joinedAt}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">상품수</span>
+                <span>{selectedSeller.productCount}건</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">평점</span>
+                <StarRating rating={selectedSeller.rating} />
+              </div>
+              <div className="border-t pt-3 flex justify-between">
+                <span className="text-muted-foreground">수수료율</span>
+                <span>{selectedSeller.charge}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">상태</span>
+                <span
+                  className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[selectedSeller.status]}`}
+                >
+                  {selectedSeller.status}
+                </span>
+              </div>
+              <div className="border-t pt-3 flex justify-between">
+                <span className="text-muted-foreground">사업장 주소</span>
+                <span className="text-right max-w-[60%]">{selectedSeller.address}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">정산 계좌</span>
+                <span>
+                  {selectedSeller.bankName} {selectedSeller.bankAccount}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editSeller} onOpenChange={() => setEditSeller(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>판매자 정보 수정</DialogTitle>
+          </DialogHeader>
+          {editSeller && (
+            <div className="space-y-4 text-sm">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-muted-foreground">수수료율</label>
+                <input
+                  className="border rounded px-3 py-1.5 text-sm w-full"
+                  value={editSeller.charge}
+                  onChange={(e) => setEditSeller({ ...editSeller, charge: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-muted-foreground">상태</label>
+                <Select
+                  value={editSeller.status}
+                  onValueChange={(value) => setEditSeller({ ...editSeller, status: value as Status })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="승인">승인</SelectItem>
+                    <SelectItem value="거절">거절</SelectItem>
+                    <SelectItem value="정지">정지</SelectItem>
+                    <SelectItem value="대기">대기</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setEditSeller(null)}>
+                  취소
+                </Button>
+                <Button size="sm" onClick={handleSaveEdit}>
+                  저장
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
