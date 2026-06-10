@@ -15,7 +15,9 @@ export function useAvatarUpload(accessToken: string | null, onUploaded: (url: st
     setUploading(true);
     const form = new FormData();
     form.append('avatar', file);
-    const { data } = await api.post<{ url?: string }>('/user/avatar', form);
+    const { data } = await api.post<{ url?: string }>('/user/avatar', form, {
+      headers: { 'Content-Type': undefined },
+    });
     setUploading(false);
     if (data.url) onUploaded(data.url);
   };
