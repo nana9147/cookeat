@@ -105,7 +105,7 @@ export default function MembersPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">회원 관리</h1>
-          <p className="text-sm text-muted-foreground">전체 회원: 1,234명</p>
+          <p className="text-sm text-muted-foreground">전체 회원: {memberList.length}명</p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5">
           <Filter size={14} />
