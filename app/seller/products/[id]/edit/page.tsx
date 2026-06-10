@@ -28,7 +28,6 @@ const MOCK_PRODUCT: ProductFormData = {
   },
   description: { content: '이건 멋사농장 토마토~' },
   shippingInfo: {
-    deliveryMethod: '택배',
     shippingFeeType: '유료',
     shippingFee: '3000',
     returnFee: '3000',
