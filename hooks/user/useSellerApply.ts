@@ -24,7 +24,7 @@ export function useSellerApply() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  useEffect(() => {
+  async function fetchApplication() {
     if (!accessToken) return;
     fetch('/api/seller/apply', {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -38,6 +38,10 @@ export function useSellerApply() {
         setFetchError(true);
         setApplication(null);
       });
+  }
+
+  useEffect(() => {
+    fetchApplication();
   }, [accessToken]);
 
   async function submit(fields: {
@@ -73,21 +77,7 @@ export function useSellerApply() {
       return false;
     }
 
-    setApplication((prev) =>
-      prev
-        ? { ...prev, approve_status: 'pending', rejected_reason: null }
-        : ({
-            seller_id: json.data.sellerId,
-            store_name: fields.storeName,
-            business_number: fields.businessNumber,
-            business_address: fields.businessAddress || null,
-            bank_name: fields.bankName,
-            bank_account: fields.bankAccount,
-            approve_status: 'pending',
-            rejected_reason: null,
-            created_at: new Date().toISOString(),
-          } as SellerApplication),
-    );
+    await fetchApplication();
     return true;
   }
 
