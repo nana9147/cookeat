@@ -1,5 +1,5 @@
 export type OrderStatus = '결제완료' | '배송준비중' | '배송중' | '배송완료' | '취소' | '환불';
-export type PaymentMethod = '카드' | '실시간 계좌이체' | '간편결제' | '휴대폰 소액결제';
+export type PaymentMethod = '신용카드' | '실시간 계좌이체' | '간편결제' | '휴대폰 소액결제';
 
 export type OrderStatusFilter = OrderStatus | '전체' | '취소환불';
 
@@ -13,12 +13,26 @@ export interface Order {
   orderDate: string;
 }
 
+// 주문 상세 내역 - 기본 정보
+export interface OrderInfo {
+  id: string;
+  orderDate: string;
+  status: OrderStatus;
+}
+
+export interface OrderInfoSectionProps {
+  info: OrderInfo;
+  name: string;
+}
+
 // 주문 상세 내역 - 개별 상품 정보
 export interface OrderProduct {
   id: string;
   itemName: string;
   quantity: number;
+  unitPrice: number;
   itemTotalPrice: number;
+  img: string;
 }
 
 // 주문 상세 내역 - 결제 정보
@@ -44,9 +58,7 @@ export interface DeliveryInfo {
 }
 
 export interface OrderDetail {
-  id: string;
-  orderDate: string;
-  status: OrderStatus;
+  info: OrderInfo;
   products: OrderProduct[];
   payment: PaymentInfo;
   delivery: DeliveryInfo;
