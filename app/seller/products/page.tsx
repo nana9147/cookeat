@@ -61,6 +61,20 @@ const products: Product[] = [
   },
 ];
 
+const categories: (CategoryName | '전체')[] = [
+  '전체',
+  '채소',
+  '과일·견과',
+  '정육·계란',
+  '수산·해산물',
+  '쌀·잡곡',
+  '유제품',
+  '오일/소스',
+  '밀키트',
+];
+
+const statuses: (ProductStatus | '전체')[] = ['전체', '판매중', '품절', '판매종료'];
+
 export default function ProductsPage() {
   const [category, setCategory] = useState<CategoryName | '전체'>('전체');
   const [status, setStatus] = useState<ProductStatus | '전체'>('전체');
@@ -95,7 +109,7 @@ export default function ProductsPage() {
           <div className="relative flex-1">
             <Input
               placeholder="상품명으로 검색"
-              className="py-5"
+              className="py-5 bg-card"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -124,7 +138,7 @@ export default function ProductsPage() {
           <Button
             onClick={() => setIsFilterOpen((prev) => !prev)}
             variant="outline"
-            className="flex items-center gap-1.5 px-4 shrink-0 py-5"
+            className="flex items-center gap-1.5 px-4 shrink-0 py-5 bg-card"
           >
             <Filter />
             필터
@@ -132,12 +146,10 @@ export default function ProductsPage() {
         </div>
         {/* 필터 탭 */}
         {isFilterOpen && (
-          <FilterTabs
-            category={category}
-            status={status}
-            onCategoryChange={setCategory}
-            onStatusChange={setStatus}
-          />
+          <>
+            <FilterTabs options={categories} value={category} onChange={setCategory} />
+            <FilterTabs options={statuses} value={status} onChange={setStatus} />
+          </>
         )}
 
         <div className="flex items-center justify-between mb-2">

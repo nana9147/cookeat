@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ShippingSectionProps } from '@/types/seller/shipping';
 
-const DELIVERY_METHODS = ['택배', '직접배송', '퀵서비스', '방문수령'];
 const SHIPPING_FEE_TYPES = ['무료', '유료', '조건부 무료'];
 
 // TODO: API로 교체
@@ -58,29 +57,6 @@ export default function ShippingSection({ data, onChange }: ShippingSectionProps
           <CardTitle>배송 정보</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-5 pt-5">
-          {/* 배송 방법 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              배송 방법 <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              {DELIVERY_METHODS.map((method) => (
-                <button
-                  key={method}
-                  type="button"
-                  onClick={() => onChange('deliveryMethod', method)}
-                  className={`px-4 py-1.5 text-sm rounded-md border transition-colors ${
-                    data.deliveryMethod === method
-                      ? 'border-green-600 bg-green-50 text-green-700 font-medium'
-                      : 'border-gray-300 text-gray-600 hover:border-gray-400'
-                  }`}
-                >
-                  {method}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* 배송비 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
