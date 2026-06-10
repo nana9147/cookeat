@@ -1,5 +1,6 @@
 import PasswordFields from './PasswordFields';
 import NicknameField from './NicknameField';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 const inputCls = 'h-11 px-4 rounded-lg border border-border text-sm outline-none focus:border-primary transition-colors';
 
@@ -37,7 +38,7 @@ export default function RegisterFormFields(p: Props) {
       />
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-dark-text">전화번호</label>
-        <input type="tel" value={p.phone} onChange={(e) => p.onPhoneChange(e.target.value)} placeholder="010-0000-0000" className={inputCls} />
+        <PhoneInput value={p.phone} onChange={p.onPhoneChange} className={inputCls} />
       </div>
     </>
   );
