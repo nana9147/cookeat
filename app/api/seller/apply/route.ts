@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ errors: fieldErrors }, { status: 400 })
   }
 
-  const { storeName, businessNumber, businessAddress, bankName, bankAccount } = body
-  const fields = { storeName, businessNumber, businessAddress, bankName, bankAccount }
+  const { isCoRepresentative, representativeName, csPhone, storeName, businessNumber, businessAddress, bankName, bankAccount } = body
+  const fields = { isCoRepresentative: !!isCoRepresentative, representativeName, csPhone, storeName, businessNumber, businessAddress, bankName, bankAccount }
 
   const existing = await getSellerByUserId(authed.userId)
 

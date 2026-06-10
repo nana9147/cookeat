@@ -7,6 +7,9 @@ export type ApproveStatus = 'pending' | 'approved' | 'rejected';
 
 export interface SellerApplication {
   seller_id: number;
+  is_co_representative: boolean;
+  representative_name: string;
+  cs_phone: string;
   store_name: string;
   business_number: string;
   business_address: string | null;
@@ -45,6 +48,9 @@ export function useSellerApply() {
   }, [accessToken]);
 
   async function submit(fields: {
+    isCoRepresentative: boolean;
+    representativeName: string;
+    csPhone: string;
     storeName: string;
     businessNumber: string;
     businessAddress: string;

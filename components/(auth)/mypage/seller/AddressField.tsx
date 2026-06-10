@@ -38,15 +38,18 @@ export default function AddressField({ onChange }: Props) {
         placeholder="기본 주소"
         className={`${inputCls} cursor-default`}
       />
-      <input
-        ref={detailRef}
-        type="text"
-        value={detailAddress}
-        onChange={(e) => handleDetailChange(e.target.value)}
-        placeholder="상세 주소를 입력해주세요"
-        maxLength={100}
-        className={inputCls}
-      />
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm text-gray-text">상세 주소 <span className="text-xs">(선택)</span></span>
+        <input
+          ref={detailRef}
+          type="text"
+          value={detailAddress}
+          onChange={(e) => handleDetailChange(e.target.value)}
+          placeholder="상세 주소를 입력해주세요"
+          maxLength={100}
+          className={inputCls}
+        />
+      </div>
     </div>
   );
 }
