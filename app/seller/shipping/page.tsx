@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { CourierCode, ShippingOrder, ShippingStatus } from '@/types/seller/shipping';
-import ShippingStatusCards from '../components/Shipping/ShippingStatusCards';
 import ShippingTable from '../components/Shipping/ShippingTable';
+import { useFilter } from '@/hooks/useFilter';
+import StatusCards from '@/components/ui/StatusCards';
 
 const MOCK_SHIPPING_ORDERS: ShippingOrder[] = [
   {
@@ -62,10 +63,26 @@ const MOCK_SHIPPING_ORDERS: ShippingOrder[] = [
   },
 ];
 
+const SHIPPING_COLOR_MAP = {
+  배송준비중: 'text-yellow-500',
+  배송중: 'text-blue-500',
+  배송완료: 'text-green-500',
+};
+
 export default function ShippingPage() {
   const [status, setStatus] = useState<ShippingStatus | '전체'>('전체');
-  const [search, setSearch] = useState('');
   const [shippingOrders, setShippingOrders] = useState(MOCK_SHIPPING_ORDERS);
+
+  const {
+    search,
+    setSearch,
+    filtered: filteredBySearch,
+  } = useFilter(
+    shippingOrders,
+    (o, search) => o.customer.includes(search) || o.id.includes(search)
+  );
+
+  const filtered = filteredBySearch.filter((o) => status === '전체' || o.status === status);
 
   const statusCardData = [
     {
@@ -85,12 +102,6 @@ export default function ShippingPage() {
     },
   ];
 
-  const filtered = shippingOrders.filter((o) => {
-    const matchStatus = status === '전체' || o.status === status;
-    const matchSearch = o.customer.includes(search) || o.id.includes(search);
-    return matchStatus && matchSearch;
-  });
-
   const handleUpdate = (orderId: string, courier: string, trackingNumber: string) => {
     setShippingOrders((prev) =>
       prev.map((o) =>
@@ -106,7 +117,13 @@ export default function ShippingPage() {
       <div className="mb-8 pr-5 flex items-center justify-between">
         <h1 className="text-h2 font-bold text-dark-text">배송 관리</h1>
       </div>
-      <ShippingStatusCards cards={statusCardData} status={status} onStatusChange={setStatus} />
+      <StatusCards
+        cards={statusCardData}
+        status={status}
+        onStatusChange={setStatus}
+        colorMap={SHIPPING_COLOR_MAP}
+        cols={3}
+      />
       <ShippingTable
         orders={filtered}
         search={search}

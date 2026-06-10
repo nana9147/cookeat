@@ -5,9 +5,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import type { Order, OrderStatus, OrderStatusFilter, StatusCardItem } from '@/types/seller/order';
-import OrderStatusCards from '../components/OrderList/OrderStatusCards';
 import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
 import OrderTable from '../components/OrderList/OrderTable';
+import StatusCards from '@/components/ui/StatusCards';
+import { useFilter } from '@/hooks/useFilter';
 
 const statuses: (OrderStatus | '전체')[] = [
   '전체',
@@ -138,19 +139,29 @@ const statusCardData: StatusCardItem[] = [
   },
 ];
 
+const ORDER_COLOR_MAP = {
+  결제완료: 'text-green-500',
+  배송준비중: 'text-yellow-500',
+  배송중: 'text-blue-500',
+  배송완료: 'text-taupe-500',
+  '취소/환불': 'text-red-500',
+};
+
 export default function OrdersPage() {
-  const [search, setSearch] = useState('');
   const [status, setStatus] = useState<OrderStatusFilter>('전체');
 
-  const filtered = orders.filter((o) => {
-    const matchStatus =
-      status === '전체'
-        ? true
-        : status === '취소환불'
-          ? o.status === '취소' || o.status === '환불'
-          : o.status === status;
-    const matchSearch = o.customer.includes(search) || o.id.includes(search);
-    return matchStatus && matchSearch;
+  const {
+    search,
+    setSearch,
+    filtered: filteredBySearch,
+  } = useFilter(orders, (o, search) => o.customer.includes(search) || o.id.includes(search));
+
+  const filtered = filteredBySearch.filter((o) => {
+    return status === '전체'
+      ? true
+      : status === '취소환불'
+        ? o.status === '취소' || o.status === '환불'
+        : o.status === status;
   });
 
   return (
@@ -162,7 +173,13 @@ export default function OrdersPage() {
           엑셀 다운로드
         </Button>
       </div>
-      <OrderStatusCards cards={statusCardData} status={status} onStatusChange={setStatus} />
+      <StatusCards
+        cards={statusCardData}
+        status={status}
+        onStatusChange={setStatus}
+        colorMap={ORDER_COLOR_MAP}
+        cols={5}
+      />
       <OrderSearchFilter
         search={search}
         onSearchChange={setSearch}
