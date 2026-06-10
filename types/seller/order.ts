@@ -51,3 +51,25 @@ export interface OrderDetail {
   payment: PaymentInfo;
   delivery: DeliveryInfo;
 }
+
+// 주문 상태 카드
+export interface StatusCardItem {
+  label: string;
+  count: number;
+  filterValue: string;
+}
+
+export interface OrderStatusCardsProps {
+  cards: StatusCardItem[];
+  status: OrderStatusFilter;
+  onStatusChange: (value: OrderStatusFilter) => void;
+}
+
+// 주문 필터
+export interface OrderSearchProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  status: OrderStatusFilter;
+  onStatusChange: (value: OrderStatusFilter) => void;
+  statuses: (OrderStatus | '전체')[];
+}
