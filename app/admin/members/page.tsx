@@ -86,6 +86,9 @@ const statusBadge: Record<Status, string> = {
 export default function MembersPage() {
   const [search, setSearch] = useState('');
   const [memberList, setMemberList] = useState<Member[]>(members);
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterGrade, setFilterGrade] = useState<Grade | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
 
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [editMember, setEditMember] = useState<Member | null>(null);
@@ -97,8 +100,12 @@ export default function MembersPage() {
   const handleEdit = (member: Member) => {
     setEditMember(member);
   };
-
-  const filtered = memberList.filter((m) => m.name.includes(search) || m.email.includes(search));
+  const filtered = memberList.filter((m) => {
+    const matchSearch = m.name.includes(search) || m.email.includes(search);
+    const matchGrade = filterGrade === 'all' || m.grade === filterGrade;
+    const matchStatus = filterStatus === 'all' || m.status === filterStatus;
+    return matchSearch && matchGrade && matchStatus;
+  });
 
   return (
     <div className="p-6 space-y-4">
@@ -107,11 +114,50 @@ export default function MembersPage() {
           <h1 className="text-2xl font-bold">회원 관리</h1>
           <p className="text-sm text-muted-foreground">전체 회원: {memberList.length}명</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          className={`gap-1.5 ${showFilter ? 'border-primary text-primary' : ''}`}
+          onClick={() => setShowFilter((prev) => !prev)}
+        >
           <Filter size={14} />
           필터
         </Button>
       </div>
+
+      {showFilter && (
+        <div className="flex flex-wrap items-end gap-3 rounded-md border bg-white p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">등급</span>
+            <Select value={filterGrade} onValueChange={(v) => setFilterGrade(v as Grade | 'all')}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="일반">일반</SelectItem>
+                <SelectItem value="VIP">VIP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">상태</span>
+            <Select
+              value={filterStatus}
+              onValueChange={(v) => setFilterStatus(v as Status | 'all')}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="정상">정상</SelectItem>
+                <SelectItem value="정지">정지</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         <Search
