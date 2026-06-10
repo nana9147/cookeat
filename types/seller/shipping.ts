@@ -1,4 +1,8 @@
+export type ShippingStatus = '배송준비중' | '배송중' | '배송완료';
+
 export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
+
+export type AddressType = 'origin' | 'return';
 
 export type CourierCode =
   | 'CJ대한통운'
@@ -8,7 +12,7 @@ export type CourierCode =
   | '우체국택배'
   | 'CU 편의점택배'
   | 'GS25 편의점택배'
-  | 'ETC'; // types/seller/shipping.ts
+  | 'ETC';
 
 export interface AddressItem {
   id: string;
@@ -37,4 +41,31 @@ export interface ShippingData {
 export interface ShippingSectionProps {
   data: ShippingData;
   onChange: (field: keyof ShippingData, value: string) => void;
+}
+
+export interface ShippingOrder {
+  id: string; // 주문번호
+  customer: string; // 주문자
+  products: string[]; // 상품명
+  orderDate: string; // 주문일시
+  status: ShippingStatus;
+  courier: CourierCode | ''; // 택배사
+  trackingNumber: string; // 운송장 번호
+}
+
+export interface AddressItemWithType extends AddressItem {
+  type: AddressType;
+}
+
+export interface ShippingStatusCardsProps {
+  cards: { label: string; count: number; filterValue: string }[];
+  status: ShippingStatus | '전체';
+  onStatusChange: (value: ShippingStatus | '전체') => void;
+}
+
+export interface ShippingTableProps {
+  orders: ShippingOrder[];
+  search: string;
+  onSearchChange: (value: string) => void;
+  onUpdate: (orderId: string, courier: string, trackingNumber: string) => void;
 }
