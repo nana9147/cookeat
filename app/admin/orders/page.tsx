@@ -10,66 +10,225 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-type Status = '배송중' | '결제완료' | '배송완료' | '취소';
+type Status = '결제완료' | '주문확인' | '배송준비' | '배송중' | '배송완료' | '취소';
+
+interface OrderItem {
+  itemId: number;
+  orderId: string;
+  productId: number;
+  productName: string;
+  sellerId: number;
+  quantity: number;
+  unitPrice: number;
+}
+
+interface Shipping {
+  shippingId: number;
+  orderId: string;
+  carrier: string;
+  trackingNumber: string;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+}
 
 interface Order {
-  id: number;
-  orderNumber: string;
-  name: string;
-  orderDate: string;
-  product: number;
-  cost: number;
+  orderId: string;
+  userId: number;
+  totalAmount: number;
+  shippingFee: number;
+  usedPoint: number;
+  couponId: number | null;
+  couponDiscount: number;
+  finalAmount: number;
+  paymentMethod: string;
   status: Status;
+  recipient: string;
+  phone: string;
+  address: string;
+  addressDetail: string;
+  shippingRequest: string | null;
+  createdAt: string;
+  updatedAt: string;
+  orderItems: OrderItem[];
 }
 
 const order: Order[] = [
   {
-    id: 1,
-    orderNumber: 'ORD-001',
-    name: '김쿡잇',
-    orderDate: '2026.06.04',
-    product: 6,
-    cost: 18000,
+    orderId: 'ORD-001',
+    userId: 1,
+    totalAmount: 18000,
+    shippingFee: 3000,
+    usedPoint: 0,
+    couponId: null,
+    couponDiscount: 0,
+    finalAmount: 21000,
+    paymentMethod: '카드',
     status: '배송중',
+    recipient: '김쿡잇',
+    phone: '010-1234-5678',
+    address: '서울시 강남구 테헤란로 123',
+    addressDetail: '456호',
+    shippingRequest: null,
+    createdAt: '2026-06-04T00:00:00',
+    updatedAt: '2026-06-04T00:00:00',
+    orderItems: [
+      {
+        itemId: 1,
+        orderId: 'ORD-001',
+        productId: 10,
+        productName: '된장찌개 밀키트',
+        sellerId: 1,
+        quantity: 2,
+        unitPrice: 8000,
+      },
+      {
+        itemId: 2,
+        orderId: 'ORD-001',
+        productId: 11,
+        productName: '김치볶음밥 밀키트',
+        sellerId: 1,
+        quantity: 1,
+        unitPrice: 2000,
+      },
+    ],
   },
   {
-    id: 2,
-    orderNumber: 'ORD-002',
-    name: '이레시피',
-    orderDate: '2026.06.04',
-    product: 4,
-    cost: 19000,
+    orderId: 'ORD-002',
+    userId: 2,
+    totalAmount: 19000,
+    shippingFee: 3000,
+    usedPoint: 0,
+    couponId: null,
+    couponDiscount: 0,
+    finalAmount: 22000,
+    paymentMethod: '카드',
     status: '결제완료',
+    recipient: '이레시피',
+    phone: '010-1234-5678',
+    address: '서울시 강남구 테헤란로 123',
+    addressDetail: '456호',
+    shippingRequest: '문 앞에 놔주세요',
+    createdAt: '2026-06-04T00:00:00',
+    updatedAt: '2026-06-04T00:00:00',
+    orderItems: [
+      {
+        itemId: 3,
+        orderId: 'ORD-002',
+        productId: 12,
+        productName: '부대찌개 밀키트',
+        sellerId: 2,
+        quantity: 1,
+        unitPrice: 9500,
+      },
+      {
+        itemId: 4,
+        orderId: 'ORD-002',
+        productId: 13,
+        productName: '순두부찌개 밀키트',
+        sellerId: 2,
+        quantity: 1,
+        unitPrice: 9500,
+      },
+    ],
   },
   {
-    id: 3,
-    orderNumber: 'ORD-003',
-    name: '박요리',
-    orderDate: '2026.06.04',
-    product: 3,
-    cost: 8000,
+    orderId: 'ORD-003',
+    userId: 3,
+    totalAmount: 8000,
+    shippingFee: 3000,
+    usedPoint: 0,
+    couponId: null,
+    couponDiscount: 0,
+    finalAmount: 11000,
+    paymentMethod: '카드',
     status: '취소',
+    recipient: '박요리',
+    phone: '010-1234-5678',
+    address: '서울시 강남구 테헤란로 123',
+    addressDetail: '456호',
+    shippingRequest: null,
+    createdAt: '2026-06-04T00:00:00',
+    updatedAt: '2026-06-04T00:00:00',
+    orderItems: [
+      {
+        itemId: 5,
+        orderId: 'ORD-003',
+        productId: 14,
+        productName: '갈비찜 밀키트',
+        sellerId: 3,
+        quantity: 1,
+        unitPrice: 8000,
+      },
+    ],
   },
   {
-    id: 4,
-    orderNumber: 'ORD-004',
-    name: '최맛있',
-    orderDate: '2026.06.04',
-    product: 7,
-    cost: 38000,
+    orderId: 'ORD-004',
+    userId: 4,
+    totalAmount: 38000,
+    shippingFee: 3000,
+    usedPoint: 0,
+    couponId: null,
+    couponDiscount: 0,
+    finalAmount: 41000,
+    paymentMethod: '카드',
     status: '배송완료',
+    recipient: '최맛있',
+    phone: '010-1234-5678',
+    address: '서울시 강남구 테헤란로 123',
+    addressDetail: '456호',
+    shippingRequest: null,
+    createdAt: '2026-06-04T00:00:00',
+    updatedAt: '2026-06-04T00:00:00',
+    orderItems: [
+      {
+        itemId: 6,
+        orderId: 'ORD-004',
+        productId: 15,
+        productName: '삼겹살 구이 밀키트',
+        sellerId: 4,
+        quantity: 2,
+        unitPrice: 12000,
+      },
+      {
+        itemId: 7,
+        orderId: 'ORD-004',
+        productId: 16,
+        productName: '닭갈비 밀키트',
+        sellerId: 4,
+        quantity: 1,
+        unitPrice: 9000,
+      },
+      {
+        itemId: 8,
+        orderId: 'ORD-004',
+        productId: 17,
+        productName: '해물파전 밀키트',
+        sellerId: 4,
+        quantity: 1,
+        unitPrice: 5000,
+      },
+    ],
   },
 ];
 
 const statusBadge: Record<Status, string> = {
   결제완료: 'bg-primary text-white',
+  주문확인: 'bg-primary text-white',
+  배송준비: 'bg-yellow text-white',
   배송중: 'bg-yellow text-white',
   배송완료: 'bg-muted text-white',
   취소: 'bg-red text-white',
 };
 
 export default function MembersPage() {
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  const handleViewDetail = (order: Order) => {
+    setSelectedOrder(order);
+  };
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -98,12 +257,12 @@ export default function MembersPage() {
           </TableHeader>
           <TableBody>
             {order.map((o) => (
-              <TableRow key={o.id}>
-                <TableCell className="font-medium">{o.orderNumber}</TableCell>
-                <TableCell className="text-muted-foreground">{o.name}</TableCell>
-                <TableCell className="text-muted-foreground">{o.orderDate}</TableCell>
-                <TableCell>{o.product}개</TableCell>
-                <TableCell>{o.cost}원</TableCell>
+              <TableRow key={o.orderId}>
+                <TableCell className="font-medium">{o.orderId}</TableCell>
+                <TableCell className="text-muted-foreground">{o.recipient}</TableCell>
+                <TableCell className="text-muted-foreground">{o.createdAt}</TableCell>
+                <TableCell>{o.orderItems.length}개</TableCell>
+                <TableCell>{o.finalAmount.toLocaleString()}원</TableCell>
                 <TableCell>
                   <span
                     className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[o.status]}`}
@@ -113,7 +272,11 @@ export default function MembersPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <button className="text-primary" aria-label="상세보기">
+                    <button
+                      className="text-primary"
+                      aria-label="상세보기"
+                      onClick={() => handleViewDetail(o)}
+                    >
                       <Eye size={16} />
                     </button>
                   </div>
@@ -123,6 +286,92 @@ export default function MembersPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>주문 상세정보</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">주문일시</span>
+                  <span>{selectedOrder.createdAt}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">수령인</span>
+                  <span>{selectedOrder.recipient}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">연락처</span>
+                  <span>{selectedOrder.phone}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">배송지</span>
+                  <span>
+                    {selectedOrder.address} {selectedOrder.addressDetail}
+                  </span>
+                </div>
+                {selectedOrder.shippingRequest && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">배송 요청사항</span>
+                    <span>{selectedOrder.shippingRequest}</span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p className="mb-2 font-semibold">주문 상품</p>
+                <div className="space-y-1">
+                  {selectedOrder.orderItems.map((item) => (
+                    <div key={item.itemId} className="flex justify-between text-sm">
+                      <span>
+                        {item.productName} x{item.quantity}
+                      </span>
+                      <span>{(item.unitPrice * item.quantity).toLocaleString()}원</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 font-semibold">결제 정보</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">상품 합계</span>
+                    <span>{selectedOrder.totalAmount.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">배송비</span>
+                    <span>{selectedOrder.shippingFee.toLocaleString()}원</span>
+                  </div>
+                  {
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">쿠폰 할인</span>
+                      <span>-{selectedOrder.couponDiscount.toLocaleString()}원</span>
+                    </div>
+                  }
+                  {
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">포인트 사용</span>
+                      <span>-{selectedOrder.usedPoint.toLocaleString()}원</span>
+                    </div>
+                  }
+                  <div className="flex justify-between border-t pt-1 font-semibold">
+                    <span>최종 결제금액</span>
+                    <span>{selectedOrder.finalAmount.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">결제수단</span>
+                    <span>{selectedOrder.paymentMethod}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
