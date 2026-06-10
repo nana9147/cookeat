@@ -1,6 +1,7 @@
 'use client';
 
 import { useSellerApplyForm, type SellerApplyFields } from '@/hooks/user/useSellerApplyForm';
+import SellerRepresentativeFields from './SellerRepresentativeFields';
 import SellerBusinessFields from './SellerBusinessFields';
 import SellerBankFields from './SellerBankFields';
 
@@ -14,6 +15,9 @@ interface Props {
 
 export default function SellerApplyForm({ isRejected, rejectedReason, submitting, submitError, onSubmit }: Props) {
   const {
+    isCoRepresentative, setIsCoRepresentative,
+    representativeName, setRepresentativeName,
+    csPhone, setCsPhone,
     storeName, setStoreName,
     businessNumber, setBusinessNumber,
     setBusinessAddress,
@@ -35,10 +39,16 @@ export default function SellerApplyForm({ isRejected, rejectedReason, submitting
       )}
 
       <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-5">
+        <SellerRepresentativeFields
+          isCoRepresentative={isCoRepresentative} onIsCoRepresentativeChange={setIsCoRepresentative}
+          representativeName={representativeName} onRepresentativeNameChange={(v: string) => { setRepresentativeName(v); clearError('representativeName'); }} representativeNameError={errors.representativeName}
+        />
+
         <SellerBusinessFields
-          storeName={storeName} onStoreNameChange={(v) => { setStoreName(v); clearError('storeName'); }} storeNameError={errors.storeName}
-          businessNumber={businessNumber} onBusinessNumberChange={(v) => { setBusinessNumber(v); clearError('businessNumber'); }} businessNumberError={errors.businessNumber}
-          onAddressChange={setBusinessAddress}
+          csPhone={csPhone} onCsPhoneChange={(v: string) => { setCsPhone(v); clearError('csPhone'); }} csPhoneError={errors.csPhone}
+          storeName={storeName} onStoreNameChange={(v: string) => { setStoreName(v); clearError('storeName'); }} storeNameError={errors.storeName}
+          businessNumber={businessNumber} onBusinessNumberChange={(v: string) => { setBusinessNumber(v); clearError('businessNumber'); }} businessNumberError={errors.businessNumber}
+          onAddressChange={(v: string) => { setBusinessAddress(v); clearError('businessAddress'); }} addressError={errors.businessAddress}
         />
 
         <hr className="border-border" />
