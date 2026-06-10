@@ -9,6 +9,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { CircleUser } from 'lucide-react';
@@ -18,7 +21,14 @@ const menuItems = [
   { label: '대시보드', href: '/seller' },
   { label: '상품관리', href: '/seller/products' },
   { label: '주문관리', href: '/seller/orders' },
-  { label: '배송관리', href: '/seller/delivery' },
+  {
+    label: '배송관리',
+    href: '/seller/shipping',
+    subItems: [
+      { label: '배송 처리', href: '/seller/shipping' },
+      { label: '주소 관리', href: '/seller/shipping/address' },
+    ],
+  },
   { label: '리뷰관리', href: '/seller/reviews' },
   { label: '정산관리', href: '/seller/settlement' },
   { label: '판매자정보', href: '/seller/info' },
@@ -50,6 +60,23 @@ export default function SellerSidebar() {
                   >
                     <Link href={item.href}>{item.label}</Link>
                   </SidebarMenuButton>
+
+                  {/* 서브메뉴 */}
+                  {item.subItems && isActive && (
+                    <SidebarMenuSub>
+                      {item.subItems.map((sub) => (
+                        <SidebarMenuSubItem key={sub.label}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === sub.href}
+                            className={`text-white hover:bg-white hover:text-gray-text ${pathname === sub.href ? 'bg-white text-gray-text font-semibold' : ''}`}
+                          >
+                            <Link href={sub.href}>{sub.label}</Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  )}
                 </SidebarMenuItem>
               );
             })}
