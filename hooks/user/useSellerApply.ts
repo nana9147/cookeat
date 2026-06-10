@@ -20,6 +20,7 @@ export interface SellerApplication {
 export function useSellerApply() {
   const { accessToken } = useAuthStore();
   const [application, setApplication] = useState<SellerApplication | null | undefined>(undefined);
+  const [fetchError, setFetchError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -28,8 +29,15 @@ export function useSellerApply() {
     fetch('/api/seller/apply', {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
-      .then((r) => r.json())
-      .then((json) => setApplication(json.data ?? null));
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((json) => setApplication(json.data ?? null))
+      .catch(() => {
+        setFetchError(true);
+        setApplication(null);
+      });
   }, [accessToken]);
 
   async function submit(fields: {
@@ -83,5 +91,5 @@ export function useSellerApply() {
     return true;
   }
 
-  return { application, submitting, submitError, submit };
+  return { application, fetchError, submitting, submitError, submit };
 }

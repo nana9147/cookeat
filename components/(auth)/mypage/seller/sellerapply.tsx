@@ -5,7 +5,11 @@ import SellerApplyForm from './SellerApplyForm';
 import SellerApplyStatus from './SellerApplyStatus';
 
 export default function Sellerapply() {
-  const { application, submitting, submitError, submit } = useSellerApply();
+  const { application, fetchError, submitting, submitError, submit } = useSellerApply();
+
+  if (fetchError) {
+    return <div className="py-12 text-center text-sm text-red-500">데이터를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.</div>;
+  }
 
   if (application === undefined) {
     return <div className="py-12 text-center text-sm text-gray-text">불러오는 중...</div>;
