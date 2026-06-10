@@ -1,32 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
 import type { Order } from '@/types/seller/order';
 import StatusBadge from '@/app/seller/components/StatusBadge';
 import Link from 'next/link';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { usePagination } from '@/hooks/usePagination';
+import Pagination from '@/components/ui/Pagination';
+import EmptyRows from '@/components/ui/EmptyRows';
 
 export default function OrderTable({ orders }: { orders: Order[] }) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 10;
-
-  const paginated = orders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const totalPages = Math.ceil(orders.length / PAGE_SIZE);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [orders]);
-
-  const getPageNumbers = () => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-
-    if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (currentPage >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-
-    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-  };
+  const { currentPage, setCurrentPage, paginated, totalPages, getPageNumbers } = usePagination(
+    orders,
+    10
+  );
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden py-3">
@@ -59,72 +45,34 @@ export default function OrderTable({ orders }: { orders: Order[] }) {
             <>
               {paginated.map((order) => (
                 <tr key={order.id} className="border-b border-gray-50 last:border-b-0">
-                  <td className="px-4 py-4 text-sm text-gray-600 text-center">{order.id}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600 text-center">{order.customer}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600 text-center">{order.product}</td>
-                  <td className="px-4 py-4 text-sm text-gray-800 text-center">
+                  <td className="px-5 py-4 text-sm font-mono text-gray-500">{order.id}</td>
+                  <td className="px-4 py-4 text-sm text-gray-800 text-center">{order.customer}</td>
+                  <td className="px-4 py-4 text-sm text-gray-700 text-center">{order.product}</td>
+                  <td className="px-4 py-4 text-sm font-medium text-gray-800 text-center">
                     {order.price.toLocaleString()}원
                   </td>
-                  <td className="px-4 py-4 text-sm text-center">
+                  <td className="px-4 py-4 text-center">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="px-4 py-4 text-sm text-gray-600 text-center">{order.orderDate}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600 text-center">
+                  <td className="px-4 py-4 text-sm text-gray-500 text-center">{order.orderDate}</td>
+                  <td className="px-4 py-4 text-center">
                     <Link href={`/seller/orders/${order.id}`}>
                       <Button size="sm">상세</Button>
                     </Link>
                   </td>
                 </tr>
               ))}
-
-              {/* 빈 행으로 나머지 채우기 */}
-              {Array.from({ length: PAGE_SIZE - paginated.length }).map((_, i) => (
-                <tr key={`empty-${i}`}>
-                  <td colSpan={7} className="py-[30.5px]" />
-                </tr>
-              ))}
+              <EmptyRows count={10 - paginated.length} colSpan={7} />
             </>
           )}
         </tbody>
       </table>
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-4 pb-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            ←
-          </Button>
-
-          {getPageNumbers().map((page, i) =>
-            page === '...' ? (
-              <span key={i} className="px-2 text-gray-400">
-                ...
-              </span>
-            ) : (
-              <Button
-                key={page}
-                variant={currentPage === page ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrentPage(Number(page))}
-              >
-                {page}
-              </Button>
-            )
-          )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-          >
-            →
-          </Button>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        getPageNumbers={getPageNumbers}
+      />
     </div>
   );
 }
