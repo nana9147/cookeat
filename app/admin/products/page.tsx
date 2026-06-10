@@ -9,9 +9,27 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-type Status = '판매중' | '품절';
+type Status = '판매중' | '품절' | '판매중지';
+
+const CATEGORIES = ['채소', '과일', '육류', '수산물', '유제품', '가공식품', '기타'];
 
 interface Product {
   id: number;
@@ -65,9 +83,22 @@ const product: Product[] = [
 const statusBadge: Record<Status, string> = {
   판매중: 'bg-primary text-white',
   품절: 'bg-red text-white',
+  판매중지: 'bg-red text-white',
 };
 
-export default function MembersPage() {
+export default function ProductsPage() {
+  const [productList, setProductList] = useState<Product[]>(product);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+
+  const handleViewDetail = (product: Product) => {
+    setSelectedProduct(product);
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditProduct({ ...product });
+  };
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -95,7 +126,7 @@ export default function MembersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {product.map((p) => (
+            {productList.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell className="text-muted-foreground">{p.seller}</TableCell>
@@ -111,13 +142,27 @@ export default function MembersPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <button className="text-primary" aria-label="상세보기">
+                    <button
+                      className="text-primary"
+                      aria-label="상세보기"
+                      onClick={() => handleViewDetail(p)}
+                    >
                       <Eye size={16} />
                     </button>
-                    <button className="text-gray-text " aria-label="수정">
+                    <button
+                      className="text-gray-text "
+                      aria-label="수정"
+                      onClick={() => handleEdit(p)}
+                    >
                       <Pencil size={16} />
                     </button>
-                    <button className="text-red-500 " aria-label="정지">
+                    <button
+                      className="text-red "
+                      aria-label="정지"
+                      onClick={() =>
+                        setProductList((prev) => prev.filter((item) => item.id !== p.id))
+                      }
+                    >
                       <Ban size={16} />
                     </button>
                   </div>
@@ -127,6 +172,110 @@ export default function MembersPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>상품 상세 정보</DialogTitle>
+          </DialogHeader>
+          {selectedProduct && (
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">상품명</span>
+                <span className="font-medium">{selectedProduct.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">카테고리</span>
+                <span>{selectedProduct.category}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">판매자</span>
+                <span>{selectedProduct.seller}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">판매가</span>
+                <span>{selectedProduct.cost.toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">재고</span>
+                <span>{selectedProduct.stock}개</span>
+              </div>
+              <div className="border-t pt-3 flex justify-between">
+                <span className="text-muted-foreground">상태</span>
+                <span
+                  className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[selectedProduct.status]}`}
+                >
+                  {selectedProduct.status}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editProduct} onOpenChange={() => setEditProduct(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>상품 정보 수정</DialogTitle>
+          </DialogHeader>
+          {editProduct && (
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">카테고리</label>
+                <Select
+                  value={editProduct.category}
+                  onValueChange={(v) => setEditProduct({ ...editProduct, category: v })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">판매 상태</label>
+                <Select
+                  value={editProduct.status}
+                  onValueChange={(v) => setEditProduct({ ...editProduct, status: v as Status })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(['판매중', '품절', '판매중지'] as Status[]).map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">취소</Button>
+            </DialogClose>
+            <Button
+              onClick={() => {
+                if (!editProduct) return;
+                setProductList((prev) =>
+                  prev.map((p) => (p.id === editProduct.id ? editProduct : p))
+                );
+                setEditProduct(null);
+              }}
+            >
+              저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
