@@ -1,8 +1,13 @@
 import { OrderStatus } from '@/types/seller/order';
 import type { ProductStatus } from '@/types/seller/product';
+import { AddressBadgeType } from '@/types/seller/shipping';
 
-export default function StatusBadge({ status }: { status: ProductStatus | OrderStatus }) {
-  const styles: Record<ProductStatus | OrderStatus, string> = {
+export default function StatusBadge({
+  status,
+}: {
+  status: ProductStatus | OrderStatus | AddressBadgeType;
+}) {
+  const styles: Record<ProductStatus | OrderStatus | AddressBadgeType, string> = {
     판매대기: 'bg-blue-100 text-blue-700',
     판매중: 'bg-green-100 text-green-700',
     품절: 'bg-red-100 text-red-600',
@@ -14,6 +19,9 @@ export default function StatusBadge({ status }: { status: ProductStatus | OrderS
     배송완료: 'bg-beige-50 text-muted border border-border',
     취소: 'bg-slate-50 text-slate-500 border border-slate-200',
     환불: 'bg-red-50 text-red-600 border border-red-200',
+
+    기본출고지: 'bg-violet-50 text-violet-600 border border-violet-200',
+    기본반품지: 'bg-cyan-50 text-cyan-600 border border-cyan-200',
   };
 
   return (

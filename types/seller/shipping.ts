@@ -1,9 +1,8 @@
 export type ShippingStatus = '배송준비중' | '배송중' | '배송완료';
-
 export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
-
-export type AddressType = 'origin' | 'return';
-
+export type AddressType = '출고지' | '반품지';
+export type AddressBadgeType = '기본출고지' | '기본반품지';
+export type AddressFormType = '등록' | '수정';
 export type CourierCode =
   | 'CJ대한통운'
   | '로젠택배'
@@ -20,6 +19,8 @@ export interface AddressItem {
   zipCode: string;
   baseAddress: string;
   detailAddress: string;
+  type: AddressType;
+  isDefault: boolean;
 }
 
 export interface ShippingFeeItem {
@@ -68,4 +69,18 @@ export interface ShippingTableProps {
   search: string;
   onSearchChange: (value: string) => void;
   onUpdate: (orderId: string, courier: string, trackingNumber: string) => void;
+}
+
+export interface AddressCardProps {
+  address: AddressItem;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+export interface AddressFormProps {
+  mode: AddressFormType;
+  address?: AddressItem;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (form: Omit<AddressItem, 'id'>) => void;
 }
