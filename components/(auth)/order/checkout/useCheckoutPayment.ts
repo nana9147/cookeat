@@ -1,5 +1,7 @@
 'use client';
 
+import api from '@/lib/api';
+
 const FINAL_AMOUNT = 35410;
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!;
 
@@ -28,19 +30,16 @@ export function useCheckoutPayment(paymentMethod: string) {
     const orderId = `ORDER_${Date.now()}`;
     try {
       if (paymentMethod === 'kakao') {
-        const res = await fetch('/api/payment/kakao/ready', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId, userId: 'test_user', itemName: '쿡잇 주문', quantity: 1, totalAmount: FINAL_AMOUNT }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          alert(`카카오페이 오류: ${JSON.stringify(data.error ?? data)}`);
-          return;
+        try {
+          const { data } = await api.post<{ tid: string; redirectUrl: string }>('/payment/kakao/ready', {
+            orderId, userId: 'test_user', itemName: '쿡잇 주문', quantity: 1, totalAmount: FINAL_AMOUNT,
+          });
+          sessionStorage.setItem('kakaoTid', data.tid);
+          sessionStorage.setItem('kakaoOrderId', orderId);
+          window.location.href = data.redirectUrl;
+        } catch (err) {
+          alert(`카카오페이 오류: ${(err as Error).message}`);
         }
-        sessionStorage.setItem('kakaoTid', data.tid);
-        sessionStorage.setItem('kakaoOrderId', orderId);
-        window.location.href = data.redirectUrl;
         return;
       }
       if (paymentMethod === 'card' || paymentMethod === 'toss') {

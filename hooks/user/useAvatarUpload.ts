@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import api from '@/lib/api';
 
 export function useAvatarUpload(accessToken: string | null, onUploaded: (url: string) => void) {
   const [preview, setPreview] = useState<string | null>(null);
@@ -14,12 +15,7 @@ export function useAvatarUpload(accessToken: string | null, onUploaded: (url: st
     setUploading(true);
     const form = new FormData();
     form.append('avatar', file);
-    const res = await fetch('/api/user/avatar', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}` },
-      body: form,
-    });
-    const data = await res.json();
+    const { data } = await api.post<{ url?: string }>('/user/avatar', form);
     setUploading(false);
     if (data.url) onUploaded(data.url);
   };

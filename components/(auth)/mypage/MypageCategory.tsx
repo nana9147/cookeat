@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { sections } from './CategoryData';
+import api from '@/lib/api';
 
 export default function MypageCategory() {
   const pathname = usePathname();
@@ -10,7 +11,7 @@ export default function MypageCategory() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await api.post('/auth/logout');
     clearAuth();
     alert('로그아웃되었습니다.');
     router.replace('/');

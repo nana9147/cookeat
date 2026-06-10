@@ -13,12 +13,12 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// 서버에서 반환한 에러 메시지를 Error 객체로 통일
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    const message = err.response?.data?.error ?? err.message
-    return Promise.reject(new Error(message))
+    const data = err.response?.data
+    const message = data?.error ?? err.message
+    return Promise.reject(Object.assign(new Error(message), { data }))
   },
 )
 
