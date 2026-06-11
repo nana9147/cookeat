@@ -1,12 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { FormType, ShippingTemplate } from '@/types/seller/shipping';
+import { FormType, ShippingTemplate, ReturnPolicy } from '@/types/seller/shipping';
 import { Plus, TextSearch } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useState } from 'react';
 import ShippingTemplateTable from './ShippingTemplateTable';
 import ShippingTemplateForm from './ShippingTemplateForm';
+import ReturnPolicyTable from './ReturnPolicyTable';
+import ReturnPolicyForm from './ReturnPolicyForm';
 
 const MOCK_ShIPPING_TEMPLATES: ShippingTemplate[] = [
   {
@@ -44,18 +46,61 @@ const MOCK_ShIPPING_TEMPLATES: ShippingTemplate[] = [
   },
 ];
 
+const MOCK_RETURN_POLICIES: ReturnPolicy[] = [
+  {
+    id: 'rp1',
+    name: '기본 반품 정책',
+    content: {
+      returnPeriod: 7,
+      defectShippingPayer: '판매자',
+      nonReturnReasons: [],
+      refundPeriod: 3,
+    },
+    isDefault: true,
+  },
+  {
+    id: 'rp2',
+    name: '신선식품 반품 정책',
+    content: {
+      returnPeriod: 7,
+      defectShippingPayer: '판매자',
+      nonReturnReasons: ['신선식품 단순 변심', '개봉/사용/설치 완료'],
+      refundPeriod: 5,
+    },
+    isDefault: false,
+  },
+  {
+    id: 'rp3',
+    name: '가공식품 반품 정책',
+    content: {
+      returnPeriod: 14,
+      defectShippingPayer: '판매자',
+      nonReturnReasons: ['개봉/사용/설치 완료'],
+      refundPeriod: 7,
+    },
+    isDefault: false,
+  },
+];
+
 export default function TemplateList() {
+  const [activeTab, setActiveTab] = useState<'shipping' | 'return'>('shipping');
+  const [isShippingFormOpen, setIsShippingFormOpen] = useState(false);
+  const [isReturnFormOpen, setIsReturnFormOpen] = useState(false);
+
   const [shippingTemplate, setShippingTemplate] =
     useState<ShippingTemplate[]>(MOCK_ShIPPING_TEMPLATES);
-  const [isOpen, setIsOpen] = useState(false);
-  const [formMode, setFormMode] = useState<FormType>('등록');
-  const [selectedTemplate, setSelectedTemplate] = useState<ShippingTemplate | undefined>(undefined);
+  const [returnTemplate, setReturnTemplate] = useState<ReturnPolicy[]>(MOCK_RETURN_POLICIES);
 
-  const handleSetDefault = (id: string) => {
+  const [formMode, setFormMode] = useState<FormType>('등록');
+  const [selectedShipping, setSelectedShipping] = useState<ShippingTemplate | undefined>(undefined);
+  const [selectedReturn, setSelectedReturn] = useState<ReturnPolicy | undefined>(undefined);
+
+  //shipping
+  const handleShippingSetDefault = (id: string) => {
     setShippingTemplate((prev) => prev.map((t) => ({ ...t, isDefault: t.id === id })));
   };
 
-  const handleSubmit = (form: Omit<ShippingTemplate, 'id'>) => {
+  const handleShippingSubmit = (form: Omit<ShippingTemplate, 'id'>) => {
     if (formMode === '등록') {
       const newTemplate = { ...form, id: String(Date.now()) };
       setShippingTemplate((prev) =>
@@ -64,17 +109,44 @@ export default function TemplateList() {
     } else {
       setShippingTemplate((prev) =>
         prev.map((a) => {
-          if (a.id === selectedTemplate?.id) return { ...a, ...form };
+          if (a.id === selectedShipping?.id) return { ...a, ...form };
           if (form.isDefault) return { ...a, isDefault: false };
           return a;
         })
       );
     }
-    setIsOpen(false);
+    setIsShippingFormOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleShippingDelete = (id: string) => {
     setShippingTemplate((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  // return
+  const handleReturnSetDefault = (id: string) => {
+    setReturnTemplate((prev) => prev.map((t) => ({ ...t, isDefault: t.id === id })));
+  };
+
+  const handleReturnSubmit = (form: Omit<ReturnPolicy, 'id'>) => {
+    if (formMode === '등록') {
+      const newPolicy = { ...form, id: String(Date.now()) };
+      setReturnTemplate((prev) =>
+        prev.map((a) => (form.isDefault ? { ...a, isDefault: false } : a)).concat(newPolicy)
+      );
+    } else {
+      setReturnTemplate((prev) =>
+        prev.map((a) => {
+          if (a.id === selectedReturn?.id) return { ...a, ...form };
+          if (form.isDefault) return { ...a, isDefault: false };
+          return a;
+        })
+      );
+    }
+    setIsReturnFormOpen(false);
+  };
+
+  const handleReturnDelete = (id: string) => {
+    setReturnTemplate((prev) => prev.filter((a) => a.id !== id));
   };
 
   return (
@@ -87,21 +159,25 @@ export default function TemplateList() {
           </span>
         </div>
         <Button
-          variant="outline"
-          className="p-5"
           onClick={() => {
             setFormMode('등록');
-            setSelectedTemplate(undefined);
-            setIsOpen(true);
+            if (activeTab === 'shipping') {
+              setSelectedShipping(undefined);
+              setIsShippingFormOpen(true);
+            } else {
+              setSelectedReturn(undefined);
+              setIsReturnFormOpen(true);
+            }
           }}
         >
           <Plus />
-          템플릿 추가
+          {activeTab === 'shipping' ? '배송 템플릿 추가' : '반품규정 템플릿 추가'}
         </Button>
       </div>
-      <Tabs defaultValue="shipping">
+
+      <Tabs defaultValue="shipping" onValueChange={(v) => setActiveTab(v as 'shipping' | 'return')}>
         <div className="flex items-center justify-between mb-4 border-b border-border">
-          <TabsList variant={'line'}>
+          <TabsList variant="line">
             <TabsTrigger
               value="shipping"
               className="p-3 after:bg-primary data-active:text-emerald-500"
@@ -116,38 +192,67 @@ export default function TemplateList() {
             </TabsTrigger>
           </TabsList>
         </div>
+
         <TabsContent value="shipping">
           {shippingTemplate.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
               <TextSearch className="mb-4 size-10 text-muted-foreground" />
-
               <p className="mb-1 text-sm font-medium text-foreground">
                 등록된 배송 템플릿이 없습니다.
               </p>
-
               <p className="text-sm text-muted-foreground">배송 템플릿을 추가해보세요</p>
             </div>
           ) : (
             <ShippingTemplateTable
-              shippings={shippingTemplate} // ← 복수
+              shippings={shippingTemplate}
               onEdit={(shipping) => {
                 setFormMode('수정');
-                setSelectedTemplate(shipping);
-                setIsOpen(true);
+                setSelectedShipping(shipping);
+                setIsShippingFormOpen(true);
               }}
-              onDelete={handleDelete}
-              onSetDefault={handleSetDefault}
+              onDelete={handleShippingDelete}
+              onSetDefault={handleShippingSetDefault}
             />
           )}
         </TabsContent>
-        <TabsContent value="return"></TabsContent>
+
+        <TabsContent value="return">
+          {returnTemplate.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
+              <TextSearch className="mb-4 size-10 text-muted-foreground" />
+              <p className="mb-1 text-sm font-medium text-foreground">
+                등록된 교환/환불 규정 템플릿이 없습니다.
+              </p>
+              <p className="text-sm text-muted-foreground">교환/환불 규정 템플릿을 추가해보세요</p>
+            </div>
+          ) : (
+            <ReturnPolicyTable
+              policies={returnTemplate}
+              onEdit={(policy) => {
+                setFormMode('수정');
+                setSelectedReturn(policy);
+                setIsReturnFormOpen(true);
+              }}
+              onDelete={handleReturnDelete}
+              onSetDefault={handleReturnSetDefault}
+            />
+          )}
+        </TabsContent>
       </Tabs>
+
       <ShippingTemplateForm
         mode={formMode}
-        template={selectedTemplate}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onSubmit={handleSubmit}
+        template={selectedShipping}
+        isOpen={isShippingFormOpen}
+        onClose={() => setIsShippingFormOpen(false)}
+        onSubmit={handleShippingSubmit}
+      />
+      <ReturnPolicyForm
+        mode={formMode}
+        policy={selectedReturn}
+        isOpen={isReturnFormOpen}
+        onClose={() => setIsReturnFormOpen(false)}
+        onSubmit={handleReturnSubmit}
       />
     </>
   );

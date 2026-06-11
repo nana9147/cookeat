@@ -12,14 +12,11 @@ export type CourierCode =
   | 'CU 편의점택배'
   | 'GS25 편의점택배'
   | 'ETC';
-
-export interface ShippingFeeItem {
-  id: string;
-  name: string;
-  type: ShippingFeeType;
-  fee: number;
-  freeThreshold?: number; //조건부 무배 기준 금액
-}
+export type NonReturnReason =
+  | '개봉/사용/설치 완료'
+  | '신선식품 단순 변심'
+  | '주문제작 상품'
+  | '디지털 콘텐츠';
 
 export interface ShippingData {
   shippingFeeType: ShippingFeeType;
@@ -57,7 +54,7 @@ export interface ShippingTableProps {
   onUpdate: (orderId: string, courier: string, trackingNumber: string) => void;
 }
 
-/** 배송 템플릿 한 건 */
+/** 배송 템플릿  */
 export interface ShippingTemplate {
   id: string;
   name: string;
@@ -94,10 +91,6 @@ export interface AddressItem {
   isDefault: boolean;
 }
 
-export interface AddressItemWithType extends AddressItem {
-  type: AddressType;
-}
-
 export interface AddressCardProps {
   address: AddressItem;
   onEdit: () => void;
@@ -110,4 +103,34 @@ export interface AddressFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (form: Omit<AddressItem, 'id'>) => void;
+}
+
+/* 반품 템플릿 */
+export interface ReturnPolicyContent {
+  returnPeriod: number; // 반품 가능 기간 (일)
+  defectShippingPayer: '판매자'; // 판매자 귀책 배송비 부담 (항상 판매자)
+  nonReturnReasons: NonReturnReason[]; // 반품 불가 사유
+  refundPeriod: number; // 환불 처리 기간 (일)
+}
+
+export interface ReturnPolicy {
+  id: string;
+  name: string;
+  content: ReturnPolicyContent;
+  isDefault: boolean;
+}
+
+export interface ReturnPolicyFormProps {
+  mode: FormType;
+  policy?: ReturnPolicy;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (form: Omit<ReturnPolicy, 'id'>) => void;
+}
+
+export interface ReturnPolicyTableProps {
+  policies: ReturnPolicy[];
+  onEdit: (policy: ReturnPolicy) => void;
+  onDelete: (id: string) => void;
+  onSetDefault: (id: string) => void;
 }
