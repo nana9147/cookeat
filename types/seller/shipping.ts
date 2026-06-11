@@ -2,7 +2,7 @@ export type ShippingStatus = '배송준비중' | '배송중' | '배송완료';
 export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
 export type AddressType = '출고지' | '반품지';
 export type AddressBadgeType = '기본출고지' | '기본반품지';
-export type AddressFormType = '등록' | '수정';
+export type FormType = '등록' | '수정';
 export type CourierCode =
   | 'CJ대한통운'
   | '로젠택배'
@@ -12,16 +12,6 @@ export type CourierCode =
   | 'CU 편의점택배'
   | 'GS25 편의점택배'
   | 'ETC';
-
-export interface AddressItem {
-  id: string;
-  name: string;
-  zipCode: string;
-  baseAddress: string;
-  detailAddress: string;
-  type: AddressType;
-  isDefault: boolean;
-}
 
 export interface ShippingFeeItem {
   id: string;
@@ -54,10 +44,6 @@ export interface ShippingOrder {
   trackingNumber: string; // 운송장 번호
 }
 
-export interface AddressItemWithType extends AddressItem {
-  type: AddressType;
-}
-
 export interface ShippingStatusCardsProps {
   cards: { label: string; count: number; filterValue: string }[];
   status: ShippingStatus | '전체';
@@ -71,6 +57,47 @@ export interface ShippingTableProps {
   onUpdate: (orderId: string, courier: string, trackingNumber: string) => void;
 }
 
+/** 배송 템플릿 한 건 */
+export interface ShippingTemplate {
+  id: string;
+  name: string;
+  feeType: ShippingFeeType;
+  fee: number;
+  freeThreshold: number;
+  returnFee: number;
+  originAddress: string;
+  returnAddress: string;
+  isDefault: boolean;
+}
+
+export interface ShippingTemplateFormProps {
+  mode: FormType;
+  template?: ShippingTemplate;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (form: Omit<ShippingTemplate, 'id'>) => void;
+}
+export interface ShippingTemplateTableProps {
+  shippings: ShippingTemplate[];
+  onEdit: (shipping: ShippingTemplate) => void;
+  onDelete: (id: string) => void;
+  onSetDefault: (id: string) => void;
+}
+
+export interface AddressItem {
+  id: string;
+  name: string;
+  zipCode: string;
+  baseAddress: string;
+  detailAddress: string;
+  type: AddressType;
+  isDefault: boolean;
+}
+
+export interface AddressItemWithType extends AddressItem {
+  type: AddressType;
+}
+
 export interface AddressCardProps {
   address: AddressItem;
   onEdit: () => void;
@@ -78,7 +105,7 @@ export interface AddressCardProps {
 }
 
 export interface AddressFormProps {
-  mode: AddressFormType;
+  mode: FormType;
   address?: AddressItem;
   isOpen: boolean;
   onClose: () => void;
