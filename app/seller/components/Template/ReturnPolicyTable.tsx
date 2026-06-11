@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Table,
   TableBody,
@@ -9,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Pencil, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -20,32 +20,26 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useEffect, useState } from 'react';
-import { ShippingTemplateTableProps } from '@/types/seller/shipping';
+import { ReturnPolicyTableProps } from '@/types/seller/shipping';
+import { Pencil, Trash2 } from 'lucide-react';
 
-export default function ShippingTemplateTable({
-  shippings,
+import { useEffect, useState } from 'react';
+
+export default function ReturnPolicyTable({
+  policies,
   onEdit,
   onDelete,
   onSetDefault,
-}: ShippingTemplateTableProps) {
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const defaultId = shippings.find((s) => s.isDefault)?.id ?? '';
+}: ReturnPolicyTableProps) {
+  const defaultId = policies.find((s) => s.isDefault)?.id ?? '';
   const [selectedId, setSelectedId] = useState(defaultId);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDefaultConfirmOpen, setIsDefaultConfirmOpen] = useState(false);
 
-  const feeDescription = (shipping: ShippingTemplateTableProps['shippings'][0]) => {
-    if (shipping.feeType === '무료') return '무료';
-    if (shipping.feeType === '조건부 무료')
-      return `${shipping.fee.toLocaleString()}원 (${shipping.freeThreshold.toLocaleString()}원 이상 무료)`;
-    return `${shipping.fee.toLocaleString()}원`;
-  };
-
   useEffect(() => {
-    const newDefaultId = shippings.find((s) => s.isDefault)?.id ?? '';
+    const newDefaultId = policies.find((s) => s.isDefault)?.id ?? '';
     setSelectedId(newDefaultId);
-  }, [shippings]);
+  }, [policies]);
 
   return (
     <>
@@ -55,43 +49,36 @@ export default function ShippingTemplateTable({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-16 text-center">기본</TableHead>
-                <TableHead>템플릿명</TableHead>
-                <TableHead className="text-center">배송 유형</TableHead>
-                <TableHead className="text-center">배송비</TableHead>
-                <TableHead className="text-center">반품/교환</TableHead>
-                <TableHead>출고지</TableHead>
+                <TableHead className="text-center">템플릿명</TableHead>
+                <TableHead className="text-center">반품 가능 기간</TableHead>
+                <TableHead className="text-center">환불 처리</TableHead>
                 <TableHead className="w-20 text-center">관리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {shippings.length === 0 ? (
+              {policies.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
-                    등록된 배송 템플릿이 없어요
-                  </TableCell>
+                  <TableCell>등록된 교환/환불 규정 템플릿이 없습니다.</TableCell>
                 </TableRow>
               ) : (
-                shippings.map((shipping) => (
+                policies.map((policy) => (
                   <TableRow
-                    key={shipping.id}
+                    key={policy.id}
                     className="cursor-pointer"
-                    onClick={() => setSelectedId(shipping.id)}
+                    onClick={() => setSelectedId(policy.id)}
                   >
                     <TableCell className="text-center">
                       <div className="flex justify-center">
-                        <RadioGroupItem value={shipping.id} />
+                        <RadioGroupItem value={policy.id} />
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium text-gray-800">{shipping.name}</TableCell>
-                    <TableCell className="text-center text-gray-700">{shipping.feeType}</TableCell>
+                    <TableCell className="text-center text-gray-700">{policy.name}</TableCell>
                     <TableCell className="text-center text-gray-700">
-                      {feeDescription(shipping)}
+                      {policy.content.returnPeriod}일
                     </TableCell>
+
                     <TableCell className="text-center text-gray-700">
-                      {shipping.returnFee.toLocaleString()}원
-                    </TableCell>
-                    <TableCell className="text-gray-500 text-sm max-w-48 truncate">
-                      {shipping.originAddress || '—'}
+                      {policy.content.refundPeriod}일
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex justify-center gap-1">
@@ -100,7 +87,7 @@ export default function ShippingTemplateTable({
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onEdit(shipping);
+                            onEdit(policy);
                           }}
                         >
                           <Pencil size={15} className="text-gray-400" />
@@ -110,7 +97,7 @@ export default function ShippingTemplateTable({
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setDeleteTarget(shipping.id);
+                            setDeleteTarget(policy.id);
                           }}
                         >
                           <Trash2 size={15} className="text-red-400" />
@@ -133,7 +120,7 @@ export default function ShippingTemplateTable({
           <AlertDialogHeader>
             <AlertDialogTitle>해당 템플릿을 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              [{shippings.find((s) => s.id === deleteTarget)?.name}] 템플릿이 삭제됩니다. 이 작업은
+              [{policies.find((s) => s.id === deleteTarget)?.name}] 템플릿이 삭제됩니다. 이 작업은
               되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -155,7 +142,7 @@ export default function ShippingTemplateTable({
           <AlertDialogHeader>
             <AlertDialogTitle>기본 템플릿을 변경하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              [{shippings.find((s) => s.id === selectedId)?.name}] 템플릿이 기본값으로 설정됩니다.
+              [{policies.find((s) => s.id === selectedId)?.name}] 템플릿이 기본값으로 설정됩니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
