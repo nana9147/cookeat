@@ -32,7 +32,7 @@ export function useCheckoutPayment(paymentMethod: string) {
       if (paymentMethod === 'kakao') {
         try {
           const { data } = await api.post<{ tid: string; redirectUrl: string }>('/payment/kakao/ready', {
-            orderId, userId: 'test_user', itemName: '쿡잇 주문', quantity: 1, totalAmount: FINAL_AMOUNT,
+            orderId, userId: 'test_user', itemName: 'Cookeat 주문', quantity: 1, totalAmount: FINAL_AMOUNT,
           });
           sessionStorage.setItem('kakaoTid', data.tid);
           sessionStorage.setItem('kakaoOrderId', orderId);
