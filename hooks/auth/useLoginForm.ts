@@ -24,7 +24,7 @@ export function useLoginForm() {
     setSubmitError(null)
     try {
       const result = await authService.login(email, password)
-      setAuth(result.accessToken, result.refreshToken, result.user)
+      setAuth(result.accessToken, result.refreshToken, result.user, keepLogin)
       router.push('/')
     } catch (err) {
       const msg = err instanceof Error ? err.message : null
