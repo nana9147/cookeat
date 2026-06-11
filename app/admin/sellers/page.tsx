@@ -226,7 +226,7 @@ export default function MembersPage() {
         />
         <Input
           className="pl-9"
-          placeholder="회원명, 사업자 번호로 검색"
+          placeholder="판매자명, 사업자 번호로 검색"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
