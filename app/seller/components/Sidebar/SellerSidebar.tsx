@@ -27,6 +27,7 @@ const menuItems = [
     subItems: [
       { label: '배송 처리', href: '/seller/shipping' },
       { label: '주소 관리', href: '/seller/shipping/address' },
+      { label: '템플릿 관리', href: '/seller/shipping/templates' },
     ],
   },
   { label: '리뷰관리', href: '/seller/reviews' },
