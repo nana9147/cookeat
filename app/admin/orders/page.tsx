@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Filter } from 'lucide-react';
+import { Eye, Filter, Search } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -11,7 +11,15 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type Status = '결제완료' | '주문확인' | '배송준비' | '배송중' | '배송완료' | '취소';
 
@@ -224,11 +232,23 @@ const statusBadge: Record<Status, string> = {
 };
 
 export default function MembersPage() {
+  const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderList, setOrderList] = useState<Order[]>(order);
+
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
 
   const handleViewDetail = (order: Order) => {
     setSelectedOrder(order);
   };
+
+  const filtered = orderList.filter((o) => {
+    const matchSearch = o.orderId.includes(search) || o.recipient.includes(search);
+    const matchStatus = filterStatus === 'all' || o.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -236,10 +256,52 @@ export default function MembersPage() {
           <h1 className="text-2xl font-bold">주문 관리</h1>
           <p className="text-sm text-muted-foreground">오늘 주문: 234건</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setShowFilter((prev) => !prev)}
+        >
           <Filter size={14} />
           필터
         </Button>
+      </div>
+
+      {showFilter && (
+        <div className="flex flex-wrap items-end gap-3 rounded-md border bg-white p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">상태</span>
+            <Select
+              value={filterStatus}
+              onValueChange={(v) => setFilterStatus(v as Status | 'all')}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="결제완료">결제완료</SelectItem>
+                <SelectItem value="주문확인">주문확인</SelectItem>
+                <SelectItem value="배송중">배송중</SelectItem>
+                <SelectItem value="배송완료">배송완료</SelectItem>
+                <SelectItem value="배송준비">배송준비</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      <div className="relative">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
+          className="pl-9"
+          placeholder="주문자명, 주문 번호로 검색"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       <div className="overflow-x-auto rounded-md border bg-white">
@@ -256,7 +318,7 @@ export default function MembersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {order.map((o) => (
+            {filtered.map((o) => (
               <TableRow key={o.orderId}>
                 <TableCell className="font-medium">{o.orderId}</TableCell>
                 <TableCell className="text-muted-foreground">{o.recipient}</TableCell>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Pencil, Ban, Filter, Star } from 'lucide-react';
+import { Eye, Pencil, Ban, Filter, Star, Search } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -39,7 +40,7 @@ interface Seller {
 function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-1">
-      <Star size={14} className="fill-yellow-400 text-yellow-400" />
+      <Star size={14} className="fill-yellow text-yellow" />
       <span className="text-xs text-muted-foreground">{rating.toFixed(1)}</span>
     </div>
   );
@@ -69,8 +70,8 @@ const seller: Seller[] = [
     address: '서울시 강남구 테헤란로 456, 7층',
     bankName: '국민은행',
     bankAccount: '123-45-67890',
-    rating: 4.5,
-    status: '승인',
+    rating: 4,
+    status: '정지',
   },
   {
     id: 3,
@@ -82,8 +83,8 @@ const seller: Seller[] = [
     address: '서울시 강남구 테헤란로 456, 7층',
     bankName: '국민은행',
     bankAccount: '123-45-67890',
-    rating: 4.5,
-    status: '승인',
+    rating: 3,
+    status: '거절',
   },
   {
     id: 4,
@@ -95,8 +96,8 @@ const seller: Seller[] = [
     address: '서울시 강남구 테헤란로 456, 7층',
     bankName: '국민은행',
     bankAccount: '123-45-67890',
-    rating: 4.5,
-    status: '승인',
+    rating: 4.2,
+    status: '대기',
   },
 ];
 
@@ -108,9 +109,15 @@ const statusBadge: Record<Status, string> = {
 };
 
 export default function MembersPage() {
+  const [search, setSearch] = useState('');
   const [sellerList, setSellerList] = useState<Seller[]>(seller);
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [editSeller, setEditSeller] = useState<Seller | null>(null);
+
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
+  const [filterCharge, setFilterCharge] = useState<string>('all');
+  const [filterRating, setFilterRating] = useState<string>('all');
 
   const handleViewDetail = (seller: Seller) => {
     setSelectedSeller(seller);
@@ -125,6 +132,26 @@ export default function MembersPage() {
     setSellerList((prev) => prev.map((s) => (s.id === editSeller.id ? editSeller : s)));
     setEditSeller(null);
   };
+  const filtered = seller.filter((s) => {
+    const matchSearch = s.name.includes(search) || s.number.includes(search);
+    const matchStatus = filterStatus === 'all' || s.status === filterStatus;
+
+    const chargeNum = parseFloat(s.charge);
+    const matchCharge =
+      filterCharge === 'all' ||
+      (filterCharge === 'low' && chargeNum <= 10) ||
+      (filterCharge === 'mid' && chargeNum > 10 && chargeNum <= 20) ||
+      (filterCharge === 'high' && chargeNum > 20);
+
+    const matchRating =
+      filterRating === 'all' ||
+      (filterRating === '4.5+' && s.rating >= 4.5) ||
+      (filterRating === '4.0+' && s.rating >= 4.0 && s.rating < 4.5) ||
+      (filterRating === 'low' && s.rating < 4.0);
+
+    return matchSearch && matchStatus && matchCharge && matchRating;
+  });
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -132,10 +159,77 @@ export default function MembersPage() {
           <h1 className="text-2xl font-bold">판매자 관리</h1>
           <p className="text-sm text-muted-foreground">전체 판매자: {sellerList.length}명</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setShowFilter((prev) => !prev)}
+        >
           <Filter size={14} />
           필터
         </Button>
+      </div>
+      {showFilter && (
+        <div className="flex flex-wrap items-end gap-3 rounded-md border bg-white p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">상태</span>
+            <Select
+              value={filterStatus}
+              onValueChange={(v) => setFilterStatus(v as Status | 'all')}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="승인">승인</SelectItem>
+                <SelectItem value="대기">대기</SelectItem>
+                <SelectItem value="거절">거절</SelectItem>
+                <SelectItem value="정지">정지</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">수수료율</span>
+            <Select value={filterCharge} onValueChange={setFilterCharge}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="low">10% 이하</SelectItem>
+                <SelectItem value="mid">10~20%</SelectItem>
+                <SelectItem value="high">20% 초과</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">평점</span>
+            <Select value={filterRating} onValueChange={setFilterRating}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="4.5+">4.5 이상</SelectItem>
+                <SelectItem value="4.0+">4.0 ~ 4.5</SelectItem>
+                <SelectItem value="low">4.0 미만</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+      <div className="relative">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
+          className="pl-9"
+          placeholder="판매자명, 사업자 번호로 검색"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       <div className="overflow-x-auto rounded-md border bg-white">
@@ -153,7 +247,7 @@ export default function MembersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sellerList.map((s) => (
+            {filtered.map((s) => (
               <TableRow key={s.id}>
                 <TableCell className="font-medium">{s.name}</TableCell>
                 <TableCell className="text-muted-foreground">{s.number}</TableCell>
@@ -280,7 +374,9 @@ export default function MembersPage() {
                 <label className="text-muted-foreground">상태</label>
                 <Select
                   value={editSeller.status}
-                  onValueChange={(value) => setEditSeller({ ...editSeller, status: value as Status })}
+                  onValueChange={(value) =>
+                    setEditSeller({ ...editSeller, status: value as Status })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
