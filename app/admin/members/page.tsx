@@ -117,7 +117,7 @@ export default function MembersPage() {
         <Button
           variant="outline"
           size="sm"
-          className={`gap-1.5 ${showFilter}`}
+          className="gap-1.5"
           onClick={() => setShowFilter((prev) => !prev)}
         >
           <Filter size={14} />
