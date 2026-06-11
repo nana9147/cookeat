@@ -1,31 +1,53 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import api from '@/lib/api';
 
-const statCards = [
-  { label: '오늘 총 매출', value: '12,450,000원', trend: '+15.3%', up: true },
-  { label: '주문 건수', value: '342건', trend: '+8.2%', up: true },
-  { label: '신규 가입자', value: '28명', trend: '+12.5%', up: true },
-  { label: '판매자 가입', value: '5명', trend: '+2명', up: true },
-  { label: '취소/환불', value: '12건', trend: '-3.1%', up: false },
-  { label: '문의 건수', value: '47건', trend: '+5건', up: true },
-];
+interface StatCard {
+  label: string;
+  value: string;
+  trend: string;
+  up: boolean;
+}
 
-const popularProducts = [
-  { rank: 1, name: '신선한 양파', sub: '234건 판매', price: '1,250,000원' },
-  { rank: 2, name: '국내산 대파', sub: '189건 판매', price: '980,000원' },
-  { rank: 3, name: '프리미엄 소고기', sub: '87건 판매', price: '2,340,000원' },
-  { rank: 4, name: '유기농 당근', sub: '156건 판매', price: '780,000원' },
-];
+interface PopularProduct {
+  rank: number;
+  name: string;
+  sub: string;
+  price: string;
+}
 
-const categoryStats = [
-  { name: '채소', percent: 35, revenue: '4,500,000원' },
-  { name: '육류', percent: 25, revenue: '3,200,000원' },
-  { name: '과일', percent: 22, revenue: '2,800,000원' },
-  { name: '수산', percent: 18, revenue: '2,300,000원' },
-];
+interface CategoryStat {
+  name: string;
+  percent: number;
+  revenue: string;
+}
 
 export default function AdminPage() {
+  const [statCards, setStatCards] = useState<StatCard[]>([]);
+  const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
+  const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([]);
+
+  useEffect(() => {
+    api.get('/admin/dashboard').then(({ data }) => {
+      const s = data.statCards;
+
+      setStatCards([
+        { label: '오늘 총 매출', value: `${s.todayRevenue.toLocaleString()}원`, trend: '', up: true },
+        { label: '주문 건수', value: `${s.orderCount}건`, trend: '', up: true },
+        { label: '신규 가입자', value: `${s.newMembers}명`, trend: '', up: true },
+        { label: '판매자 가입', value: `${s.newSellers}명`, trend: '', up: true },
+        { label: '취소/환불', value: `${s.cancelCount}건`, trend: '', up: false },
+        { label: '문의 건수', value: `${s.inquiryCount}건`, trend: '', up: true },
+      ]);
+      setPopularProducts(data.popularProducts);
+      setCategoryStats(data.categoryStats);
+    });
+  }, []);
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -40,7 +62,7 @@ export default function AdminPage() {
               <p className="text-sm text-muted-foreground">{stat.label}</p>
               <p className="text-2xl font-bold mt-1">{stat.value}</p>
               <p
-                className={`flex items-center gap-1 text-sm mt-1 ${stat.up ? 'text-green-600' : 'text-red-500'}`}
+                className={`flex items-center gap-1 text-sm mt-1 ${stat.up ? 'text-primary' : 'text-red'}`}
               >
                 {stat.up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                 {stat.trend}
