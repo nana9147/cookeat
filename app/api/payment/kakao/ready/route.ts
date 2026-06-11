@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/serverAuth';
 
 const CID = process.env.KAKAO_CID ?? 'TC0ONETIME';
 const SECRET_KEY = process.env.KAKAO_SECRET_KEY!;
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL!;
 
 export async function POST(req: NextRequest) {
-  const { orderId, userId, itemName, quantity, totalAmount } = await req.json();
+  const authed = await requireAuth(req);
+  if (authed instanceof NextResponse) return authed;
+
+  const { orderId, itemName, quantity, totalAmount } = await req.json();
 
   const res = await fetch('https://open-api.kakaopay.com/online/v1/payment/ready', {
     method: 'POST',
@@ -16,7 +20,7 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({
       cid: CID,
       partner_order_id: orderId,
-      partner_user_id: userId,
+      partner_user_id: String(authed.userId),
       item_name: itemName,
       quantity,
       total_amount: totalAmount,

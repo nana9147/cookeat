@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/serverAuth';
 
 const CID = process.env.KAKAO_CID ?? 'TC0ONETIME';
 const SECRET_KEY = process.env.KAKAO_SECRET_KEY!;
 
 export async function POST(req: NextRequest) {
-  const { tid, pgToken, orderId, userId } = await req.json();
+  const authed = await requireAuth(req);
+  if (authed instanceof NextResponse) return authed;
+
+  const { tid, pgToken, orderId } = await req.json();
 
   const res = await fetch('https://open-api.kakaopay.com/online/v1/payment/approve', {
     method: 'POST',
@@ -16,7 +20,7 @@ export async function POST(req: NextRequest) {
       cid: CID,
       tid,
       partner_order_id: orderId,
-      partner_user_id: userId,
+      partner_user_id: String(authed.userId),
       pg_token: pgToken,
     }),
   });
