@@ -1,3 +1,5 @@
+import PhoneInput from '@/components/ui/PhoneInput';
+
 const inputCls = 'h-11 w-full px-4 rounded-lg border border-border text-sm outline-none focus:border-primary transition-colors disabled:bg-gray-50 disabled:text-gray-text';
 
 type CheckResult = { text: string; ok: boolean } | null;
@@ -34,7 +36,7 @@ export default function ProfileInfoFields({ email, nickname, onNicknameChange, n
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-dark-text">전화번호</label>
-        <input type="tel" value={phone} onChange={(e) => onPhoneChange(e.target.value)} placeholder="010-0000-0000" className={inputCls} />
+        <PhoneInput value={phone} onChange={onPhoneChange} className={inputCls} />
       </div>
     </>
   );

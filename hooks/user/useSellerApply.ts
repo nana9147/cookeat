@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import api from '@/lib/api';
 
 export type ApproveStatus = 'pending' | 'approved' | 'rejected';
 
@@ -27,25 +28,19 @@ export function useSellerApply() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  async function fetchApplication() {
+  const fetchApplication = useCallback(async () => {
     if (!accessToken) return;
-    fetch('/api/seller/apply', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((json) => setApplication(json.data ?? null))
+    api.get<{ data: SellerApplication | null }>('/seller/apply')
+      .then(({ data: json }) => setApplication(json.data ?? null))
       .catch(() => {
         setFetchError(true);
         setApplication(null);
       });
-  }
+  }, [accessToken]);
 
   useEffect(() => {
     fetchApplication();
-  }, [accessToken]);
+  }, [fetchApplication]);
 
   async function submit(fields: {
     isCoRepresentative: boolean;
@@ -60,31 +55,21 @@ export function useSellerApply() {
     setSubmitError('');
     setSubmitting(true);
 
-    const res = await fetch('/api/seller/apply', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(fields),
-    });
-
-    const json = await res.json();
-    setSubmitting(false);
-
-    if (!res.ok) {
-      // 필드별 validation 에러는 첫 번째 메시지만 노출
-      if (json.errors) {
-        const first = Object.values(json.errors as Record<string, string>)[0];
-        setSubmitError(first);
+    try {
+      await api.post('/seller/apply', fields);
+      await fetchApplication();
+      return true;
+    } catch (err) {
+      const data = (err as { data?: { errors?: Record<string, string>; error?: string } }).data;
+      if (data?.errors) {
+        setSubmitError(Object.values(data.errors)[0]);
       } else {
-        setSubmitError(json.error ?? '신청 중 오류가 발생했습니다.');
+        setSubmitError((err as Error).message || '신청 중 오류가 발생했습니다.');
       }
       return false;
+    } finally {
+      setSubmitting(false);
     }
-
-    await fetchApplication();
-    return true;
   }
 
   return { application, fetchError, submitting, submitError, submit };

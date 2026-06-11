@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import api from '@/lib/api';
+
+interface ApiProfile {
+  email?: string;
+  nickname?: string;
+  phone?: string;
+  isSocial?: boolean;
+  profileImage?: string | null;
+  point?: number;
+}
 
 interface UserInfo {
   nickname: string;
@@ -14,40 +24,19 @@ interface UserInfo {
 
 export function useUserInfo() {
   const { user, accessToken } = useAuthStore();
-  const [point, setPoint] = useState(0);
-  const [email, setEmail] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [phone, setPhone] = useState('');
-  const [isSocial, setIsSocial] = useState(false);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user?.email) setEmail(user.email);
-    if (user?.nickname) setNickname(user.nickname);
-    if (user?.isSocial !== undefined) setIsSocial(user.isSocial);
-    if (user?.profileImage) setProfileImage(user.profileImage);
-  }, [user]);
+  const [apiProfile, setApiProfile] = useState<ApiProfile | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
-    fetch('/api/auth/profile', { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((r) => r.json())
-      .then((data) => {
-        setPoint(data.point ?? 0);
-        if (data.email) setEmail(data.email);
-        if (data.nickname) setNickname(data.nickname);
-        setPhone(data.phone ?? '');
-        setIsSocial(data.isSocial ?? false);
-        setProfileImage(data.profileImage ?? null);
-      });
+    api.get<ApiProfile>('/auth/profile').then(({ data }) => setApiProfile(data));
   }, [accessToken]);
 
   return {
-    nickname,
-    email,
-    phone,
-    profileImage,
-    point,
-    isSocial,
+    email: apiProfile?.email ?? user?.email ?? '',
+    nickname: apiProfile?.nickname ?? user?.nickname ?? '',
+    phone: apiProfile?.phone ?? '',
+    profileImage: apiProfile?.profileImage ?? user?.profileImage ?? null,
+    isSocial: apiProfile?.isSocial ?? user?.isSocial ?? false,
+    point: apiProfile?.point ?? 0,
   } satisfies UserInfo;
 }

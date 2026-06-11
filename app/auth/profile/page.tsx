@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/auth/authService'
+import PhoneInput from '@/components/ui/PhoneInput'
 
 const inputCls = 'h-11 px-4 rounded-lg border border-border text-sm outline-none focus:border-primary transition-colors'
 const btnCls = 'h-11 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
@@ -75,7 +76,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-dark-text">전화번호</label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000" className={inputCls} autoFocus />
+            <PhoneInput value={phone} onChange={setPhone} className={inputCls} />
           </div>
           {error && <p className="text-xs text-red">{error}</p>}
           <button type="submit" disabled={!check?.ok || !phone.trim() || isLoading} className={btnCls}>
