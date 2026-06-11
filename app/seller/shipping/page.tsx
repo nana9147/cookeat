@@ -114,8 +114,12 @@ export default function ShippingPage() {
 
   return (
     <div className="bg-background p-8">
-      <div className="mb-8 pr-5 flex items-center justify-between">
-        <h1 className="text-h2 font-bold text-dark-text">배송 관리</h1>
+      <div className="mb-8">
+        <h1 className="text-h2 font-bold text-dark-text">
+          배송 관리
+          <span className="text-light-gray font-normal mx-2">/</span>
+          <span className="text-h4 font-medium">배송 처리</span>
+        </h1>
       </div>
       <StatusCards
         cards={statusCardData}
