@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { AddressFormType, AddressItem } from '@/types/seller/shipping';
+import { FormType , AddressItem } from '@/types/seller/shipping';
 import { Plus, MapPinOff } from 'lucide-react';
 import { useState } from 'react';
 import AddressCard from './AddressCard';
@@ -32,7 +32,7 @@ const MOCK_ADDRESSES: AddressItem[] = [
 export default function AddressList() {
   const [addresses, setAddresses] = useState<AddressItem[]>(MOCK_ADDRESSES);
   const [isOpen, setIsOpen] = useState(false);
-  const [formMode, setFormMode] = useState<AddressFormType>('등록');
+  const [formMode, setFormMode] = useState<FormType >('등록');
   const [selectedAddress, setSelectedAddress] = useState<AddressItem | undefined>(undefined);
 
   const origins = addresses.filter((a) => a.type === '출고지');
