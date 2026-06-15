@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import CartStepper from '@/components/(auth)/order/CartStepper';
-import PaymentSummary from '@/components/(auth)/order/PaymentSummary';
+import CartStepper from '@/components/(auth)/cart/CartStepper';
+import PaymentSummary from '@/components/(auth)/cart/PaymentSummary';
 import DeliverInfo from './DeliveryInfo';
 import OrderItems from './OrderItems';
 import PaymentMethod from './PaymentMethod';
@@ -16,7 +16,10 @@ export default function Checkout() {
 
   return (
     <div className="max-w-300 mx-auto px-4 desktop:px-6 py-6 desktop:py-10">
-      <h2 className="text-h3 desktop:text-h2 font-bold text-dark-text mb-2" suppressHydrationWarning>
+      <h2
+        className="text-h3 desktop:text-h2 font-bold text-dark-text mb-2"
+        suppressHydrationWarning
+      >
         주문/결제
       </h2>
       <CartStepper />
