@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import api from '@/lib/api';
+import Pagination from '@/components/ui/Pagination';
 
 type Grade = '일반' | 'VIP';
 type Status = 'active' | 'suspended';
@@ -51,9 +52,12 @@ const statusLabel: Record<Status, string> = {
   suspended: '정지',
 };
 
+const PAGE_SIZE = 20;
+
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [showFilter, setShowFilter] = useState(false);
@@ -71,6 +75,8 @@ export default function MembersPage() {
       try {
         const params = new URLSearchParams();
         if (filterStatus !== 'all') params.set('status', filterStatus);
+        params.set('page', String(page));
+        params.set('limit', String(PAGE_SIZE));
         const { data } = await api.get(`/admin/users?${params}`);
         if (!cancelled) {
           setMembers(data.users);
@@ -85,10 +91,11 @@ export default function MembersPage() {
     return () => {
       cancelled = true;
     };
-  }, [filterStatus]);
+  }, [filterStatus, page]);
 
   function handleFilterStatusChange(value: Status | 'all') {
     setFilterStatus(value);
+    setPage(1);
   }
 
   function handleEdit(member: Member) {
@@ -107,6 +114,16 @@ export default function MembersPage() {
     } catch {
       alert('상태 변경에 실패했습니다.');
     }
+  }
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  function getPageNumbers() {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    if (page >= totalPages - 3)
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', page - 1, page, page + 1, '...', totalPages];
   }
 
   const filtered = members.filter((m) => {
@@ -253,6 +270,16 @@ export default function MembersPage() {
           </TableBody>
         </Table>
       </div>
+
+      <div className="text-sm text-muted-foreground">
+        {total}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}명
+      </div>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        getPageNumbers={getPageNumbers}
+      />
 
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
         <DialogContent>
