@@ -6,7 +6,7 @@ export type { AuthUser } from './authTypes';
 export const authService = {
   login: async (email: string, password: string): Promise<LoginResult> => {
     const { user, session } = await api.post('/auth/login', { email, password }).then((r) => r.data);
-    return { user: toAuthUser(user), accessToken: session.access_token, refreshToken: session.refresh_token };
+    return { user: toAuthUser(user, user._role), accessToken: session.access_token, refreshToken: session.refresh_token };
   },
 
   register: async (email: string, password: string, nickname: string, phone: string): Promise<RegisterResult> => {
