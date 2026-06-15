@@ -14,16 +14,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-function StarRating({ count }: { count: number }) {
+function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          size={16}
-          className={i < count ? 'fill-yellow text-yellow' : 'fill-muted text-muted'}
-        />
-      ))}
+    <div className="flex items-center gap-1">
+      <Star size={14} className="fill-yellow text-yellow" />
+      <span className="text-xs text-muted-foreground">{rating.toFixed(1)}</span>
     </div>
   );
 }
@@ -175,7 +170,7 @@ export default function ReviewsPage() {
                 <TableCell className="font-medium">{r.productName}</TableCell>
                 <TableCell className="text-muted-foreground">{r.author}</TableCell>
                 <TableCell>
-                  <StarRating count={r.rating} />
+                  <StarRating rating={r.rating} />
                 </TableCell>
                 <TableCell className="text-muted-foreground">{r.date}</TableCell>
                 <TableCell className="text-red font-medium">{r.reportCount}건</TableCell>
@@ -253,7 +248,7 @@ export default function ReviewsPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">평점</p>
-                    <StarRating count={selected.rating} />
+                    <StarRating rating={selected.rating} />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">상태</p>

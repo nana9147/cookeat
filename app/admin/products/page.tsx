@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Pencil, Ban, Filter } from 'lucide-react';
+import { Eye, Pencil, Ban, Filter, Search } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -57,8 +58,8 @@ const product: Product[] = [
     name: '국내산 대파',
     category: '채소',
     cost: 2800,
-    stock: 89,
-    status: '판매중',
+    stock: 0,
+    status: '품절',
   },
   {
     id: 3,
@@ -66,8 +67,8 @@ const product: Product[] = [
     name: '프리미엄 소고기',
     category: '육류',
     cost: 28000,
-    stock: 0,
-    status: '품절',
+    stock: 4,
+    status: '판매중지',
   },
   {
     id: 4,
@@ -87,9 +88,14 @@ const statusBadge: Record<Status, string> = {
 };
 
 export default function ProductsPage() {
+  const [search, setSearch] = useState('');
   const [productList, setProductList] = useState<Product[]>(product);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
 
   const handleViewDetail = (product: Product) => {
     setSelectedProduct(product);
@@ -99,6 +105,13 @@ export default function ProductsPage() {
     setEditProduct({ ...product });
   };
 
+  const filtered = productList.filter((p) => {
+    const matchSearch = p.seller.includes(search) || p.name.includes(search);
+    const matchStatus = filterStatus === 'all' || p.status === filterStatus;
+    const matchCategory = filterCategory === 'all' || p.category === filterCategory;
+    return matchSearch && matchStatus && matchCategory;
+  });
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -106,10 +119,67 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold">상품 관리</h1>
           <p className="text-sm text-muted-foreground">전체 상품: 234개</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setShowFilter((prev) => !prev)}
+        >
           <Filter size={14} />
           필터
         </Button>
+      </div>
+      {showFilter && (
+        <div className="flex flex-wrap items-end gap-3 rounded-md border bg-white p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">상태</span>
+            <Select
+              value={filterStatus}
+              onValueChange={(v) => setFilterStatus(v as Status | 'all')}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="판매중">판매중</SelectItem>
+                <SelectItem value="품절">품절</SelectItem>
+                <SelectItem value="판매중지">판매중지</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">카테고리</span>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="채소">채소</SelectItem>
+                <SelectItem value="과일">과일</SelectItem>
+                <SelectItem value="육류">육류</SelectItem>
+                <SelectItem value="수산물">수산물</SelectItem>
+                <SelectItem value="유제품">유제품</SelectItem>
+                <SelectItem value="가공식품">가공식품</SelectItem>
+                <SelectItem value="기타">기타</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      <div className="relative">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
+          className="pl-9"
+          placeholder="판매자명, 상품명으로 검색"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       <div className="overflow-x-auto rounded-md border bg-white">
@@ -126,7 +196,7 @@ export default function ProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {productList.map((p) => (
+            {filtered.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell className="text-muted-foreground">{p.seller}</TableCell>
