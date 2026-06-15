@@ -1,3 +1,4 @@
+import Image from 'next/image';
 export default function HeroSection() {
   return (
     <div
@@ -18,7 +19,20 @@ export default function HeroSection() {
 
         <p className="text-gray-600 mb-8">다양한 레시피를 구경해 보세요!</p>
 
-        <button className="bg-green-700 text-white px-8 py-3 rounded-full font-medium">
+        <button
+          className="
+    bg-green-700
+    text-white
+    px-8
+    py-3
+    rounded-full
+    font-medium
+    transition-all
+    duration-300
+    hover:bg-green-800
+    hover:scale-105
+  "
+        >
           레시피 둘러보기
         </button>
 
@@ -31,15 +45,29 @@ export default function HeroSection() {
 
       <div
         className="
-        w-full
-        lg:w-[500px]
-        h-[180px]
-        md:h-[250px]
-        lg:h-[320px]
-        bg-[#E7E1D3]
-        rounded-2xl
-        "
-      />
+  relative
+  w-full
+  lg:w-[500px]
+  h-[180px]
+  md:h-[250px]
+  lg:h-[320px]
+  rounded-2xl
+  overflow-hidden
+  "
+      >
+        <Image
+          src="/images/categories/recipes/bibimbap.png"
+          alt="오늘의 추천 메뉴"
+          fill
+          priority
+          className="
+      object-cover
+      transition-transform
+      duration-500
+      hover:scale-105
+    "
+        />
+      </div>
     </div>
   );
 }
