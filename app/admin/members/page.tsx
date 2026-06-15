@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import api from '@/lib/api';
+import Pagination from '@/components/ui/Pagination';
 
 type Grade = '일반' | 'VIP';
 type Status = 'active' | 'suspended';
@@ -56,7 +57,6 @@ const PAGE_SIZE = 20;
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [total, setTotal] = useState(0);
-  const [hasNext, setHasNext] = useState(false);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -81,7 +81,6 @@ export default function MembersPage() {
         if (!cancelled) {
           setMembers(data.users);
           setTotal(data.pagination.total);
-          setHasNext(data.pagination.hasNext);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -115,6 +114,16 @@ export default function MembersPage() {
     } catch {
       alert('상태 변경에 실패했습니다.');
     }
+  }
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  function getPageNumbers() {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    if (page >= totalPages - 3)
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', page - 1, page, page + 1, '...', totalPages];
   }
 
   const filtered = members.filter((m) => {
@@ -262,30 +271,15 @@ export default function MembersPage() {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>
-          {total}명 중 {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, total)}명
-        </span>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page === 1 || loading}
-          >
-            이전
-          </Button>
-          <span className="px-1">{page}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!hasNext || loading}
-          >
-            다음
-          </Button>
-        </div>
+      <div className="text-sm text-muted-foreground">
+        {total}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}명
       </div>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        getPageNumbers={getPageNumbers}
+      />
 
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
         <DialogContent>
