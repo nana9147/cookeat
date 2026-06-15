@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import StatusBadge from '@/components/common/StatusBadge';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -222,14 +223,6 @@ const order: Order[] = [
   },
 ];
 
-const statusBadge: Record<Status, string> = {
-  결제완료: 'bg-primary text-white',
-  주문확인: 'bg-primary text-white',
-  배송준비: 'bg-yellow text-white',
-  배송중: 'bg-yellow text-white',
-  배송완료: 'bg-muted text-white',
-  취소: 'bg-red text-white',
-};
 
 export default function MembersPage() {
   const [search, setSearch] = useState('');
@@ -326,11 +319,7 @@ export default function MembersPage() {
                 <TableCell>{o.orderItems.length}개</TableCell>
                 <TableCell>{o.finalAmount.toLocaleString()}원</TableCell>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[o.status]}`}
-                  >
-                    {o.status}
-                  </span>
+                  <StatusBadge status={o.status} />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 text-muted-foreground">

@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import StatusBadge from '@/components/common/StatusBadge';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -109,11 +110,6 @@ const initialReviews: Review[] = [
   },
 ];
 
-const stateBadge: Record<Review['state'], string> = {
-  정상: 'bg-primary text-white',
-  신고: 'bg-red text-white',
-  처리완료: 'bg-muted text-muted-foreground',
-};
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
@@ -175,11 +171,7 @@ export default function ReviewsPage() {
                 <TableCell className="text-muted-foreground">{r.date}</TableCell>
                 <TableCell className="text-red font-medium">{r.reportCount}건</TableCell>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${stateBadge[r.state]}`}
-                  >
-                    {r.state}
-                  </span>
+                  <StatusBadge status={r.state} />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -252,11 +244,7 @@ export default function ReviewsPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">상태</p>
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${stateBadge[selected.state]}`}
-                    >
-                      {selected.state}
-                    </span>
+                    <StatusBadge status={selected.state} />
                   </div>
                 </div>
               </div>

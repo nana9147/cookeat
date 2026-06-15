@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye } from 'lucide-react';
+import StatusBadge from '@/components/common/StatusBadge';
 import {
   Table,
   TableHeader,
@@ -89,11 +90,6 @@ const recipes: Recipe[] = [
   },
 ];
 
-const statusBadge: Record<RecipeStatus, string> = {
-  공개: 'bg-primary text-white',
-  비공개: 'bg-muted text-muted-foreground',
-  신고: 'bg-red text-white',
-};
 
 export default function RecipesPage() {
   const [pointsPerView, setPointsPerView] = useState(5);
@@ -180,11 +176,7 @@ export default function RecipesPage() {
                   {Math.floor(recipe.points / 10)}백P
                 </TableCell>
                 <TableCell className="px-4 py-3 text-center">
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[recipe.status]}`}
-                  >
-                    {recipe.status}
-                  </span>
+                  <StatusBadge status={recipe.status} />
                 </TableCell>
                 <TableCell className="px-4 py-3 text-center">
                   <Button
@@ -239,11 +231,7 @@ export default function RecipesPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">상태</p>
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[selectedRecipes.status]}`}
-                    >
-                      {selectedRecipes.status}
-                    </span>
+                    <StatusBadge status={selectedRecipes.status} />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">신고 횟수</p>

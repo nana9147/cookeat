@@ -12,6 +12,7 @@ import {
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import StatusBadge from '@/components/common/StatusBadge';
 import {
   Dialog,
   DialogContent,
@@ -81,11 +82,6 @@ const product: Product[] = [
   },
 ];
 
-const statusBadge: Record<Status, string> = {
-  판매중: 'bg-primary text-white',
-  품절: 'bg-red text-white',
-  판매중지: 'bg-red text-white',
-};
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('');
@@ -204,11 +200,7 @@ export default function ProductsPage() {
                 <TableCell>{p.cost}원</TableCell>
                 <TableCell>{p.stock}개</TableCell>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[p.status]}`}
-                  >
-                    {p.status}
-                  </span>
+                  <StatusBadge status={p.status} />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -272,11 +264,7 @@ export default function ProductsPage() {
               </div>
               <div className="border-t pt-3 flex justify-between">
                 <span className="text-muted-foreground">상태</span>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[selectedProduct.status]}`}
-                >
-                  {selectedProduct.status}
-                </span>
+                <StatusBadge status={selectedProduct.status} />
               </div>
             </div>
           )}

@@ -20,6 +20,7 @@ import {
   SelectValue,
   SelectItem,
 } from '@/components/ui/select';
+import StatusBadge from '@/components/common/StatusBadge';
 
 type Status = '승인' | '대기' | '거절' | '정지';
 
@@ -101,12 +102,6 @@ const seller: Seller[] = [
   },
 ];
 
-const statusBadge: Record<Status, string> = {
-  승인: 'bg-primary text-white',
-  거절: 'bg-red text-white',
-  정지: 'bg-red text-white',
-  대기: 'bg-yellow text-white',
-};
 
 export default function MembersPage() {
   const [search, setSearch] = useState('');
@@ -258,11 +253,7 @@ export default function MembersPage() {
                 </TableCell>
                 <TableCell>{s.charge}</TableCell>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[s.status]}`}
-                  >
-                    {s.status}
-                  </span>
+                  <StatusBadge status={s.status} />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -334,11 +325,7 @@ export default function MembersPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">상태</span>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[selectedSeller.status]}`}
-                >
-                  {selectedSeller.status}
-                </span>
+                <StatusBadge status={selectedSeller.status} />
               </div>
               <div className="border-t pt-3 flex justify-between">
                 <span className="text-muted-foreground">사업장 주소</span>
