@@ -264,7 +264,7 @@ export default function MembersPage() {
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          {total}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}명
+          {total}명 중 {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, total)}명
         </span>
         <div className="flex items-center gap-2">
           <Button
