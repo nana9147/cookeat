@@ -51,9 +51,13 @@ const statusLabel: Record<Status, string> = {
   suspended: '정지',
 };
 
+const PAGE_SIZE = 20;
+
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [total, setTotal] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [showFilter, setShowFilter] = useState(false);
@@ -71,10 +75,13 @@ export default function MembersPage() {
       try {
         const params = new URLSearchParams();
         if (filterStatus !== 'all') params.set('status', filterStatus);
+        params.set('page', String(page));
+        params.set('limit', String(PAGE_SIZE));
         const { data } = await api.get(`/admin/users?${params}`);
         if (!cancelled) {
           setMembers(data.users);
           setTotal(data.pagination.total);
+          setHasNext(data.pagination.hasNext);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -85,10 +92,11 @@ export default function MembersPage() {
     return () => {
       cancelled = true;
     };
-  }, [filterStatus]);
+  }, [filterStatus, page]);
 
   function handleFilterStatusChange(value: Status | 'all') {
     setFilterStatus(value);
+    setPage(1);
   }
 
   function handleEdit(member: Member) {
@@ -252,6 +260,31 @@ export default function MembersPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>
+          {total}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}명
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p - 1)}
+            disabled={page === 1 || loading}
+          >
+            이전
+          </Button>
+          <span className="px-1">{page}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasNext || loading}
+          >
+            다음
+          </Button>
+        </div>
       </div>
 
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
