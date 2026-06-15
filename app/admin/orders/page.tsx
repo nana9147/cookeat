@@ -223,8 +223,7 @@ const order: Order[] = [
   },
 ];
 
-
-export default function MembersPage() {
+export default function OrdersPage() {
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderList, setOrderList] = useState<Order[]>(order);
