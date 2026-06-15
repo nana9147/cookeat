@@ -1,5 +1,10 @@
+import { Suspense } from 'react';
 import Complete from '@/components/(auth)/cart/complete/Complete';
 
 export default function CompletePage() {
-  return <Complete />;
+  return (
+    <Suspense>
+      <Complete />
+    </Suspense>
+  );
 }

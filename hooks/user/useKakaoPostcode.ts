@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
-    kakao: {
+    kakao?: {
       Postcode: new (options: {
         oncomplete: (data: KakaoPostcodeData) => void;
       }) => { open: () => void };
@@ -36,6 +36,7 @@ export function useKakaoPostcode(onChange: (fullAddress: string) => void) {
   }, []);
 
   function openPostcode() {
+    if (!window.kakao) return;
     new window.kakao.Postcode({
       oncomplete(data) {
         let extra = '';

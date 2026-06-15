@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Phone, Place } from './CheckoutIcons';
 
 const MOCK_ADDRESSES = [
@@ -9,6 +9,12 @@ const MOCK_ADDRESSES = [
 ];
 
 type Address = (typeof MOCK_ADDRESSES)[number];
+
+export interface SelectedAddress {
+  recipient: string;
+  phone: string;
+  address: string;
+}
 
 function AddressCard({ addr, isSelected, onSelect }: { addr: Address; isSelected: boolean; onSelect: (id: number) => void }) {
   return (
@@ -38,8 +44,20 @@ function AddressCard({ addr, isSelected, onSelect }: { addr: Address; isSelected
   );
 }
 
-export default function DeliveryInfo() {
+export default function DeliveryInfo({ onAddressSelect }: { onAddressSelect?: (addr: SelectedAddress) => void }) {
   const [selectedId, setSelectedId] = useState(1);
+
+  useEffect(() => {
+    const initial = MOCK_ADDRESSES.find((a) => a.id === 1)!;
+    onAddressSelect?.({ recipient: initial.name, phone: initial.phone, address: initial.address });
+  }, []);
+
+  function handleSelect(id: number) {
+    setSelectedId(id);
+    const selected = MOCK_ADDRESSES.find((a) => a.id === id)!;
+    onAddressSelect?.({ recipient: selected.name, phone: selected.phone, address: selected.address });
+  }
+
   return (
     <section className="py-6 border-b border-border">
       <h3 className="text-h4 font-bold text-dark-text mb-4">
@@ -47,7 +65,7 @@ export default function DeliveryInfo() {
       </h3>
       <div className="flex flex-col gap-3">
         {MOCK_ADDRESSES.map((addr) => (
-          <AddressCard key={addr.id} addr={addr} isSelected={selectedId === addr.id} onSelect={setSelectedId} />
+          <AddressCard key={addr.id} addr={addr} isSelected={selectedId === addr.id} onSelect={handleSelect} />
         ))}
       </div>
       <button type="button" className="mt-3 w-full py-3 border border-dashed border-muted rounded-xl text-sm text-gray-text hover:bg-hover transition-colors">
