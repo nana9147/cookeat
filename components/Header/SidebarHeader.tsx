@@ -1,4 +1,4 @@
-import { useHeaderUIStore } from '@/store/header/headerStore';
+import { useHeaderUIStore } from '@/store/headerStore';
 
 export default function SidebarHeader() {
   const closeSidebar = useHeaderUIStore((state) => state.closeSidebar);

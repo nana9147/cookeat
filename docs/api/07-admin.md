@@ -143,16 +143,15 @@
 
 `Response 200`
 
-| 필드             | 타입      | 설명                          |
-| ---------------- | --------- | ----------------------------- |
-| `sellerId`       | `int`     | 판매자 ID                     |
-| `storeName`      | `string`  | 상호명                        |
-| `email`          | `string`  | 이메일                        |
-| `businessNumber` | `string`  | 사업자 번호                   |
-| `isApproved`     | `boolean` | 승인 여부                     |
-| `status`         | `string`  | 상태 (`승인`, `대기`, `거절`) |
-| `productCount`   | `int`     | 등록 상품 수                  |
-| `createdAt`      | `string`  | 신청일 (ISO 8601)             |
+| 필드             | 타입     | 설명                                          |
+| ---------------- | -------- | --------------------------------------------- |
+| `sellerId`       | `int`    | 판매자 ID                                     |
+| `storeName`      | `string` | 상호명                                        |
+| `email`          | `string` | 이메일                                        |
+| `businessNumber` | `string` | 사업자 번호                                   |
+| `approveStatus`  | `string` | 승인 상태 (`pending`, `approved`, `rejected`) |
+| `productCount`   | `int`    | 등록 상품 수                                  |
+| `createdAt`      | `string` | 신청일 (ISO 8601)                             |
 
 ```json
 {
@@ -164,8 +163,7 @@
         "storeName": "건강한 농장",
         "email": "seller@example.com",
         "businessNumber": "000-00-00000",
-        "isApproved": false,
-        "status": "대기",
+        "approveStatus": "pending",
         "productCount": 0,
         "createdAt": "2026-05-30T00:00:00Z"
       }
@@ -179,13 +177,13 @@
 
 `Request Body`
 
-| 필드       | 타입      | 필수 | 설명                       |
-| ---------- | --------- | ---- | -------------------------- |
-| `approved` | `boolean` | ✓    | `true` 승인 / `false` 거절 |
-| `reason`   | `string`  | ✗    | 거절 사유                  |
+| 필드     | 타입     | 필수 | 설명                              |
+| -------- | -------- | ---- | --------------------------------- |
+| `status` | `string` | ✓    | `approved` 또는 `rejected`        |
+| `reason` | `string` | ✗    | 거절 사유 (`rejected` 시 권장)    |
 
 ```json
-{ "approved": true, "reason": null }
+{ "status": "rejected", "reason": "서류 미비" }
 ```
 
 ---

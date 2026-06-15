@@ -1,0 +1,199 @@
+// app/seller/orders/page.tsx
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
+import type { Order, OrderStatus, OrderStatusFilter, StatusCardItem } from '@/types/seller/order';
+import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
+import OrderTable from '../components/OrderList/OrderTable';
+import StatusCards from '@/components/ui/StatusCards';
+import { useFilter } from '@/hooks/useFilter';
+
+const statuses: (OrderStatus | '전체')[] = [
+  '전체',
+  '결제완료',
+  '배송완료',
+  '배송준비중',
+  '배송중',
+  '취소',
+  '환불',
+];
+
+const orders: Order[] = [
+  {
+    id: 'ORD-2024-001',
+    customer: '김가을',
+    product: '유기농 토마토 500g',
+    price: 15900,
+    status: '배송준비중',
+    orderDate: '2026-06-09 11:56:39',
+  },
+  {
+    id: 'ORD-2024-002',
+    customer: '이여름',
+    product: '무농약 상추 300g',
+    price: 8500,
+    status: '결제완료',
+    orderDate: '2026-06-09 14:16:22',
+  },
+  {
+    id: 'ORD-2024-003',
+    customer: '박겨울',
+    product: '국내산 달걀 30구',
+    price: 12000,
+    status: '배송중',
+    orderDate: '2026-06-08 09:23:11',
+  },
+  {
+    id: 'ORD-2024-004',
+    customer: '최봄',
+    product: '유기농 감자 1kg',
+    price: 9800,
+    status: '배송완료',
+    orderDate: '2026-06-07 16:44:05',
+  },
+  {
+    id: 'ORD-2024-005',
+    customer: '정하늘',
+    product: '프리미엄 올리브유',
+    price: 32000,
+    status: '결제완료',
+    orderDate: '2026-06-09 10:12:33',
+  },
+  {
+    id: 'ORD-2024-006',
+    customer: '한바다',
+    product: '생크림 200ml',
+    price: 4800,
+    status: '배송중',
+    orderDate: '2026-06-08 13:55:47',
+  },
+  {
+    id: 'ORD-2024-007',
+    customer: '윤서준',
+    product: '유기농 양파 1kg',
+    price: 5500,
+    status: '취소',
+    orderDate: '2026-06-07 08:30:22',
+  },
+  {
+    id: 'ORD-2024-008',
+    customer: '임지아',
+    product: '신선 토마토 500g',
+    price: 8500,
+    status: '환불',
+    orderDate: '2026-06-06 15:20:18',
+  },
+  {
+    id: 'ORD-2024-009',
+    customer: '강민준',
+    product: '쌀 10kg',
+    price: 45000,
+    status: '배송완료',
+    orderDate: '2026-06-05 11:10:09',
+  },
+  {
+    id: 'ORD-2024-010',
+    customer: '오수빈',
+    product: '밀키트 2인분',
+    price: 18000,
+    status: '취소',
+    orderDate: '2026-06-09 09:05:55',
+  },
+  {
+    id: 'ORD-2024-010',
+    customer: '오수빈',
+    product: '밀키트 2인분',
+    price: 18000,
+    status: '취소',
+    orderDate: '2026-06-09 09:05:55',
+  },
+];
+
+const statusCardData: StatusCardItem[] = [
+  {
+    label: '결제완료',
+    count: orders.filter((o) => o.status === '결제완료').length,
+    filterValue: '결제완료',
+  },
+  {
+    label: '배송준비중',
+    count: orders.filter((o) => o.status === '배송준비중').length,
+    filterValue: '배송준비중',
+  },
+  {
+    label: '배송중',
+    count: orders.filter((o) => o.status === '배송중').length,
+    filterValue: '배송중',
+  },
+  {
+    label: '배송완료',
+    count: orders.filter((o) => o.status === '배송완료').length,
+    filterValue: '배송완료',
+  },
+  {
+    label: '취소/환불',
+    count: orders.filter((o) => o.status === '취소' || o.status === '환불').length,
+    filterValue: '취소환불',
+  },
+];
+
+const ORDER_COLOR_MAP = {
+  결제완료: 'text-green-500',
+  배송준비중: 'text-yellow-500',
+  배송중: 'text-blue-500',
+  배송완료: 'text-taupe-500',
+  '취소/환불': 'text-red-500',
+};
+
+export default function OrdersPage() {
+  const [status, setStatus] = useState<OrderStatusFilter>('전체');
+
+  const {
+    search,
+    setSearch,
+    filtered: filteredBySearch,
+  } = useFilter(orders, (o, search) => o.customer.includes(search) || o.id.includes(search));
+
+  const filtered = filteredBySearch.filter((o) => {
+    return status === '전체'
+      ? true
+      : status === '취소환불'
+        ? o.status === '취소' || o.status === '환불'
+        : o.status === status;
+  });
+
+  return (
+    <div className="bg-background p-8">
+      <div className="flex flex-row justify-between items-center mb-8">
+        <h1 className="text-h2 font-bold text-dark-text">주문 관리</h1>
+        <Button>
+          <Download />
+          엑셀 다운로드
+        </Button>
+      </div>
+      <StatusCards
+        cards={statusCardData}
+        status={status}
+        onStatusChange={setStatus}
+        colorMap={ORDER_COLOR_MAP}
+        cols={5}
+      />
+      <OrderSearchFilter
+        search={search}
+        onSearchChange={setSearch}
+        status={status}
+        onStatusChange={setStatus}
+        statuses={statuses}
+      />
+      <div className="flex items-center justify-start mb-2 px-5">
+        <p className="text-sm text-gray-500">
+          총 <span className="font-semibold text-gray-800">{filtered.length}</span>건
+        </p>
+      </div>
+
+      <OrderTable orders={filtered} />
+    </div>
+  );
+}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { CartIcon, MenuIcon, UserIcon } from './HeaderIcons';
-import { useHeaderUIStore } from '@/store/header/headerStore';
+import { useHeaderUIStore } from '@/store/headerStore';
 
 interface Props {
   token: string | null;
@@ -15,12 +15,18 @@ export default function HeaderActions({ token }: Props) {
     <div className="flex items-center gap-1 ml-auto desktop:ml-0 shrink-0">
       {token ? (
         <>
-          <button className="p-2 text-dark-text hover:text-primary transition-colors">
+          <Link
+            href="/cart"
+            className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors"
+          >
             <CartIcon />
-          </button>
-          <button className="p-2 text-dark-text hover:text-primary transition-colors">
+          </Link>
+          <Link
+            href="/mypage"
+            className="hidden desktop:block p-2 text-dark-text hover:text-primary transition-colors"
+          >
             <UserIcon />
-          </button>
+          </Link>
         </>
       ) : (
         <Link
