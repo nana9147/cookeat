@@ -22,6 +22,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import api from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
+import StatusBadge from '@/components/common/StatusBadge';
 
 type Grade = '일반' | 'VIP';
 type Status = 'active' | 'suspended';
@@ -36,16 +37,6 @@ interface Member {
   status: Status;
   point: number;
 }
-
-const gradeBadge: Record<Grade, string> = {
-  일반: 'bg-beige text-black',
-  VIP: 'bg-yellow text-white',
-};
-
-const statusBadge: Record<Status, string> = {
-  active: 'bg-primary text-white',
-  suspended: 'bg-red text-white',
-};
 
 const statusLabel: Record<Status, string> = {
   active: '정상',
@@ -232,19 +223,11 @@ export default function MembersPage() {
                     {new Date(member.createdAt).toLocaleDateString('ko-KR')}
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${gradeBadge[member.grade]}`}
-                    >
-                      {member.grade}
-                    </span>
+                    <StatusBadge status={member.grade} />
                   </TableCell>
                   <TableCell>{member.orderCount}건</TableCell>
                   <TableCell>
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[member.status]}`}
-                    >
-                      {statusLabel[member.status]}
-                    </span>
+                    <StatusBadge status={statusLabel[member.status]} />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -302,11 +285,7 @@ export default function MembersPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">등급</span>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-medium ${gradeBadge[selectedMember.grade]}`}
-                >
-                  {selectedMember.grade}
-                </span>
+                <StatusBadge status={selectedMember.grade} />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">주문수</span>
@@ -318,11 +297,7 @@ export default function MembersPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">상태</span>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[selectedMember.status]}`}
-                >
-                  {statusLabel[selectedMember.status]}
-                </span>
+                <StatusBadge status={statusLabel[selectedMember.status]} />
               </div>
             </div>
           )}

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import StatusBadge from '@/components/common/StatusBadge';
 
 type InquiryState = '답변대기' | '처리중' | '답변완료';
 type InquiryCategory = '배송' | '환불' | '상품' | '기타';
@@ -24,18 +25,6 @@ interface Inquiry {
   state: InquiryState;
 }
 
-const categoryBadge: Record<InquiryCategory, string> = {
-  배송: 'bg-blue-100 text-blue-700',
-  환불: 'bg-red-100 text-red',
-  상품: 'bg-green-100 text-green-700',
-  기타: 'bg-gray-100 text-gray-700',
-};
-
-const stateBadge: Record<InquiryState, string> = {
-  답변대기: 'bg-yellow text-white',
-  처리중: 'bg-primary text-white',
-  답변완료: 'bg-beige text-foreground',
-};
 
 const inquiries: Inquiry[] = [
   {
@@ -127,19 +116,11 @@ export default function SupportPage() {
                 <TableCell className="font-medium">{inq.title}</TableCell>
                 <TableCell className="text-muted-foreground">{inq.author}</TableCell>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${categoryBadge[inq.category]}`}
-                  >
-                    {inq.category}
-                  </span>
+                  <StatusBadge status={inq.category} />
                 </TableCell>
                 <TableCell className="text-muted-foreground">{inq.date}</TableCell>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${stateBadge[inq.state]}`}
-                  >
-                    {inq.state}
-                  </span>
+                  <StatusBadge status={inq.state} />
                 </TableCell>
                 <TableCell>
                   <Button size="sm" className="h-7 px-3 text-xs">

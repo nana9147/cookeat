@@ -14,6 +14,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import StatusBadge from '@/components/common/StatusBadge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 type InquiryState = '답변대기' | '처리중' | '답변완료';
@@ -37,11 +38,6 @@ interface Inquiry {
   messages: Message[];
 }
 
-const stateBadge: Record<InquiryState, string> = {
-  답변대기: 'bg-yellow text-white',
-  처리중: 'bg-primary text-white',
-  답변완료: 'bg-beige text-foreground',
-};
 
 const initialInquiries: Inquiry[] = [
   {
@@ -239,11 +235,7 @@ export default function InquiryPage() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{inq.date}</TableCell>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${stateBadge[inq.state]}`}
-                  >
-                    {inq.state}
-                  </span>
+                  <StatusBadge status={inq.state} />
                 </TableCell>
                 <TableCell>
                   <button
@@ -275,11 +267,7 @@ export default function InquiryPage() {
                     <span>{selectedInquiry.date}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${stateBadge[selectedInquiry.state]}`}
-                    >
-                      {selectedInquiry.state}
-                    </span>
+                    <StatusBadge status={selectedInquiry.state} />
                     {selectedInquiry.state !== '답변완료' && (
                       <button
                         onClick={markDone}

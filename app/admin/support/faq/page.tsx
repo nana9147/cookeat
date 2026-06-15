@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import StatusBadge from '@/components/common/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -42,13 +43,6 @@ interface Faq {
   status: FaqStatus;
 }
 
-const categoryBadge: Record<Exclude<FaqCategory, '전체'>, string> = {
-  배송: 'bg-blue-100 text-blue-700',
-  환불: 'bg-red-100 text-red',
-  상품: 'bg-green-100 text-green-700',
-  회원: 'bg-yellow-100 text-yellow',
-  결제: 'bg-purple-100 text-purple-700',
-};
 
 const CATEGORIES: FaqCategory[] = ['전체', '배송', '환불', '상품', '회원', '결제'];
 const FAQ_CATEGORIES = CATEGORIES.filter((c): c is Exclude<FaqCategory, '전체'> => c !== '전체');
@@ -205,11 +199,7 @@ export default function FaqPage() {
             {filtered.map((faq) => (
               <TableRow key={faq.id}>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${categoryBadge[faq.category]}`}
-                  >
-                    {faq.category}
-                  </span>
+                  <StatusBadge status={faq.category} />
                 </TableCell>
                 <TableCell className="font-medium">{faq.title}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -217,15 +207,7 @@ export default function FaqPage() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{faq.date}</TableCell>
                 <TableCell>
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${
-                      faq.status === '공개'
-                        ? 'bg-primary text-white'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {faq.status}
-                  </span>
+                  <StatusBadge status={faq.status} />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">

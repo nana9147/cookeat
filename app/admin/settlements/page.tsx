@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { CreditCard, Building2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import StatusBadge from '@/components/common/StatusBadge';
 
 const statCards = [
   { label: '정산 대기', value: '870만원', sub: '3건' },
@@ -161,10 +162,6 @@ const settlements: Settlement[] = [
   },
 ];
 
-const statusBadge: Record<SettlementStatus, string> = {
-  정산대기: 'bg-yellow text-white',
-  정산완료: 'bg-primary text-white',
-};
 
 export default function SettlementsPage() {
   const [activeTab, setActiveTab] = useState<SettlementStatus>('정산대기');
@@ -239,11 +236,7 @@ export default function SettlementsPage() {
                   <div className="space-y-3 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{s.seller}</span>
-                      <span
-                        className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge[s.status]}`}
-                      >
-                        {s.status}
-                      </span>
+                      <StatusBadge status={s.status} />
                     </div>
                     <p className="text-sm text-muted-foreground">{s.period}</p>
                     <div className="grid grid-cols-3 gap-4 max-w-sm">
