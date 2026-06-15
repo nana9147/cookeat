@@ -1,4 +1,4 @@
-import Complete from '@/components/(auth)/order/complete/Complete';
+import Complete from '@/components/(auth)/cart/complete/Complete';
 
 export default function CompletePage() {
   return <Complete />;

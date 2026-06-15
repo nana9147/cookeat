@@ -1,6 +1,6 @@
-import CartStepper from '@/components/(auth)/order/CartStepper';
-import Cart from '@/components/(auth)/order/Cart';
-import OrderList from '@/components/(auth)/order/OrderList';
+import CartStepper from '@/components/(auth)/cart/CartStepper';
+import Cart from '@/components/(auth)/cart/Cart';
+import OrderList from '@/components/(auth)/cart/OrderList';
 
 export default function Order() {
   return (
