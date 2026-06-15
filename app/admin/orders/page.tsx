@@ -277,6 +277,7 @@ export default function OrdersPage() {
                 <SelectItem value="배송중">배송중</SelectItem>
                 <SelectItem value="배송완료">배송완료</SelectItem>
                 <SelectItem value="배송준비">배송준비</SelectItem>
+                <SelectItem value="취소">취소</SelectItem>
               </SelectContent>
             </Select>
           </div>
