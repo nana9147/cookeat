@@ -51,7 +51,12 @@ api.interceptors.response.use(
         if (error || !data.session) throw error ?? new Error('refresh failed')
 
         const { access_token, refresh_token } = data.session
-        useAuthStore.getState().setAuth(access_token, refresh_token, toAuthUser(data.user!))
+        const existingUser = useAuthStore.getState().user
+        if (existingUser) {
+          useAuthStore.getState().setAuth(access_token, refresh_token, existingUser)
+        } else {
+          useAuthStore.getState().setAuth(access_token, refresh_token, toAuthUser(data.user!))
+        }
 
         refreshQueue.forEach((cb) => cb(access_token))
         refreshQueue = []

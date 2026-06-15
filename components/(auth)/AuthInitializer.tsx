@@ -23,7 +23,12 @@ export default function AuthInitializer() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'TOKEN_REFRESHED' && session) {
-        setAuth(session.access_token, session.refresh_token, toAuthUser(session.user))
+        const existingUser = useAuthStore.getState().user
+        setAuth(
+          session.access_token,
+          session.refresh_token,
+          existingUser ?? toAuthUser(session.user),
+        )
       }
       if (event === 'SIGNED_OUT') clearAuth()
     })

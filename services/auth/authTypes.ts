@@ -1,9 +1,12 @@
+export type UserRole = 'user' | 'seller' | 'admin';
+
 export interface AuthUser {
   userId: string;
   email: string;
   nickname: string;
   profileImage: string | null;
   isSocial: boolean;
+  role: UserRole;
 }
 
 export interface LoginResult {
@@ -18,17 +21,21 @@ export interface RegisterResult {
   refreshToken: string | null;
 }
 
-export function toAuthUser(raw: {
-  id: string;
-  email?: string;
-  user_metadata?: { nickname?: string; avatar_url?: string; custom_avatar_url?: string };
-  app_metadata?: { provider?: string };
-}): AuthUser {
+export function toAuthUser(
+  raw: {
+    id: string;
+    email?: string;
+    user_metadata?: { nickname?: string; avatar_url?: string; custom_avatar_url?: string };
+    app_metadata?: { provider?: string };
+  },
+  role: UserRole = 'user',
+): AuthUser {
   return {
     userId: raw.id,
     email: raw.email ?? '',
     nickname: raw.user_metadata?.nickname ?? '',
     profileImage: raw.user_metadata?.custom_avatar_url ?? raw.user_metadata?.avatar_url ?? null,
     isSocial: raw.app_metadata?.provider !== 'email',
+    role,
   };
 }
