@@ -38,7 +38,7 @@
 
 > 스크린샷 추가 예정
 
-### 게시판
+### 재료 구매 목록
 
 > 스크린샷 추가 예정
 
@@ -52,7 +52,6 @@
 | :------------- | :-------------------------------------------- |
 | 🏠 **Home**    | 메인 페이지 — 인기 레시피 및 최신 게시글 노출 |
 | 🍽️ **Recipes** | 레시피 목록 — 검색 및 카테고리 필터           |
-| 📋 **Board**   | 커뮤니티 게시판 — 게시글 작성 · 조회 · 댓글   |
 | 👤 **My Page** | 내 정보 수정, 내 레시피, 즐겨찾기             |
 
 ### 🔐 인증 시스템
@@ -81,7 +80,18 @@
 
 ### 📦 주요 라이브러리
 
-> 추가 예정
+| 라이브러리                       | 버전         | 용도                 |
+| :------------------------------- | :----------- | :------------------- |
+| `@supabase/supabase-js`          | ^2.107.0     | DB 클라이언트        |
+| `axios`                          | ^1.16.1      | HTTP 통신            |
+| `zustand`                        | ^5.0.14      | 전역 상태 관리       |
+| `@tiptap/react` + extensions     | ^3.26.0      | 리치 텍스트 에디터   |
+| `@tosspayments/tosspayments-sdk` | ^2.7.0       | 토스페이 결제 SDK    |
+| `react-daum-postcode`            | ^4.0.0       | 카카오 주소 검색     |
+| `@dnd-kit/core` + sortable       | ^6.3 / ^10   | 드래그 앤 드롭       |
+| `shadcn` / `radix-ui`            | ^4.10 / ^1.4 | UI 컴포넌트          |
+| `lucide-react`                   | ^1.17.0      | 아이콘               |
+| `tailwind-merge` / `clsx`        | ^3.6 / ^2.1  | Tailwind 클래스 유틸 |
 
 ---
 
@@ -92,31 +102,27 @@ cookeat/
 ├── public/                   # 정적 에셋 (이미지, 아이콘 등)
 ├── app/                      # Next.js App Router
 │   ├── (auth)/               # 로그인·회원가입 라우트 그룹
-│   │   ├── login/
-│   │   └── register/
-│   │       └── complete/
-│   ├── (main)/               # 메인 라우트 그룹
-│   ├── api/                  # API 라우트
-│   │   └── auth/             # 인증 API (로그인·회원가입·닉네임확인·프로필)
-│   ├── auth/                 # OAuth 콜백·소셜 로그인 프로필 완성
-│   └── admin/                # 어드민 페이지
+│   ├── (main)/               # 메인 라우트 그룹 (board, cart, mypage, recipes)
+│   ├── admin/                # 어드민 페이지
+│   └── api/                  # API 라우트 (auth, admin, order, payment, seller, user)
 ├── components/
-│   ├── (auth)/               # 인증 관련 컴포넌트
-│   ├── Header/               # 헤더·사이드바 컴포넌트
+│   ├── (auth)/               # 페이지별 컴포넌트 (cart, login, mypage)
+│   ├── Header/               # 헤더·사이드바
+│   ├── Footer/               # 푸터
 │   └── ui/                   # shadcn/ui 기본 컴포넌트
 ├── hooks/
-│   └── auth/                 # 인증 훅 (로그인·회원가입·닉네임확인)
+│   ├── auth/                 # 인증 훅
+│   └── user/                 # 유저 훅 (프로필·판매자 신청·주소)
 ├── services/
 │   └── auth/                 # 인증 서비스 레이어 및 타입 정의
 ├── store/                    # Zustand 스토어 (인증·헤더 UI)
 ├── lib/                      # API 클라이언트·Supabase 인스턴스·유틸
+├── types/                    # 공통 타입 정의
+├── supabase/
+│   └── migrations/           # DB 마이그레이션 파일
 ├── docs/                     # 프로젝트 문서
 │   ├── api/                  # API 도메인별 상세 명세
 │   ├── daily_log/            # 팀원별 데일리 로그
-│   │   ├── 홍정빈/
-│   │   ├── 엄인호/
-│   │   ├── 최유종/
-│   │   └── 추유나/
 │   └── reviews/              # 리뷰 문서
 ├── next.config.ts
 └── package.json
@@ -171,6 +177,18 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
 # 서버 전용 관리자 키 (RLS 우회, 절대 클라이언트에 노출 금지) — Settings > API > Project API keys > service_role
 SUPABASE_SERVICE_ROLE_KEY=
+
+# KakaoPay
+KAKAO_SECRET_KEY=
+KAKAO_CID=
+NEXT_PUBLIC_BASE_URL=
+
+# TossPay (테스트 키)
+NEXT_PUBLIC_TOSS_CLIENT_KEY=
+TOSS_SECRET_KEY=
+
+# JWT
+JWT_SECRET=
 ```
 
 ---
@@ -179,9 +197,9 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 |  이름  | 역할 |                        GitHub                        |
 | :----: | :--: | :--------------------------------------------------: |
-| 홍정빈 | 팀장 | [@jbhong3010-ops](https://github.com/jbhong3010-ops) |
+| 최유종 | 팀장 |         [@jjong0](https://github.com/jjong0)         |
+| 홍정빈 | 팀원 | [@jbhong3010-ops](https://github.com/jbhong3010-ops) |
 | 엄인호 | 팀원 |         [@djsy01](https://github.com/djsy01)         |
-| 최유종 | 팀원 |         [@jjong0](https://github.com/jjong0)         |
 | 추유나 | 팀원 |       [@nana9147](https://github.com/nana9147)       |
 
 ---
