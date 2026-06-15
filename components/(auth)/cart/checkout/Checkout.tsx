@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import CartStepper from '@/components/(auth)/cart/CartStepper';
 import PaymentSummary from '@/components/(auth)/cart/PaymentSummary';
-import DeliverInfo from './DeliveryInfo';
+import DeliverInfo, { SelectedAddress } from './DeliveryInfo';
 import OrderItems from './OrderItems';
 import PaymentMethod from './PaymentMethod';
 import OrderAgreement from './OrderAgreement';
@@ -13,7 +13,8 @@ export default function Checkout() {
   const [allAgreed, setAllAgreed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [finalAmount, setFinalAmount] = useState(0);
-  const handlePay = useCheckoutPayment(paymentMethod, finalAmount);
+  const [deliveryInfo, setDeliveryInfo] = useState<SelectedAddress | null>(null);
+  const handlePay = useCheckoutPayment(paymentMethod, finalAmount, deliveryInfo);
 
   return (
     <div className="max-w-300 mx-auto px-4 desktop:px-6 py-6 desktop:py-10">
@@ -26,7 +27,7 @@ export default function Checkout() {
       <CartStepper />
       <div className="flex flex-col desktop:flex-row gap-6 desktop:gap-10 desktop:items-start">
         <div className="flex-1 min-w-0">
-          <DeliverInfo />
+          <DeliverInfo onAddressSelect={setDeliveryInfo} />
           <OrderItems />
           <PaymentMethod onPaymentChange={setPaymentMethod} />
           <OrderAgreement onAgreementChange={setAllAgreed} />

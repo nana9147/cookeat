@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  const { totalAmount, shippingFee = 0, couponDiscount = 0, finalAmount, paymentMethod } = await req.json();
+  const { totalAmount, shippingFee = 0, couponDiscount = 0, finalAmount, paymentMethod, recipient = '', phone = '', address = '' } = await req.json();
 
   if (!finalAmount || finalAmount <= 0) {
     return NextResponse.json({ error: '유효하지 않은 결제 금액입니다.' }, { status: 400 });
@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
       final_amount: finalAmount,
       payment_method: paymentMethod ?? '미정',
       status: '결제전',
-      recipient: '',
-      phone: '',
-      address: '',
+      recipient,
+      phone,
+      address,
       address_detail: '',
     })
     .select('order_id, final_amount')

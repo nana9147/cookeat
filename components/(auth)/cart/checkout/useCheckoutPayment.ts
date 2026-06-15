@@ -24,12 +24,21 @@ async function loadTossV1() {
   return (window as TossWindow).TossPayments!(TOSS_CLIENT_KEY);
 }
 
-export function useCheckoutPayment(paymentMethod: string, finalAmount: number) {
+interface DeliveryInfo {
+  recipient: string;
+  phone: string;
+  address: string;
+}
+
+export function useCheckoutPayment(paymentMethod: string, finalAmount: number, deliveryInfo: DeliveryInfo | null) {
   return async () => {
     try {
       const { data: order } = await api.post<{ orderId: string; finalAmount: number }>('/order', {
         finalAmount,
         paymentMethod,
+        recipient: deliveryInfo?.recipient ?? '',
+        phone: deliveryInfo?.phone ?? '',
+        address: deliveryInfo?.address ?? '',
       });
       const { orderId, finalAmount: confirmedAmount } = order;
 
