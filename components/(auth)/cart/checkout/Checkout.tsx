@@ -12,7 +12,8 @@ import { useCheckoutPayment } from './useCheckoutPayment';
 export default function Checkout() {
   const [allAgreed, setAllAgreed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
-  const handlePay = useCheckoutPayment(paymentMethod);
+  const [finalAmount, setFinalAmount] = useState(0);
+  const handlePay = useCheckoutPayment(paymentMethod, finalAmount);
 
   return (
     <div className="max-w-300 mx-auto px-4 desktop:px-6 py-6 desktop:py-10">
@@ -31,7 +32,7 @@ export default function Checkout() {
           <OrderAgreement onAgreementChange={setAllAgreed} />
         </div>
         <div className="w-full desktop:w-80 desktop:sticky desktop:top-6 shrink-0">
-          <PaymentSummary mode="checkout" allAgreed={allAgreed} onPay={handlePay} />
+          <PaymentSummary mode="checkout" allAgreed={allAgreed} onPay={handlePay} onAmountChange={setFinalAmount} />
         </div>
       </div>
     </div>

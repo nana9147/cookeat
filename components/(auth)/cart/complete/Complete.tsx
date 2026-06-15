@@ -35,7 +35,7 @@ export default function Complete() {
       const tid = sessionStorage.getItem('kakaoTid');
       const orderId = sessionStorage.getItem('kakaoOrderId');
       api
-        .post('/payment/kakao/approve', { tid, pgToken, orderId, userId: 'test_user' })
+        .post('/payment/kakao/approve', { tid, pgToken, orderId })
         .then(({ data }) => {
           sessionStorage.removeItem('kakaoTid');
           sessionStorage.removeItem('kakaoOrderId');

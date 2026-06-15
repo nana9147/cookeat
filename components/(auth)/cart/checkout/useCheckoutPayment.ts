@@ -2,7 +2,6 @@
 
 import api from '@/lib/api';
 
-const FINAL_AMOUNT = 35410;
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!;
 
 type TossWindow = Window & {
@@ -25,14 +24,19 @@ async function loadTossV1() {
   return (window as TossWindow).TossPayments!(TOSS_CLIENT_KEY);
 }
 
-export function useCheckoutPayment(paymentMethod: string) {
+export function useCheckoutPayment(paymentMethod: string, finalAmount: number) {
   return async () => {
-    const orderId = `ORDER_${Date.now()}`;
     try {
+      const { data: order } = await api.post<{ orderId: string; finalAmount: number }>('/order', {
+        finalAmount,
+        paymentMethod,
+      });
+      const { orderId, finalAmount: confirmedAmount } = order;
+
       if (paymentMethod === 'kakao') {
         try {
           const { data } = await api.post<{ tid: string; redirectUrl: string }>('/payment/kakao/ready', {
-            orderId, userId: 'test_user', itemName: 'Cookeat 주문', quantity: 1, totalAmount: FINAL_AMOUNT,
+            orderId, itemName: 'Cookeat 주문', quantity: 1, totalAmount: confirmedAmount,
           });
           sessionStorage.setItem('kakaoTid', data.tid);
           sessionStorage.setItem('kakaoOrderId', orderId);
@@ -42,15 +46,17 @@ export function useCheckoutPayment(paymentMethod: string) {
         }
         return;
       }
+
       if (paymentMethod === 'card' || paymentMethod === 'toss') {
         const toss = await loadTossV1();
         toss.requestPayment(paymentMethod === 'card' ? '카드' : '토스페이', {
-          amount: FINAL_AMOUNT, orderId, orderName: 'Cookeat 주문',
+          amount: confirmedAmount, orderId, orderName: 'Cookeat 주문',
           successUrl: `${window.location.origin}/cart/complete`,
           failUrl: `${window.location.origin}/cart/checkout`,
         });
         return;
       }
+
       alert('해당 결제 수단은 준비 중입니다.');
     } catch (err) {
       alert(`결제 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}`);
