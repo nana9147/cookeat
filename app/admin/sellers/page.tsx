@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
@@ -21,6 +21,10 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import StatusBadge from '@/components/common/StatusBadge';
+import api from '@/lib/api';
+import Pagination from '@/components/ui/Pagination';
+
+const PAGE_SIZE = 20;
 
 type Status = '승인' | '대기' | '거절' | '정지';
 
@@ -34,11 +38,48 @@ interface Seller {
   address: string;
   bankName: string;
   bankAccount: string;
-  rating: number;
+  representativeName: string;
+  csPhone: string;
+  rating: number | null;
   status: Status;
 }
 
-function StarRating({ rating }: { rating: number }) {
+interface ApiSeller {
+  sellerId: number;
+  storeName: string;
+  businessNumber: string;
+  businessAddress: string;
+  bankName: string;
+  bankAccount: string;
+  commissionRate: number;
+  representativeName: string;
+  csPhone: string;
+  status: Status;
+  productCount: number;
+  rating: number | null;
+  createdAt: string;
+}
+
+function toSeller(s: ApiSeller): Seller {
+  return {
+    id: s.sellerId,
+    number: s.businessNumber,
+    name: s.storeName,
+    charge: `${s.commissionRate}%`,
+    joinedAt: s.createdAt.split('T')[0].replace(/-/g, '.'),
+    productCount: s.productCount,
+    address: s.businessAddress,
+    bankName: s.bankName,
+    bankAccount: s.bankAccount,
+    representativeName: s.representativeName,
+    csPhone: s.csPhone,
+    rating: s.rating,
+    status: s.status,
+  };
+}
+
+function StarRating({ rating }: { rating: number | null }) {
+  if (rating === null) return <span className="text-xs text-muted-foreground">-</span>;
   return (
     <div className="flex items-center gap-1">
       <Star size={14} className="fill-yellow text-yellow" />
@@ -47,64 +88,12 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-const seller: Seller[] = [
-  {
-    id: 1,
-    number: '123-45-67890',
-    name: '신선마켓',
-    charge: '15%',
-    joinedAt: '2024.05.20',
-    productCount: 12,
-    address: '서울시 강남구 테헤란로 456, 7층',
-    bankName: '국민은행',
-    bankAccount: '123-45-67890',
-    rating: 4.5,
-    status: '승인',
-  },
-  {
-    id: 2,
-    number: '234-56-78901',
-    name: '채소나라',
-    charge: '15%',
-    joinedAt: '2024.05.20',
-    productCount: 12,
-    address: '서울시 강남구 테헤란로 456, 7층',
-    bankName: '국민은행',
-    bankAccount: '123-45-67890',
-    rating: 4,
-    status: '정지',
-  },
-  {
-    id: 3,
-    number: '345-67-89012',
-    name: '정육점',
-    charge: '15%',
-    joinedAt: '2024.05.20',
-    productCount: 12,
-    address: '서울시 강남구 테헤란로 456, 7층',
-    bankName: '국민은행',
-    bankAccount: '123-45-67890',
-    rating: 3,
-    status: '거절',
-  },
-  {
-    id: 4,
-    number: '456-78-90123',
-    name: '자연농원',
-    charge: '15%',
-    joinedAt: '2024.05.20',
-    productCount: 12,
-    address: '서울시 강남구 테헤란로 456, 7층',
-    bankName: '국민은행',
-    bankAccount: '123-45-67890',
-    rating: 4.2,
-    status: '대기',
-  },
-];
-
 export default function SellersPage() {
   const [search, setSearch] = useState('');
-  const [sellerList, setSellerList] = useState<Seller[]>(seller);
+  const [sellerList, setSellerList] = useState<Seller[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [editSeller, setEditSeller] = useState<Seller | null>(null);
 
@@ -113,36 +102,92 @@ export default function SellersPage() {
   const [filterCharge, setFilterCharge] = useState<string>('all');
   const [filterRating, setFilterRating] = useState<string>('all');
 
-  const handleViewDetail = (seller: Seller) => {
-    setSelectedSeller(seller);
-  };
+  useEffect(() => {
+    let cancelled = false;
 
-  const handleEdit = (seller: Seller) => {
-    setEditSeller({ ...seller });
-  };
+    async function load() {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filterStatus !== 'all') params.set('status', filterStatus);
+        params.set('page', String(page));
+        params.set('limit', String(PAGE_SIZE));
+        const { data } = await api.get<{ sellers: ApiSeller[]; pagination: { total: number } }>(
+          `/admin/sellers?${params}`
+        );
+        if (!cancelled) {
+          setSellerList(data.sellers.map(toSeller));
+          setTotal(data.pagination.total);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
 
-  const handleSaveEdit = () => {
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [filterStatus, page]);
+
+  function handleFilterStatusChange(value: Status | 'all') {
+    setFilterStatus(value);
+    setPage(1);
+  }
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  function getPageNumbers(): (number | string)[] {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    if (page >= totalPages - 3)
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', page - 1, page, page + 1, '...', totalPages];
+  }
+
+  const handleViewDetail = (seller: Seller) => setSelectedSeller(seller);
+  const handleEdit = (seller: Seller) => setEditSeller({ ...seller });
+
+  const handleSaveEdit = async () => {
     if (!editSeller) return;
-    setSellerList((prev) => prev.map((s) => (s.id === editSeller.id ? editSeller : s)));
-    setEditSeller(null);
+    try {
+      const isSuspend = editSeller.status === '정지';
+      const statusMap: Record<Exclude<Status, '정지'>, string> = {
+        승인: 'approved',
+        대기: 'pending',
+        거절: 'rejected',
+      };
+      const commissionRate = parseFloat(editSeller.charge);
+      await api.patch(`/admin/sellers/${editSeller.id}/approve`, {
+        ...(isSuspend
+          ? { suspend: true }
+          : { status: statusMap[editSeller.status as Exclude<Status, '정지'>] }),
+        ...(!isNaN(commissionRate) ? { commissionRate } : {}),
+      });
+      setSellerList((prev) => prev.map((s) => (s.id === editSeller.id ? editSeller : s)));
+      setEditSeller(null);
+    } catch (e) {
+      console.error('판매자 정보 수정 실패', e);
+    }
   };
+
   const filtered = sellerList.filter((s) => {
     const matchSearch = s.name.includes(search) || s.number.includes(search);
     const matchStatus = filterStatus === 'all' || s.status === filterStatus;
-
     const chargeNum = parseFloat(s.charge);
     const matchCharge =
       filterCharge === 'all' ||
       (filterCharge === 'low' && chargeNum <= 10) ||
       (filterCharge === 'mid' && chargeNum > 10 && chargeNum <= 20) ||
       (filterCharge === 'high' && chargeNum > 20);
-
     const matchRating =
       filterRating === 'all' ||
+      s.rating === null ||
       (filterRating === '4.5+' && s.rating >= 4.5) ||
       (filterRating === '4.0+' && s.rating >= 4.0 && s.rating < 4.5) ||
       (filterRating === 'low' && s.rating < 4.0);
-
     return matchSearch && matchStatus && matchCharge && matchRating;
   });
 
@@ -151,7 +196,7 @@ export default function SellersPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">판매자 관리</h1>
-          <p className="text-sm text-muted-foreground">전체 판매자: {sellerList.length}명</p>
+          <p className="text-sm text-muted-foreground">전체 판매자: {total}명</p>
         </div>
         <Button
           variant="outline"
@@ -163,13 +208,14 @@ export default function SellersPage() {
           필터
         </Button>
       </div>
+
       {showFilter && (
         <div className="flex flex-wrap items-end gap-3 rounded-md border bg-white p-4">
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">상태</span>
             <Select
               value={filterStatus}
-              onValueChange={(v) => setFilterStatus(v as Status | 'all')}
+              onValueChange={(v) => handleFilterStatusChange(v as Status | 'all')}
             >
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
@@ -213,6 +259,7 @@ export default function SellersPage() {
           </div>
         </div>
       )}
+
       <div className="relative">
         <Search
           size={16}
@@ -241,48 +288,72 @@ export default function SellersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium">{s.name}</TableCell>
-                <TableCell className="text-muted-foreground">{s.number}</TableCell>
-                <TableCell className="text-muted-foreground">{s.joinedAt}</TableCell>
-                <TableCell>{s.productCount}건</TableCell>
-                <TableCell>
-                  <StarRating rating={s.rating} />
-                </TableCell>
-                <TableCell>{s.charge}</TableCell>
-                <TableCell>
-                  <StatusBadge status={s.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <button
-                      className="text-primary"
-                      aria-label="상세보기"
-                      onClick={() => handleViewDetail(s)}
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      className="text-gray-text "
-                      aria-label="수정"
-                      onClick={() => handleEdit(s)}
-                    >
-                      <Pencil size={16} />
-                    </button>
-                  </div>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  불러오는 중...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  판매자가 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">{s.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{s.number}</TableCell>
+                  <TableCell className="text-muted-foreground">{s.joinedAt}</TableCell>
+                  <TableCell>{s.productCount}건</TableCell>
+                  <TableCell>
+                    <StarRating rating={s.rating} />
+                  </TableCell>
+                  <TableCell>{s.charge}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={s.status} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <button
+                        className="text-primary"
+                        aria-label="상세보기"
+                        onClick={() => handleViewDetail(s)}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        className="text-gray-text"
+                        aria-label="수정"
+                        onClick={() => handleEdit(s)}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
-      <Dialog
-        open={!!selectedSeller}
-        onOpenChange={() => {
-          setSelectedSeller(null);
-        }}
-      >
+
+      <div className="text-sm text-muted-foreground">
+        {total > 0 && (
+          <div className="text-sm text-muted-foreground">
+            {total}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}명
+          </div>
+        )}
+      </div>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        getPageNumbers={getPageNumbers}
+      />
+
+      <Dialog open={!!selectedSeller} onOpenChange={() => setSelectedSeller(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>판매자 상세 정보</DialogTitle>
@@ -298,6 +369,14 @@ export default function SellersPage() {
                 <span>{selectedSeller.number}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-muted-foreground">대표자명</span>
+                <span>{selectedSeller.representativeName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">CS 연락처</span>
+                <span>{selectedSeller.csPhone}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">가입일</span>
                 <span>{selectedSeller.joinedAt}</span>
               </div>
@@ -309,11 +388,11 @@ export default function SellersPage() {
                 <span className="text-muted-foreground">평점</span>
                 <StarRating rating={selectedSeller.rating} />
               </div>
-              <div className="border-t pt-3 flex justify-between">
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">수수료율</span>
                 <span>{selectedSeller.charge}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="border-t pt-3 flex justify-between">
                 <span className="text-muted-foreground">상태</span>
                 <StatusBadge status={selectedSeller.status} />
               </div>
@@ -360,9 +439,9 @@ export default function SellersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="승인">승인</SelectItem>
+                    <SelectItem value="대기">대기</SelectItem>
                     <SelectItem value="거절">거절</SelectItem>
                     <SelectItem value="정지">정지</SelectItem>
-                    <SelectItem value="대기">대기</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
