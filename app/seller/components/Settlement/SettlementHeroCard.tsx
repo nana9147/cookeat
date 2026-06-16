@@ -1,0 +1,54 @@
+'use client';
+
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { SettlementHeroCardProps } from '@/types/seller/settlement';
+import { CircleDollarSign } from 'lucide-react';
+
+export default function SettlementHeroCard({ nextSettlement }: SettlementHeroCardProps) {
+  return (
+    <Card className="bg-primary rounded-xl text-white mb-6 border-0">
+      <CardContent className="px-8 py-6">
+        {/* 상단: 다음 정산 예정 + 금액 */}
+        <div className="mb-5">
+          <div className="flex items-center gap-1.5 text-white/70 text-sm mb-2">
+            <CircleDollarSign size={15} />
+            다음 정산 예정
+          </div>
+          <div className="text-4xl font-bold tracking-tight">
+            {nextSettlement.nextSettlementAmount.toLocaleString()}원
+          </div>
+        </div>
+
+        {/* 하단: 총 판매액 / 수수료 / 물류 비용 */}
+        <div className="grid grid-cols-3 gap-4 mb-5">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-white/60">총 판매액</span>
+            <span className="text-base font-semibold">
+              {nextSettlement.totalSalesAmount.toLocaleString()}원
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-white/60">수수료 ({nextSettlement.commissionRate}%)</span>
+            <span className="text-base font-semibold text-red-300">
+              -{nextSettlement.commission.toLocaleString()}원
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-white/60">물류 비용</span>
+            <span className="text-base font-semibold text-red-300">
+              -{nextSettlement.shippingFee.toLocaleString()}원
+            </span>
+          </div>
+        </div>
+
+        <Separator className="bg-white/20 mb-4" />
+
+        {/* 다음 정산일 */}
+        <div className="text-sm text-white/60">
+          다음 정산일: {nextSettlement.nextSettlementDate} 예정
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
