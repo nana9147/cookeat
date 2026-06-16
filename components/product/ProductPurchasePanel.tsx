@@ -48,10 +48,7 @@ export default function ProductPurchasePanel({
         options={options} selectedOption={selectedOption} qty={qty} stock={stock}
         unitPrice={unitPrice} totalPrice={totalPrice}
         onSelect={(opt) => { setSelectedOption(opt); setQty(1); }}
-        onDecrement={() => {
-          if (qty <= 1) { setSelectedOption(null); setQty(1); }
-          else setQty((p) => p - 1);
-        }}
+        onDecrement={() => setQty((p) => Math.max(1, p - 1))}
         onIncrement={() => setQty((p) => Math.min(stock, p + 1))}
         onQtyChange={setQty}
       />

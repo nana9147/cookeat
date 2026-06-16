@@ -19,7 +19,7 @@ export default async function ProductDetailPage({ params }: Props) {
   const details = [
     { label: '카테고리', value: product.category },
     { label: '원산지', value: '국내산' },
-    { label: '용량', value: product.name.match(/\d+(\.\d+)?(kg|g|개|ml|L)/)?.[0] ?? '-' },
+    { label: '용량', value: product.volume ?? '-' },
     { label: '판매자', value: product.seller },
   ];
 

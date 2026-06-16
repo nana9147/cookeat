@@ -18,4 +18,5 @@ export interface ShoppingProduct {
   imageUrl?: string;
   isNew?: boolean;
   stock: number;
+  volume?: string;
 }

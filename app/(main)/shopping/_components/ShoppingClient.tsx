@@ -1,6 +1,7 @@
 'use client';
 
-import { useShoppingFilter, allSellers, getPageNumbers } from '../hooks/useShoppingFilter';
+import { useShoppingFilter } from '../hooks/useShoppingFilter';
+import { allSellers, getPageNumbers } from '../utils/shoppingFilter';
 import ShoppingFilter from './ShoppingFilter';
 import ShoppingSort from './ShoppingSort';
 import ShoppingGrid from './ShoppingGrid';

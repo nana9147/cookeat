@@ -5,7 +5,12 @@ import { COOKIE_OPTS } from '@/lib/cookieOptions'
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 
-function decodeJwtPayload(token: string): { exp?: number } | null {
+interface JwtPayload {
+  exp?: number
+  app_metadata?: { role?: string }
+}
+
+function decodeJwtPayload(token: string): JwtPayload | null {
   try {
     const [, payload] = token.split('.')
     return JSON.parse(Buffer.from(payload, 'base64url').toString())
@@ -44,7 +49,6 @@ export async function proxy(request: NextRequest) {
 
   const accessToken = request.cookies.get('sb-access-token')?.value
   const refreshToken = request.cookies.get('sb-refresh-token')?.value
-  const role = request.cookies.get('sb-role')?.value
 
   const isAdminPath = pathname.startsWith('/admin')
   const isSellerPath = pathname.startsWith('/seller')
@@ -66,6 +70,10 @@ export async function proxy(request: NextRequest) {
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
+
+  // JWT 서명으로 보호된 app_metadata에서 role 읽기. 토큰 갱신 전 첫 요청은 쿠키 fallback 사용
+  const payload = decodeJwtPayload(token)
+  const role = payload?.app_metadata?.role ?? request.cookies.get('sb-role')?.value
 
   if (isAdminPath && role !== 'admin') {
     return NextResponse.redirect(new URL('/', request.url))

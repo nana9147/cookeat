@@ -1,11 +1,9 @@
 'use client';
 
 import { Minus, Plus } from 'lucide-react';
+import { ProductOption } from './types';
 
-export interface ProductOption {
-  label: string;
-  price: number;
-}
+export type { ProductOption };
 
 interface Props {
   option: ProductOption;
@@ -33,7 +31,8 @@ export function OptionQuantityRow({
         <div className="flex items-center border border-border rounded-lg overflow-hidden bg-white">
           <button
             onClick={onDecrement}
-            className="w-7 h-7 flex items-center justify-center text-gray-text hover:bg-hover transition-colors"
+            disabled={qty <= 1}
+            className="w-7 h-7 flex items-center justify-center text-gray-text hover:bg-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="수량 감소"
           >
             <Minus className="w-3 h-3" />

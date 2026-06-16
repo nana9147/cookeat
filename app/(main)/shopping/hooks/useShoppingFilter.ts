@@ -6,18 +6,6 @@ import { mockProducts } from '../data/mockProducts';
 import { filterAndSort } from '../utils/shoppingFilter';
 
 const PAGE_SIZE = 12;
-export const allSellers = [...new Set(mockProducts.map((p) => p.seller))].sort();
-
-export function getPageNumbers(currentPage: number, totalPages: number): (number | string)[] {
-  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-  const pages: (number | string)[] = [1];
-  if (currentPage > 3) pages.push('...');
-  for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++)
-    pages.push(i);
-  if (currentPage < totalPages - 2) pages.push('...');
-  pages.push(totalPages);
-  return pages;
-}
 
 export function useShoppingFilter() {
   const [category, setCategory] = useState<IngredientCategory>('전체');

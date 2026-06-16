@@ -1,6 +1,7 @@
-import { ProductOption } from './OptionQuantityRow';
-
-export type { ProductOption };
+export interface ProductOption {
+  label: string;
+  price: number;
+}
 
 export interface ProductPurchasePanelProps {
   name: string;
