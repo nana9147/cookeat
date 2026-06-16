@@ -22,7 +22,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import api from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
-import StatusBadge from '@/components/common/StatusBadge';
+import StatusBadge, { StatusBadgeStatus } from '@/components/common/StatusBadge';
 
 type Grade = '일반' | 'VIP';
 type Status = 'active' | 'suspended';
@@ -38,7 +38,7 @@ interface Member {
   point: number;
 }
 
-const statusLabel: Record<Status, string> = {
+const statusLabel: Record<Status, StatusBadgeStatus> = {
   active: '정상',
   suspended: '정지',
 };

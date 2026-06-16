@@ -1,4 +1,4 @@
-const styles: Record<string, string> = {
+const styles = {
   // 상품 상태
   판매대기: 'bg-blue-100 text-blue-700',
   판매중: 'bg-green-100 text-green-700',
@@ -61,11 +61,13 @@ const styles: Record<string, string> = {
   기타: 'bg-gray-100 text-gray-500',
   회원: 'bg-amber-100 text-amber-700',
   결제: 'bg-purple-100 text-purple-700',
-};
+} as const;
 
-export default function StatusBadge({ status }: { status: string }) {
+export type StatusBadgeStatus = keyof typeof styles;
+
+export default function StatusBadge({ status }: { status: StatusBadgeStatus }) {
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status] ?? 'bg-gray-100 text-gray-600'}`}>
+    <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
       {status}
     </span>
   );
