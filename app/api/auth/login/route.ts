@@ -21,6 +21,11 @@ export async function POST(req: NextRequest) {
 
   const role = profile?.role ?? 'user'
 
+  // app_metadata에 role 저장 → 토큰 갱신 후부터는 JWT에서 직접 읽어 쿠키 위변조 방어
+  await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
+    app_metadata: { role },
+  })
+
   const response = NextResponse.json({
     user: { ...data.user, _role: role },
     session: data.session,

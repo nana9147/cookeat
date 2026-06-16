@@ -5,7 +5,7 @@ export const mockProducts: ShoppingProduct[] = [
   { id: '1', name: '양파 1.5kg', category: '채소', price: 4260, discountRate: 30, rating: 4.5, reviewCount: 234, seller: '그린팜', stock: 100 },
   { id: '2', name: '시금치 1단 600g', category: '채소', price: 8900, rating: 4.3, reviewCount: 89, seller: '유기농마켓', stock: 50 },
   { id: '3', name: '대파 1단 (700g)', category: '채소', price: 1500, rating: 4.7, reviewCount: 412, seller: '신선채소', isNew: true, stock: 200 },
-  { id: '4', name: '동물복지달걀 10구', category: '채소', price: 3900, rating: 4.8, reviewCount: 891, seller: '행복한닭', stock: 500 },
+  { id: '4', name: '동물복지달걀 10구', category: '정육·계란', price: 3900, rating: 4.8, reviewCount: 891, seller: '행복한닭', stock: 500, volume: '10구' },
   { id: '5', name: '브로콜리 300g', category: '채소', price: 3200, discountRate: 15, rating: 4.6, reviewCount: 178, seller: '그린팜', isNew: true, stock: 80 },
   { id: '6', name: '당근 500g', category: '채소', price: 1900, rating: 4.4, reviewCount: 99, seller: '신선채소', stock: 150 },
   { id: '7', name: '파프리카 3개입', category: '채소', price: 4200, discountRate: 10, rating: 4.5, reviewCount: 67, seller: '유기농마켓', stock: 60 },
