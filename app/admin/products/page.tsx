@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -28,64 +28,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import api from '@/lib/api';
+import Pagination from '@/components/ui/Pagination';
 
-type Status = '판매중' | '품절' | '판매중지';
-
+const PAGE_SIZE = 20;
 const CATEGORIES = ['채소', '과일', '육류', '수산물', '유제품', '가공식품', '기타'];
+const STATUSES = ['판매중', '품절', '숨김'] as const;
+type Status = (typeof STATUSES)[number];
 
 interface Product {
-  id: number;
-  seller: string;
+  productId: number;
   name: string;
-  category: string;
-  cost: number;
+  sellerName: string;
+  category: string | null;
+  price: number;
   stock: number;
   status: Status;
 }
 
-const product: Product[] = [
-  {
-    id: 1,
-    seller: '신선한 마켓',
-    name: '신선한 양파',
-    category: '채소',
-    cost: 3500,
-    stock: 150,
-    status: '판매중',
-  },
-  {
-    id: 2,
-    seller: '채소나라',
-    name: '국내산 대파',
-    category: '채소',
-    cost: 2800,
-    stock: 0,
-    status: '품절',
-  },
-  {
-    id: 3,
-    seller: '정육점',
-    name: '프리미엄 소고기',
-    category: '육류',
-    cost: 28000,
-    stock: 4,
-    status: '판매중지',
-  },
-  {
-    id: 4,
-    seller: '자연농원',
-    name: '유기농 당근',
-    category: '채소',
-    cost: 4200,
-    stock: 203,
-    status: '판매중',
-  },
-];
-
-
 export default function ProductsPage() {
   const [search, setSearch] = useState('');
-  const [productList, setProductList] = useState<Product[]>(product);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [productList, setProductList] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
 
@@ -93,27 +60,90 @@ export default function ProductsPage() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
 
-  const handleViewDetail = (product: Product) => {
-    setSelectedProduct(product);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [search]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const params: Record<string, string> = {
+          page: String(page),
+          limit: String(PAGE_SIZE),
+        };
+        if (debouncedSearch) params.keyword = debouncedSearch;
+        if (filterStatus !== 'all') params.status = filterStatus;
+        if (filterCategory !== 'all') params.category = filterCategory;
+
+        const { data } = await api.get('/admin/products', { params });
+        if (!cancelled) {
+          setProductList(data.products as Product[]);
+          setTotal(data.pagination.total as number);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, filterStatus, filterCategory, page]);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  function getPageNumbers(): (number | string)[] {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    if (page >= totalPages - 3)
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', page - 1, page, page + 1, '...', totalPages];
+  }
+
+  function handleFilterStatusChange(value: Status | 'all') {
+    setFilterStatus(value);
+    setPage(1);
+  }
+
+  function handleFilterCategoryChange(value: string) {
+    setFilterCategory(value);
+    setPage(1);
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editProduct) return;
+    await api.patch(`/admin/products/${editProduct.productId}`, { status: editProduct.status });
+    setProductList((prev) =>
+      prev.map((p) => (p.productId === editProduct.productId ? editProduct : p))
+    );
+    setEditProduct(null);
   };
 
-  const handleEdit = (product: Product) => {
-    setEditProduct({ ...product });
+  const handleDelete = async (productId: number) => {
+    await api.delete(`/admin/products/${productId}`);
+    setProductList((prev) => prev.filter((p) => p.productId !== productId));
+    setTotal((prev) => prev - 1);
   };
-
-  const filtered = productList.filter((p) => {
-    const matchSearch = p.seller.includes(search) || p.name.includes(search);
-    const matchStatus = filterStatus === 'all' || p.status === filterStatus;
-    const matchCategory = filterCategory === 'all' || p.category === filterCategory;
-    return matchSearch && matchStatus && matchCategory;
-  });
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">상품 관리</h1>
-          <p className="text-sm text-muted-foreground">전체 상품: 234개</p>
+          <p className="text-sm text-muted-foreground">전체 상품: {total.toLocaleString()}개</p>
         </div>
         <Button
           variant="outline"
@@ -125,40 +155,41 @@ export default function ProductsPage() {
           필터
         </Button>
       </div>
+
       {showFilter && (
         <div className="flex flex-wrap items-end gap-3 rounded-md border bg-white p-4">
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">상태</span>
             <Select
               value={filterStatus}
-              onValueChange={(v) => setFilterStatus(v as Status | 'all')}
+              onValueChange={(v) => handleFilterStatusChange(v as Status | 'all')}
             >
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="판매중">판매중</SelectItem>
-                <SelectItem value="품절">품절</SelectItem>
-                <SelectItem value="판매중지">판매중지</SelectItem>
+                {STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">카테고리</span>
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <Select value={filterCategory} onValueChange={handleFilterCategoryChange}>
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="채소">채소</SelectItem>
-                <SelectItem value="과일">과일</SelectItem>
-                <SelectItem value="육류">육류</SelectItem>
-                <SelectItem value="수산물">수산물</SelectItem>
-                <SelectItem value="유제품">유제품</SelectItem>
-                <SelectItem value="가공식품">가공식품</SelectItem>
-                <SelectItem value="기타">기타</SelectItem>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -192,48 +223,72 @@ export default function ProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell className="font-medium">{p.name}</TableCell>
-                <TableCell className="text-muted-foreground">{p.seller}</TableCell>
-                <TableCell className="text-muted-foreground">{p.category}</TableCell>
-                <TableCell>{p.cost}원</TableCell>
-                <TableCell>{p.stock}개</TableCell>
-                <TableCell>
-                  <StatusBadge status={p.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <button
-                      className="text-primary"
-                      aria-label="상세보기"
-                      onClick={() => handleViewDetail(p)}
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      className="text-gray-text "
-                      aria-label="수정"
-                      onClick={() => handleEdit(p)}
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      className="text-red "
-                      aria-label="정지"
-                      onClick={() =>
-                        setProductList((prev) => prev.filter((item) => item.id !== p.id))
-                      }
-                    >
-                      <Ban size={16} />
-                    </button>
-                  </div>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  불러오는 중...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : productList.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  상품이 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              productList.map((p) => (
+                <TableRow key={p.productId}>
+                  <TableCell className="font-medium">{p.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{p.sellerName}</TableCell>
+                  <TableCell className="text-muted-foreground">{p.category ?? '-'}</TableCell>
+                  <TableCell>{p.price.toLocaleString()}원</TableCell>
+                  <TableCell>{p.stock}개</TableCell>
+                  <TableCell>
+                    <StatusBadge status={p.status} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <button
+                        className="text-primary"
+                        aria-label="상세보기"
+                        onClick={() => setSelectedProduct(p)}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        className="text-gray-text"
+                        aria-label="수정"
+                        onClick={() => setEditProduct({ ...p })}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        className="text-red"
+                        aria-label="삭제"
+                        onClick={() => handleDelete(p.productId)}
+                      >
+                        <Ban size={16} />
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
+
+      {total > 0 && (
+        <div className="text-sm text-muted-foreground">
+          {total}개 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}개
+        </div>
+      )}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        getPageNumbers={getPageNumbers}
+      />
 
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
         <DialogContent>
@@ -248,15 +303,15 @@ export default function ProductsPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">카테고리</span>
-                <span>{selectedProduct.category}</span>
+                <span>{selectedProduct.category ?? '-'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">판매자</span>
-                <span>{selectedProduct.seller}</span>
+                <span>{selectedProduct.sellerName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">판매가</span>
-                <span>{selectedProduct.cost.toLocaleString()}원</span>
+                <span>{selectedProduct.price.toLocaleString()}원</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">재고</span>
@@ -279,24 +334,6 @@ export default function ProductsPage() {
           {editProduct && (
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium">카테고리</label>
-                <Select
-                  value={editProduct.category}
-                  onValueChange={(v) => setEditProduct({ ...editProduct, category: v })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
                 <label className="text-sm font-medium">판매 상태</label>
                 <Select
                   value={editProduct.status}
@@ -306,7 +343,7 @@ export default function ProductsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(['판매중', '품절', '판매중지'] as Status[]).map((s) => (
+                    {STATUSES.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s}
                       </SelectItem>
@@ -320,17 +357,7 @@ export default function ProductsPage() {
             <DialogClose asChild>
               <Button variant="outline">취소</Button>
             </DialogClose>
-            <Button
-              onClick={() => {
-                if (!editProduct) return;
-                setProductList((prev) =>
-                  prev.map((p) => (p.id === editProduct.id ? editProduct : p))
-                );
-                setEditProduct(null);
-              }}
-            >
-              저장
-            </Button>
+            <Button onClick={handleSaveEdit}>저장</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
