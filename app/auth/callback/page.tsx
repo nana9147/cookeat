@@ -34,6 +34,21 @@ export default function AuthCallbackPage() {
         isSocial: u.app_metadata?.provider !== 'email',
         role: 'user',
       });
+
+      // middleware.ts가 읽을 httpOnly 쿠키 동기화 (OAuth는 클라이언트에서 토큰 획득)
+      const syncRes = await fetch('/api/auth/sync-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+        }),
+      });
+      if (!syncRes.ok) {
+        router.replace('/login');
+        return;
+      }
+
       const res = await fetch('/api/auth/profile', {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });

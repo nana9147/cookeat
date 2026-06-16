@@ -1,8 +1,7 @@
 // 모든 API 호출의 베이스 인스턴스. 인증이 필요한 엔드포인트에 Bearer 토큰을 자동으로 첨부한다.
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
-import { supabase } from '@/lib/supabase'
-import { toAuthUser } from '@/services/auth/authTypes'
+import type { AuthUser } from '@/services/auth/authTypes'
 
 const api = axios.create({
   baseURL: '/api',
@@ -26,7 +25,6 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !originalRequest._retry) {
       const { refreshToken } = useAuthStore.getState()
 
-      // refresh token이 없으면 재시도 불가 — 일반 에러로 처리
       if (!refreshToken) {
         const data = err.response?.data
         const message = data?.error ?? err.message
@@ -47,21 +45,28 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const { data, error } = await supabase.auth.refreshSession()
-        if (error || !data.session) throw error ?? new Error('refresh failed')
+        // /api/auth/refresh를 경유하면 서버에서 httpOnly 쿠키도 함께 갱신된다.
+        const res = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        })
+        if (!res.ok) throw new Error('refresh failed')
 
-        const { access_token, refresh_token } = data.session
-        const existingUser = useAuthStore.getState().user
-        if (existingUser) {
-          useAuthStore.getState().setAuth(access_token, refresh_token, existingUser)
-        } else {
-          useAuthStore.getState().setAuth(access_token, refresh_token, toAuthUser(data.user!))
+        const { accessToken, refreshToken: newRefreshToken, user } = (await res.json()) as {
+          accessToken: string
+          refreshToken: string
+          user: AuthUser
         }
 
-        refreshQueue.forEach((cb) => cb(access_token))
+        const resolvedUser = user ?? useAuthStore.getState().user
+        if (!resolvedUser) throw new Error('no user after refresh')
+        useAuthStore.getState().setAuth(accessToken, newRefreshToken, resolvedUser)
+
+        refreshQueue.forEach((cb) => cb(accessToken))
         refreshQueue = []
 
-        originalRequest.headers.Authorization = `Bearer ${access_token}`
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`
         return api(originalRequest)
       } catch {
         refreshQueue = []
