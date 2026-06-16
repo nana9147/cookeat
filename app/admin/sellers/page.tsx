@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
@@ -90,6 +90,7 @@ function StarRating({ rating }: { rating: number | null }) {
 
 export default function SellersPage() {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sellerList, setSellerList] = useState<Seller[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -102,6 +103,19 @@ export default function SellersPage() {
   const [filterCharge, setFilterCharge] = useState<string>('all');
   const [filterRating, setFilterRating] = useState<string>('all');
 
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [search]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -109,6 +123,7 @@ export default function SellersPage() {
       setLoading(true);
       try {
         const params = new URLSearchParams();
+        if (debouncedSearch) params.set('keyword', debouncedSearch);
         if (filterStatus !== 'all') params.set('status', filterStatus);
         if (filterCharge !== 'all') params.set('chargeRange', filterCharge);
         if (filterRating !== 'all') {
@@ -135,7 +150,7 @@ export default function SellersPage() {
     return () => {
       cancelled = true;
     };
-  }, [filterStatus, filterCharge, filterRating, page]);
+  }, [debouncedSearch, filterStatus, filterCharge, filterRating, page]);
 
   function handleFilterStatusChange(value: Status | 'all') {
     setFilterStatus(value);
@@ -189,14 +204,12 @@ export default function SellersPage() {
   };
 
   const filtered = sellerList.filter((s) => {
-    const matchSearch = s.name.includes(search) || s.number.includes(search);
-    const matchRating =
-      filterRating === 'all' ||
-      s.rating === null ||
-      (filterRating === '4.5+' && s.rating >= 4.5) ||
-      (filterRating === '4.0+' && s.rating >= 4.0 && s.rating < 4.5) ||
-      (filterRating === 'low' && s.rating < 4.0);
-    return matchSearch && matchRating;
+    if (filterRating === 'all') return true;
+    if (s.rating === null) return true;
+    if (filterRating === '4.5+') return s.rating >= 4.5;
+    if (filterRating === '4.0+') return s.rating >= 4.0 && s.rating < 4.5;
+    if (filterRating === 'low') return s.rating < 4.0;
+    return true;
   });
 
   return (

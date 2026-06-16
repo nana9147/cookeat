@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Eye, Pencil, Filter, Search } from 'lucide-react';
 import {
   Table,
@@ -51,12 +51,25 @@ export default function MembersPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showFilter, setShowFilter] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [filterGrade, setFilterGrade] = useState<Grade | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [editStatus, setEditStatus] = useState<Status>('active');
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [search]);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +78,7 @@ export default function MembersPage() {
       setLoading(true);
       try {
         const params = new URLSearchParams();
+        if (debouncedSearch) params.set('keyword', debouncedSearch);
         if (filterStatus !== 'all') params.set('status', filterStatus);
         params.set('page', String(page));
         params.set('limit', String(PAGE_SIZE));
@@ -82,7 +96,7 @@ export default function MembersPage() {
     return () => {
       cancelled = true;
     };
-  }, [filterStatus, page]);
+  }, [debouncedSearch, filterStatus, page]);
 
   function handleFilterStatusChange(value: Status | 'all') {
     setFilterStatus(value);
@@ -117,11 +131,9 @@ export default function MembersPage() {
     return [1, '...', page - 1, page, page + 1, '...', totalPages];
   }
 
-  const filtered = members.filter((m) => {
-    const matchSearch = m.nickname.includes(search) || m.email.includes(search);
-    const matchGrade = filterGrade === 'all' || m.grade === filterGrade;
-    return matchSearch && matchGrade;
-  });
+  const filtered = members.filter(
+    (m) => filterGrade === 'all' || m.grade === filterGrade
+  );
 
   return (
     <div className="p-6 space-y-4">
