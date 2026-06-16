@@ -175,7 +175,6 @@ export default function SellersPage() {
 
   const filtered = sellerList.filter((s) => {
     const matchSearch = s.name.includes(search) || s.number.includes(search);
-    const matchStatus = filterStatus === 'all' || s.status === filterStatus;
     const chargeNum = parseFloat(s.charge);
     const matchCharge =
       filterCharge === 'all' ||
@@ -188,7 +187,7 @@ export default function SellersPage() {
       (filterRating === '4.5+' && s.rating >= 4.5) ||
       (filterRating === '4.0+' && s.rating >= 4.0 && s.rating < 4.5) ||
       (filterRating === 'low' && s.rating < 4.0);
-    return matchSearch && matchStatus && matchCharge && matchRating;
+    return matchSearch && matchCharge && matchRating;
   });
 
   return (
