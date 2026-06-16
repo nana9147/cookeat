@@ -11,8 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import StatusBadge from '../StatusBadge';
+import Link from 'next/link';
 
 export default function SettlementTable({ data }: SettlementTableProps) {
   const { currentPage, setCurrentPage, paginated, totalPages, getPageNumbers } = usePagination(
@@ -37,7 +37,10 @@ export default function SettlementTable({ data }: SettlementTableProps) {
         </TableHeader>
         <TableBody>
           {paginated.map((item) => (
-            <TableRow key={item.id} className="text-center hover:bg-beige/50 transition-colors">
+            <TableRow
+              key={item.id}
+              className="text-center hover:bg-beige/50 transition-colors h-14"
+            >
               <TableCell className="font-medium text-dark-text">{item.period}</TableCell>
               <TableCell className="text-dark-text">
                 {item.totalSalesAmount.toLocaleString()}원
@@ -52,14 +55,12 @@ export default function SettlementTable({ data }: SettlementTableProps) {
                 <StatusBadge status={item.status} />
               </TableCell>
               <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => console.log(item.id)}
-                  className="text-xs"
+                <Link
+                  href={`/seller/settlement/${item.id}`}
+                  className="text-xs px-3 py-1.5 border border-border rounded-md hover:bg-beige transition-colors"
                 >
                   보기
-                </Button>
+                </Link>
               </TableCell>
             </TableRow>
           ))}
