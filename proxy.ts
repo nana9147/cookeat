@@ -16,7 +16,6 @@ function decodeJwtPayload(token: string): { exp?: number } | null {
 
 function isExpired(payload: { exp?: number } | null): boolean {
   if (!payload?.exp) return true
-  // 30초 여유를 두고 만료 판단
   return Math.floor(Date.now() / 1000) >= payload.exp - 30
 }
 
@@ -38,7 +37,7 @@ async function tryRefresh(
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (pathname === '/admin/login') return NextResponse.next()
