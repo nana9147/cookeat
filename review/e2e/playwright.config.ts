@@ -15,4 +15,11 @@ export default defineConfig({
     trace: "off",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  webServer: {
+    command: "PORT=3200 npm run dev",
+    url: "http://localhost:3200",
+    cwd: "../../",
+    reuseExistingServer: true,
+    timeout: 120_000,
+  },
 });
