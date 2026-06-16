@@ -5,6 +5,7 @@ const styles = {
   품절: 'bg-red-100 text-red-600',
   판매종료: 'bg-gray-100 text-gray-500',
   판매중지: 'bg-red-100 text-red-600',
+  숨김: 'bg-gray-100 text-gray-500',
 
   // 주문 상태
   결제완료: 'bg-emerald-50 text-primary border border-emerald-200',
