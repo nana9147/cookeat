@@ -8,9 +8,8 @@ export default function BackButton() {
   const router = useRouter();
 
   return (
-    <Button className="p-4" size="sm" onClick={() => router.back()}>
-      <ChevronLeft />
-      뒤로가기
+    <Button variant={'outline'} size="sm" onClick={() => router.back()}>
+      <ChevronLeft size={20} className="text-dark-text" />
     </Button>
   );
 }
