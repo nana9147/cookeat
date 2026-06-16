@@ -7,7 +7,6 @@ import { TrendingUp, Percent, Truck } from 'lucide-react';
 export default function SettlementSummaryCards({
   settlementAmount,
   settlementCount,
-  commission,
   commissionRate,
   shippingFee,
 }: SettlementSummaryCardsProps) {
