@@ -353,7 +353,6 @@ export default function SellersPage() {
         getPageNumbers={getPageNumbers}
       />
 
-      {/* 상세 보기 */}
       <Dialog open={!!selectedSeller} onOpenChange={() => setSelectedSeller(null)}>
         <DialogContent>
           <DialogHeader>
@@ -412,7 +411,6 @@ export default function SellersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* 수정 */}
       <Dialog open={!!editSeller} onOpenChange={() => setEditSeller(null)}>
         <DialogContent>
           <DialogHeader>
