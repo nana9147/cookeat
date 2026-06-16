@@ -1,13 +1,17 @@
 import { OrderStatus } from '@/types/seller/order';
 import type { ProductStatus } from '@/types/seller/product';
+import { SettlementStatus } from '@/types/seller/settlement';
 import { AddressBadgeType, ShippingFeeType } from '@/types/seller/shipping';
 
 export default function StatusBadge({
   status,
 }: {
-  status: ProductStatus | OrderStatus | AddressBadgeType | ShippingFeeType;
+  status: ProductStatus | OrderStatus | AddressBadgeType | ShippingFeeType | SettlementStatus;
 }) {
-  const styles: Record<ProductStatus | OrderStatus | AddressBadgeType | ShippingFeeType, string> = {
+  const styles: Record<
+    ProductStatus | OrderStatus | AddressBadgeType | ShippingFeeType | SettlementStatus,
+    string
+  > = {
     판매대기: 'bg-blue-100 text-blue-700',
     판매중: 'bg-green-100 text-green-700',
     품절: 'bg-red-100 text-red-600',
@@ -26,6 +30,10 @@ export default function StatusBadge({
     무료: 'bg-green-100 text-green-700',
     유료: 'bg-amber-100 text-amber-700',
     '조건부 무료': 'bg-blue-100 text-blue-700',
+
+    정산완료: 'bg-beige-50 text-muted border border-border',
+    정산예정: 'bg-blue-50 text-blue-600 border border-blue-200',
+    정산보류: 'bg-amber-50 text-yellow border border-amber-200',
   };
 
   return (
