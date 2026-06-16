@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status') ?? '';
   const keyword = searchParams.get('keyword') ?? '';
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
-  const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') ?? '50')));
+  const limit = Math.max(1, Math.min(1000, parseInt(searchParams.get('limit') ?? '50')));
+  const chargeRange = searchParams.get('chargeRange') ?? 'all';
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
@@ -39,6 +40,10 @@ export async function GET(req: NextRequest) {
   if (keyword) {
     query = query.or(`store_name.ilike.%${keyword}%,business_number.ilike.%${keyword}%`);
   }
+
+  if (chargeRange === 'low') query = query.lte('commission_rate', 10);
+  else if (chargeRange === 'mid') query = query.gt('commission_rate', 10).lte('commission_rate', 20);
+  else if (chargeRange === 'high') query = query.gt('commission_rate', 20);
 
   if (status === '정지') {
     query = query.eq('users.status', 'suspended');

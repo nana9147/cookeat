@@ -110,8 +110,13 @@ export default function SellersPage() {
       try {
         const params = new URLSearchParams();
         if (filterStatus !== 'all') params.set('status', filterStatus);
-        params.set('page', String(page));
-        params.set('limit', String(PAGE_SIZE));
+        if (filterCharge !== 'all') params.set('chargeRange', filterCharge);
+        if (filterRating !== 'all') {
+          params.set('limit', '1000');
+        } else {
+          params.set('page', String(page));
+          params.set('limit', String(PAGE_SIZE));
+        }
         const { data } = await api.get<{ sellers: ApiSeller[]; pagination: { total: number } }>(
           `/admin/sellers?${params}`
         );
@@ -130,10 +135,20 @@ export default function SellersPage() {
     return () => {
       cancelled = true;
     };
-  }, [filterStatus, page]);
+  }, [filterStatus, filterCharge, filterRating, page]);
 
   function handleFilterStatusChange(value: Status | 'all') {
     setFilterStatus(value);
+    setPage(1);
+  }
+
+  function handleFilterChargeChange(value: string) {
+    setFilterCharge(value);
+    setPage(1);
+  }
+
+  function handleFilterRatingChange(value: string) {
+    setFilterRating(value);
     setPage(1);
   }
 
@@ -175,19 +190,13 @@ export default function SellersPage() {
 
   const filtered = sellerList.filter((s) => {
     const matchSearch = s.name.includes(search) || s.number.includes(search);
-    const chargeNum = parseFloat(s.charge);
-    const matchCharge =
-      filterCharge === 'all' ||
-      (filterCharge === 'low' && chargeNum <= 10) ||
-      (filterCharge === 'mid' && chargeNum > 10 && chargeNum <= 20) ||
-      (filterCharge === 'high' && chargeNum > 20);
     const matchRating =
       filterRating === 'all' ||
       s.rating === null ||
       (filterRating === '4.5+' && s.rating >= 4.5) ||
       (filterRating === '4.0+' && s.rating >= 4.0 && s.rating < 4.5) ||
       (filterRating === 'low' && s.rating < 4.0);
-    return matchSearch && matchCharge && matchRating;
+    return matchSearch && matchRating;
   });
 
   return (
@@ -230,7 +239,7 @@ export default function SellersPage() {
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">수수료율</span>
-            <Select value={filterCharge} onValueChange={setFilterCharge}>
+            <Select value={filterCharge} onValueChange={handleFilterChargeChange}>
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
@@ -244,7 +253,7 @@ export default function SellersPage() {
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">평점</span>
-            <Select value={filterRating} onValueChange={setFilterRating}>
+            <Select value={filterRating} onValueChange={handleFilterRatingChange}>
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
