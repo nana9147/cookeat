@@ -223,8 +223,7 @@ const order: Order[] = [
   },
 ];
 
-
-export default function MembersPage() {
+export default function OrdersPage() {
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderList, setOrderList] = useState<Order[]>(order);
@@ -278,6 +277,7 @@ export default function MembersPage() {
                 <SelectItem value="배송중">배송중</SelectItem>
                 <SelectItem value="배송완료">배송완료</SelectItem>
                 <SelectItem value="배송준비">배송준비</SelectItem>
+                <SelectItem value="취소">취소</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Pencil, Ban, Filter, Star, Search } from 'lucide-react';
+import { Eye, Pencil, Filter, Star, Search } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -102,8 +102,7 @@ const seller: Seller[] = [
   },
 ];
 
-
-export default function MembersPage() {
+export default function SellersPage() {
   const [search, setSearch] = useState('');
   const [sellerList, setSellerList] = useState<Seller[]>(seller);
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
@@ -127,7 +126,7 @@ export default function MembersPage() {
     setSellerList((prev) => prev.map((s) => (s.id === editSeller.id ? editSeller : s)));
     setEditSeller(null);
   };
-  const filtered = seller.filter((s) => {
+  const filtered = sellerList.filter((s) => {
     const matchSearch = s.name.includes(search) || s.number.includes(search);
     const matchStatus = filterStatus === 'all' || s.status === filterStatus;
 
@@ -270,15 +269,6 @@ export default function MembersPage() {
                       onClick={() => handleEdit(s)}
                     >
                       <Pencil size={16} />
-                    </button>
-                    <button
-                      className="text-red"
-                      aria-label="정지"
-                      onClick={() =>
-                        setSellerList((prev) => prev.filter((item) => item.id !== s.id))
-                      }
-                    >
-                      <Ban size={16} />
                     </button>
                   </div>
                 </TableCell>
