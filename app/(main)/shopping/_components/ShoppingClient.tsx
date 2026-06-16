@@ -7,6 +7,7 @@ import { filterAndSort } from '../utils/shoppingFilter';
 import ShoppingFilter from './ShoppingFilter';
 import ShoppingSort from './ShoppingSort';
 import ShoppingGrid from './ShoppingGrid';
+import FilterSheet from './FilterSheet';
 import Pagination from '@/components/ui/Pagination';
 
 const PAGE_SIZE = 12;
@@ -29,6 +30,7 @@ export default function ShoppingClient() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [selectedSellers, setSelectedSellers] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const resetPage = () => setCurrentPage(1);
 
@@ -40,10 +42,20 @@ export default function ShoppingClient() {
   };
 
   const handleReset = () => {
-    setCategory('전체'); setSortOption('추천순');
-    setMinPrice(''); setMaxPrice('');
-    setSelectedSellers([]); setCurrentPage(1);
+    setCategory('전체');
+    setSortOption('추천순');
+    setMinPrice('');
+    setMaxPrice('');
+    setSelectedSellers([]);
+    setCurrentPage(1);
   };
+
+  const activeFilterCount = [
+    category !== '전체',
+    minPrice !== '',
+    maxPrice !== '',
+    selectedSellers.length > 0,
+  ].filter(Boolean).length;
 
   const filtered = useMemo(
     () => filterAndSort(mockProducts, { category, sortOption, minPrice, maxPrice, selectedSellers }),
@@ -54,27 +66,53 @@ export default function ShoppingClient() {
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
-    <div className="desktop:flex desktop:gap-8">
-      <ShoppingFilter
-        selectedCategory={category} onCategoryChange={(cat) => { setCategory(cat); resetPage(); }}
-        minPrice={minPrice} maxPrice={maxPrice}
+    <>
+      <div className="desktop:flex desktop:gap-8">
+        <ShoppingFilter
+          selectedCategory={category}
+          onCategoryChange={(cat) => { setCategory(cat); resetPage(); }}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onMinPriceChange={(v) => { setMinPrice(v); resetPage(); }}
+          onMaxPriceChange={(v) => { setMaxPrice(v); resetPage(); }}
+          sellers={allSellers}
+          selectedSellers={selectedSellers}
+          onSellerToggle={handleSellerToggle}
+          onReset={handleReset}
+        />
+        <div className="flex-1 min-w-0">
+          <ShoppingSort
+            totalCount={filtered.length}
+            sortOption={sortOption}
+            onSortChange={(s) => { setSortOption(s); resetPage(); }}
+            onFilterOpen={() => setIsFilterOpen(true)}
+            activeFilterCount={activeFilterCount}
+          />
+          <ShoppingGrid products={paginated} />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            getPageNumbers={() => getPageNumbers(currentPage, totalPages)}
+          />
+        </div>
+      </div>
+
+      <FilterSheet
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        selectedCategory={category}
+        onCategoryChange={(cat) => { setCategory(cat); resetPage(); }}
+        minPrice={minPrice}
+        maxPrice={maxPrice}
         onMinPriceChange={(v) => { setMinPrice(v); resetPage(); }}
         onMaxPriceChange={(v) => { setMaxPrice(v); resetPage(); }}
-        sellers={allSellers} selectedSellers={selectedSellers}
-        onSellerToggle={handleSellerToggle} onReset={handleReset}
+        sellers={allSellers}
+        selectedSellers={selectedSellers}
+        onSellerToggle={handleSellerToggle}
+        onReset={handleReset}
+        activeFilterCount={activeFilterCount}
       />
-      <div className="flex-1 min-w-0">
-        <ShoppingSort
-          totalCount={filtered.length} sortOption={sortOption}
-          onSortChange={(s) => { setSortOption(s); resetPage(); }}
-        />
-        <ShoppingGrid products={paginated} />
-        <Pagination
-          currentPage={currentPage} totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          getPageNumbers={() => getPageNumbers(currentPage, totalPages)}
-        />
-      </div>
-    </div>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import ShoppingBanners from './components/ShoppingBanners';
-import ShoppingClient from './components/ShoppingClient';
+import ShoppingBanners from './_components/ShoppingBanners';
+import ShoppingClient from './_components/ShoppingClient';
 
 export default function ShoppingPage() {
   return (
