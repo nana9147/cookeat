@@ -1,39 +1,23 @@
 import RecipeCard from './RecipeCard';
 
 const recipes = [
-  {
-    title: '크림 버섯 파스타',
-    image: '/images/categories/recipes/pasta.png',
-  },
-  {
-    title: '된장찌개',
-    image: '/images/categories/recipes/doenjang.png',
-  },
-  {
-    title: '김치찌개',
-    image: '/images/categories/recipes/kimchi.png',
-  },
-  {
-    title: '짜장면',
-    image: '/images/categories/recipes/jajang.png',
-  },
-  {
-    title: '토스트',
-    image: '/images/categories/recipes/toast.png',
-  },
+  { title: '크림 버섯 파스타', image: '/images/categories/recipes/pasta.png', author: '쿠짓이', rating: 4.8, reviewCount: 110 },
+  { title: '된장찌개', image: '/images/categories/recipes/doenjang.png', author: '파이터드', rating: 4.7, reviewCount: 50 },
+  { title: '김치찌개', image: '/images/categories/recipes/kimchi.png', author: '마크멘탈', rating: 4.9, reviewCount: 312 },
+  { title: '수워드 닭가슴살 샐러드', image: '/images/categories/recipes/bibimbap.png', author: '핫사이다', rating: 4.6, reviewCount: 88 },
+  { title: '초코 티라미수', image: '/images/categories/recipes/toast.png', author: '달달해', rating: 4.9, reviewCount: 170 },
 ];
+
 export default function PopularRecipeSection() {
   return (
     <section className="mt-8">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">인기 레시피</h2>
-
-        <button className="text-sm text-gray-500">더보기</button>
+        <h2 className="text-h4 font-bold text-dark-text">인기 레시피</h2>
+        <button className="text-sm text-gray-text hover:text-dark-text transition-colors">더보기</button>
       </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-5 gap-4">
         {recipes.map((recipe) => (
-          <RecipeCard key={recipe.title} title={recipe.title} image={recipe.image} />
+          <RecipeCard key={recipe.title} {...recipe} />
         ))}
       </div>
     </section>

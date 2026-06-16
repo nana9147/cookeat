@@ -1,23 +1,29 @@
 export default function UserPointCard() {
   return (
-    <div
-      className="
-    bg-white
-    rounded-2xl
-    p-4
-    border
-    border-gray-200
-    transition-all
-    duration-300
-    hover:shadow-lg
-  "
-    >
-      <h3 className="font-semibold">안녕하세요, 쿠팡님</h3>
+    <div className="bg-white rounded-2xl p-4 border border-border">
+      <div className="flex items-start justify-between mb-1">
+        <div>
+          <h3 className="font-semibold text-dark-text">안녕하세요, 쿠킷님!</h3>
+          <p className="text-xs text-gray-text mt-0.5">오늘도 맛있는 하루 되세요 :)</p>
+        </div>
+        <div className="w-9 h-9 rounded-full bg-card-bg flex items-center justify-center shrink-0">
+          <span className="text-lg">👤</span>
+        </div>
+      </div>
 
-      <div className="bg-green-700 text-white rounded-xl mt-3 p-4">
-        <p>보유 포인트</p>
-
-        <p className="text-3xl font-bold">12,500P</p>
+      <div className="bg-primary rounded-xl mt-3 p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-white/70">쿠킷 포인트</p>
+          <p className="text-2xl font-bold text-white mt-0.5">12,500P</p>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <span className="text-white font-bold text-sm">P</span>
+          </div>
+          <button className="text-xs text-white/80 hover:text-white transition-colors">
+            더쌓기
+          </button>
+        </div>
       </div>
     </div>
   );

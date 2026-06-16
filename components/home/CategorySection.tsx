@@ -16,9 +16,8 @@ const categories = [
 export default function CategorySection() {
   return (
     <section className="mt-8">
-      <h2 className="text-xl font-bold mb-4">카테고리</h2>
-
-      <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-4">
+      <h2 className="text-h4 font-bold text-dark-text mb-4">카테고리</h2>
+      <div className="grid grid-cols-5 tablet:grid-cols-8 desktop:grid-cols-10 gap-3">
         {categories.map((category) => (
           <CategoryItem key={category.name} name={category.name} image={category.image} />
         ))}
