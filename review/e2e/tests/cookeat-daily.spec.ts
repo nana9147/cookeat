@@ -5,7 +5,7 @@ import { test, expect, Page } from "@playwright/test";
 //  - networkidle 금지(Supabase realtime 때문에 멈춤). domcontentloaded + 고정 대기 사용.
 //  - 로그인은 한 번만, 같은 컨텍스트에서 계속 둘러본다.
 //  - 각 시나리오 끝에 풀페이지 스크린샷. 500이 떠도 캡처부터 하고 console.log로 status 기록.
-const DAY = "2026-06-16";
+const DAY = "2026-06-17";
 const SHOT = `../images/${DAY}`;
 const EMAIL = process.env.REVIEW_TEST_EMAIL ?? "cookeat-review@example.com";
 const PASSWORD = process.env.REVIEW_TEST_PASSWORD ?? "Review!2026";
@@ -84,7 +84,46 @@ test("비로그인 가드 — /seller, /admin", async ({ browser }) => {
   const page = await ctx.newPage();
   const g1 = await gotoAndShoot(page, "/seller/products/new", "cookeat-C6d-seller-new-noauth");
   const g2 = await gotoAndShoot(page, "/admin", "cookeat-C6e-admin-noauth");
+  // 이번 회차 신규 셀러 라우트도 비로그인 가드 확인
+  const g3 = await gotoAndShoot(page, "/seller/settlement", "cookeat-C6f-settlement-noauth");
+  const g4 = await gotoAndShoot(page, "/seller/reviews", "cookeat-C6g-seller-reviews-noauth");
   console.log(`[guard] seller/new noauth -> ${g1.url}`);
   console.log(`[guard] admin noauth     -> ${g2.url}`);
+  console.log(`[guard] settlement noauth-> ${g3.url}`);
+  console.log(`[guard] seller/reviews   -> ${g4.url}`);
+  await ctx.close();
+});
+
+// ---- C7 신규 라우트: 상품 상세(서버 컴포넌트) + 정산 상세 params 확인 ----
+test("신규 라우트 — /shopping/[id], /seller/settlement/[id]", async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  // 상품 목록에서 첫 상품 클릭 → 상세
+  await page.goto("/shopping", { waitUntil: "commit" }).catch(() => {});
+  await page.waitForTimeout(2500);
+  const card = page.locator('a[href*="/shopping/"]').first();
+  if (await card.count()) {
+    await card.click().catch(() => {});
+    await page.waitForTimeout(2500);
+    await page.screenshot({ path: `${SHOT}/cookeat-C7a-shopping-detail.png`, fullPage: true }).catch(() => {});
+    console.log(`[C7a] shopping detail url=${page.url()}`);
+  }
+  // 없는 상품 id → notFound 404 기대
+  const nf = await page.goto("/shopping/99999999", { waitUntil: "commit" }).catch(() => null);
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${SHOT}/cookeat-C7b-shopping-notfound.png`, fullPage: true }).catch(() => {});
+  console.log(`[C7b] /shopping/99999999 status=${nf?.status()}`);
+
+  // 정산 상세: 서로 다른 두 id가 같은 화면인지(params 미사용 버그 실증) — 비로그인이면 가드로 리다이렉트될 수 있음
+  const s1 = await page.goto("/seller/settlement/SET-001", { waitUntil: "commit" }).catch(() => null);
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${SHOT}/cookeat-C7c-settlement-SET-001.png`, fullPage: true }).catch(() => {});
+  const s2 = await page.goto("/seller/settlement/SET-999", { waitUntil: "commit" }).catch(() => null);
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${SHOT}/cookeat-C7d-settlement-SET-999.png`, fullPage: true }).catch(() => {});
+  console.log(`[C7c/d] settlement SET-001 status=${s1?.status()} url=${page.url()} / SET-999 status=${s2?.status()}`);
+
   await ctx.close();
 });

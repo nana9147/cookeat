@@ -31,3 +31,9 @@
 - **[사소] 콘솔 경고.** `/seller` 진입 시 tiptap `Duplicate extension names found: ['underline']` 경고.
   (starter-kit과 별도 underline 확장 중복 등록 추정)
 - **잘 됨:** 이메일 로그인→실제 Supabase 세션, 마이페이지 계정정보, 쇼핑 필터/정렬/페이지네이션, 장바구니 합계 계산, /admin 가드.
+
+## 7차 추가 (2026-06-17)
+- C6f/g 비로그인 가드: /seller/settlement, /seller/reviews → /login?next= 리다이렉트 (3라운드 끌던 셀러가드 해결 확인). /seller/products/new, /admin도 동일.
+- C7a /shopping/[id]: 상품 클릭 → /shopping/1 정상 렌더(서버컴포넌트). C7b /shopping/99999999 → 404(notFound).
+- C7c/d /seller/settlement/[id]: 비로그인 가드로 /login 리다이렉트(셀러권한 없어 화면 미확인). settlement/[id]가 params.id 안 읽고 항상 SET-001 — 코드로 확인(settlement/[id]/page.tsx:12-66).
+- 메인 로그인후 전체 serial 흐름은 120/180s 타임아웃(하네스 이슈). C1/C2/신규라우트는 별도 테스트로 확보. tsc 0.
