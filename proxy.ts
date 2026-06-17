@@ -71,7 +71,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // JWT 서명으로 보호된 app_metadata에서 role 읽기. 토큰 갱신 전 첫 요청은 쿠키 fallback 사용
+  // ⚠️ 낙관적(optimistic) 체크입니다. JWT 서명을 검증하지 않으며,
+  //    role이 없으면 위조 가능한 sb-role 쿠키를 fallback으로 씁니다.
+  //    실제 인가는 각 API 라우트의 requireAdmin/requireSeller(getUser 재검증)가 담당합니다.
   const payload = decodeJwtPayload(token)
   const role = payload?.app_metadata?.role ?? request.cookies.get('sb-role')?.value
 

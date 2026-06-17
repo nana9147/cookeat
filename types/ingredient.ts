@@ -20,3 +20,51 @@ export interface ShoppingProduct {
   stock: number;
   volume?: string;
 }
+
+// API 응답 타입
+export interface ProductListItem {
+  productId: number;
+  name: string;
+  brand: string;
+  price: number;
+  image: string;
+  category: CategoryName;
+  seller: string;
+  rating: number;
+  reviewCount: number;
+  stock: number;
+  createdAt: string;
+}
+
+export interface ProductDetail {
+  productId: number;
+  name: string;
+  brand: string;
+  price: number;
+  image: string;
+  images: string[];
+  description: string;
+  origin: string;
+  stock: number;
+  ingredientId: number | null;
+  category: string;
+  sellerId: number | null;
+  seller: string;
+  sellerPhone: string;
+  rating: number;
+  reviewCount: number;
+}
+
+export interface ProductsResponse {
+  success: boolean;
+  data: {
+    products: ProductListItem[];
+    sellers: string[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      hasNext: boolean;
+    };
+  };
+}
