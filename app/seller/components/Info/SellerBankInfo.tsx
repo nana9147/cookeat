@@ -6,7 +6,7 @@ export default function SellerBankInfo({ data, isEditing, onChange }: SellerAppl
   return (
     <Card className="border-border shadow-sm">
       <CardHeader className="border-b border-border">
-        <CardTitle className="text-h5 font-semibold text-dark-text">정산 계좌 정보</CardTitle>
+        <CardTitle className="text-h5 font-semibold text-dark-text">정산 정보</CardTitle>
       </CardHeader>
       <CardContent className="pt-5">
         <dl className="flex flex-col gap-4">
@@ -37,6 +37,10 @@ export default function SellerBankInfo({ data, isEditing, onChange }: SellerAppl
                 data.bank_account
               )}
             </dd>
+          </div>
+          <div className="grid grid-cols-[160px_1fr] items-center">
+            <dt className="text-sm text-gray-400">수수료율</dt>
+            <dd className="text-sm text-gray-800">{data.commission_rate}%</dd>
           </div>
         </dl>
       </CardContent>

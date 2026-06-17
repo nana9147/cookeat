@@ -12,11 +12,16 @@ export type ApproveStatus = 'pending' | 'approved' | 'rejected';
 
 export interface SellerApplication {
   seller_id: number;
+  user_id: number;
+  is_co_representative: boolean;
+  representative_name: string;
+  cs_phone: string;
   store_name: string;
   business_number: string;
   business_address: string | null;
   bank_name: string;
   bank_account: string;
+  commission_rate: string;
   approve_status: ApproveStatus;
   rejected_reason: string | null;
   created_at: string;

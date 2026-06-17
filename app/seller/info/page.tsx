@@ -9,11 +9,16 @@ import { Button } from '@/components/ui/button';
 
 const MOCK_SELLER: SellerApplication = {
   seller_id: 1,
-  store_name: '당근나라',
+  user_id: 1,
+  is_co_representative: false,
+  representative_name: '홍길동',
+  cs_phone: '010-1233-4567',
   business_number: '123-45-67890',
   business_address: '서울시 강남구 테헤란로 123, 456호',
+  store_name: '당근나라',
   bank_name: '카카오뱅크',
   bank_account: '3333-01-1234567',
+  commission_rate: '10.00',
   approve_status: 'rejected',
   rejected_reason: '사업자 등록증 서류가 불분명합니다. 재제출 해주세요.',
   created_at: '2026-01-15T09:00:00Z',

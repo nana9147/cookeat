@@ -15,6 +15,27 @@ export default function SellerBusinessInfo({ data, isEditing, onChange }: Seller
             <dd className="text-sm text-gray-800">{data.business_number}</dd>
           </div>
           <div className="grid grid-cols-[160px_1fr] items-center">
+            <dt className="text-sm text-gray-400">대표자명</dt>
+            <dd className="text-sm text-gray-800">
+              {isEditing ? (
+                <Input
+                  value={data.representative_name}
+                  onChange={(e) => onChange({ representative_name: e.target.value })}
+                  className="max-w-sm"
+                />
+              ) : (
+                data.representative_name
+              )}
+            </dd>
+          </div>
+
+          <div className="grid grid-cols-[160px_1fr] items-center">
+            <dt className="text-sm text-gray-400">공동대표 여부</dt>
+            <dd className="text-sm text-gray-800">
+              {data.is_co_representative ? '공동대표' : '단독대표'}
+            </dd>
+          </div>
+          <div className="grid grid-cols-[160px_1fr] items-center">
             <dt className="text-sm text-gray-400">사업장 주소</dt>
             <dd className="text-sm text-gray-800">
               {isEditing ? (
