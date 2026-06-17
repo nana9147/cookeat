@@ -1,41 +1,82 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SellerApplication } from '@/types/seller/seller';
 import SellerBasicInfo from '../components/Info/SellerBasicInfo';
 import SellerBankInfo from '../components/Info/SellerBankInfo';
 import SellerBusinessInfo from '../components/Info/SellerBusinessInfo';
 import { Button } from '@/components/ui/button';
-
-const MOCK_SELLER: SellerApplication = {
-  seller_id: 1,
-  store_name: '당근나라',
-  business_number: '123-45-67890',
-  business_address: '서울시 강남구 테헤란로 123, 456호',
-  bank_name: '카카오뱅크',
-  bank_account: '3333-01-1234567',
-  approve_status: 'rejected',
-  rejected_reason: '사업자 등록증 서류가 불분명합니다. 재제출 해주세요.',
-  created_at: '2026-01-15T09:00:00Z',
-};
+import { toast } from 'sonner';
+import api from '@/lib/api';
 
 export default function SellerInfoPage() {
-  const [localData, setLocalData] = useState<SellerApplication>(MOCK_SELLER);
+  const [localData, setLocalData] = useState<SellerApplication | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [savedData, setSavedData] = useState<SellerApplication | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const { data } = await api.get('/seller/me');
+        if (!cancelled) {
+          setLocalData(data.data);
+          setSavedData(data.data);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : '판매자 정보를 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleChange = (updated: Partial<SellerApplication>) => {
-    setLocalData((prev) => ({ ...prev, ...updated }));
+    setLocalData((prev) => (prev ? { ...prev, ...updated } : prev));
   };
 
-  const handleSave = () => {
-    // TODO: API 호출
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!localData) return;
+
+    try {
+      await api.patch('/seller/me', {
+        storeName: localData.store_name,
+        representativeName: localData.representative_name,
+        csPhone: localData.cs_phone,
+        businessAddress: localData.business_address ?? '',
+        bankName: localData.bank_name,
+        bankAccount: localData.bank_account,
+      });
+      setSavedData(localData);
+      setIsEditing(false);
+      toast.success('판매자 정보가 저장되었습니다.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '저장에 실패했습니다.');
+    }
   };
 
   const handleCancel = () => {
-    setLocalData(MOCK_SELLER);
+    setLocalData(savedData);
     setIsEditing(false);
   };
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-400">불러오는 중...</div>;
+  }
+
+  if (!localData) {
+    return <div className="p-8 text-center text-gray-400">판매자 정보를 찾을 수 없습니다.</div>;
+  }
 
   return (
     <div className="bg-background p-8 flex flex-col gap-4">

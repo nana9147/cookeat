@@ -28,6 +28,20 @@ export default function SellerBasicInfo({ data, isEditing, onChange }: SellerApp
             </dd>
           </div>
           <div className="grid grid-cols-[160px_1fr] items-center">
+            <dt className="text-sm text-gray-400">CS 연락처</dt>
+            <dd className="text-sm text-gray-800">
+              {isEditing ? (
+                <Input
+                  value={data.cs_phone}
+                  onChange={(e) => onChange({ cs_phone: e.target.value })}
+                  className="max-w-sm"
+                />
+              ) : (
+                data.cs_phone
+              )}
+            </dd>
+          </div>
+          <div className="grid grid-cols-[160px_1fr] items-center">
             <dt className="text-sm text-gray-400">승인 상태</dt>
             <dd>
               <StatusBadge status={data.approve_status} />
