@@ -15,7 +15,7 @@ api.interceptors.request.use((config) => {
 })
 
 let isRefreshing = false
-let refreshQueue: Array<(token: string) => void> = []
+let refreshQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = []
 
 api.interceptors.response.use(
   (res) => res,
@@ -34,8 +34,8 @@ api.interceptors.response.use(
       originalRequest._retry = true
 
       if (isRefreshing) {
-        return new Promise<string>((resolve) => {
-          refreshQueue.push(resolve)
+        return new Promise<string>((resolve, reject) => {
+          refreshQueue.push({ resolve, reject })
         }).then((token) => {
           originalRequest.headers.Authorization = `Bearer ${token}`
           return api(originalRequest)
@@ -63,12 +63,13 @@ api.interceptors.response.use(
         if (!resolvedUser) throw new Error('no user after refresh')
         useAuthStore.getState().setAuth(accessToken, newRefreshToken, resolvedUser)
 
-        refreshQueue.forEach((cb) => cb(accessToken))
+        refreshQueue.forEach(({ resolve }) => resolve(accessToken))
         refreshQueue = []
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`
         return api(originalRequest)
-      } catch {
+      } catch (refreshErr) {
+        refreshQueue.forEach(({ reject }) => reject(refreshErr))
         refreshQueue = []
         useAuthStore.getState().clearAuth()
         if (typeof window !== 'undefined') window.location.href = '/login'
