@@ -21,3 +21,9 @@ export interface SellerApplication {
   rejected_reason: string | null;
   created_at: string;
 }
+
+export interface SellerApplicationProps {
+  data: SellerApplication;
+  isEditing: boolean;
+  onChange: (updated: Partial<SellerApplication>) => void;
+}
