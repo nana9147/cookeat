@@ -40,12 +40,12 @@ export default function SellerBusinessInfo({ data, isEditing, onChange }: Seller
             <dd className="text-sm text-gray-800">
               {isEditing ? (
                 <Input
-                  value={data.business_address ?? ''}
+                  value={data.business_address || ''}
                   onChange={(e) => onChange({ business_address: e.target.value })}
                   className="max-w-sm"
                 />
               ) : (
-                (data.business_address ?? '-')
+                data.business_address || '-'
               )}
             </dd>
           </div>
