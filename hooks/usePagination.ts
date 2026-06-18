@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getPageNumbers } from '@/lib/utils';
 
 export function usePagination<T>(items: T[], pageSize: number) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -10,13 +11,11 @@ export function usePagination<T>(items: T[], pageSize: number) {
   const totalPages = Math.ceil(items.length / pageSize);
   const paginated = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const getPageNumbers = () => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (currentPage >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  return {
+    currentPage,
+    setCurrentPage,
+    paginated,
+    totalPages,
+    getPageNumbers: () => getPageNumbers(currentPage, totalPages),
   };
-
-  return { currentPage, setCurrentPage, paginated, totalPages, getPageNumbers };
 }
