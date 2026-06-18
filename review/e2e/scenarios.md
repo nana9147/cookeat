@@ -37,3 +37,23 @@
 - C7a /shopping/[id]: 상품 클릭 → /shopping/1 정상 렌더(서버컴포넌트). C7b /shopping/99999999 → 404(notFound).
 - C7c/d /seller/settlement/[id]: 비로그인 가드로 /login 리다이렉트(셀러권한 없어 화면 미확인). settlement/[id]가 params.id 안 읽고 항상 SET-001 — 코드로 확인(settlement/[id]/page.tsx:12-66).
 - 메인 로그인후 전체 serial 흐름은 120/180s 타임아웃(하네스 이슈). C1/C2/신규라우트는 별도 테스트로 확보. tsc 0.
+
+## 8차 추가 (2026-06-18) — 사용자→판매자 순서, 테스트계정 임시 seller 승격
+
+| ID | 시나리오 | 대상 | 기대 | 결과 |
+|----|----------|------|------|------|
+| C7a | 상품 상세(실DB) | `/shopping/8` | 200 실데이터 | pass |
+| C7b | 없는 상품 | `/shopping/99999999` | 404 | pass |
+| 가드 | 비로그인 /seller·/admin | `/seller/*`,`/admin` | login 리다이렉트 | pass(?next= 보존) |
+| C8a | 판매자 정보(신규) | `/seller/info` | 실DB값 표시 | pass(seller 승격 확인) |
+| C8c/d | 정산 상세 params | `/seller/settlement/SET-001` vs `/SET-999` | 다른 화면 | **fail — 둘 다 동일(MOCK SET-001, useParams 미사용)** |
+
+발견(8차):
+- **[필수·이월] 정산 상세 params 미연결**: settlement/[id]/page.tsx가 MOCK_SETTLEMENT_DETAIL 하드코딩, useParams 안 씀 → 어떤 id든 SET-001. (7차 [필수] 미해결)
+- **[해결] proxy.ts:74 주석 정정**(df1f1f2). 셀러 가드 유지(로그인 리다이렉트).
+- **[신규] /seller/info + api/seller/me(추유나)**: requireSeller 가드+필드검증, 실DB값 정상(C8a). [제안] PATCH error.message 원문노출.
+- **[해결] 쇼핑 mock→실DB(엄인호)**. 토큰갱신 pending Promise 버그 수정(b38d432, 칭찬).
+- **[제안·이월] admin keyword .or() 필터 인젝션**(products/route.ts:61).
+- **[제안] RLS 무한재귀(42P17)**: anon users/sellers/orders 읽기 시 — 데이터유출X, 7차 [] 차단에서 퇴보. service role로 가려짐.
+- tsc 0. (참고) 긴 serial 첫 테스트 하네스 타임아웃 → 신규는 독립 테스트로 확보.
+- 환경: 홈 500은 강사 로컬 node_modules에 sonner/next-themes 없어서(학생버그 아님). npm install 복구, npm ci 통과(lock 정상).
