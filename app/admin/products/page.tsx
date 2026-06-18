@@ -32,7 +32,14 @@ import api from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
 
 const PAGE_SIZE = 20;
-const CATEGORIES = ['채소', '과일', '육류', '수산물', '유제품', '가공식품', '기타'];
+const PARENT_CATEGORIES = [
+  { id: 1, label: '채소' },
+  { id: 2, label: '과일' },
+  { id: 3, label: '수산물' },
+  { id: 4, label: '육류' },
+  { id: 5, label: '가공식품' },
+  { id: 6, label: '유제품' },
+] as const;
 const STATUSES = ['판매중', '품절', '숨김'] as const;
 type Status = (typeof STATUSES)[number];
 
@@ -40,7 +47,9 @@ interface Product {
   productId: number;
   name: string;
   sellerName: string;
-  category: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  parentId: number | null;
   price: number;
   stock: number;
   status: Status;
@@ -57,7 +66,7 @@ export default function ProductsPage() {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
 
   const [showFilter, setShowFilter] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterParentId, setFilterParentId] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,7 +94,7 @@ export default function ProductsPage() {
         };
         if (debouncedSearch) params.keyword = debouncedSearch;
         if (filterStatus !== 'all') params.status = filterStatus;
-        if (filterCategory !== 'all') params.category = filterCategory;
+        if (filterParentId !== 'all') params.parentId = filterParentId;
 
         const { data } = await api.get('/admin/products', { params });
         if (!cancelled) {
@@ -101,7 +110,7 @@ export default function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, filterStatus, filterCategory, page]);
+  }, [debouncedSearch, filterStatus, filterParentId, page]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -118,8 +127,8 @@ export default function ProductsPage() {
     setPage(1);
   }
 
-  function handleFilterCategoryChange(value: string) {
-    setFilterCategory(value);
+  function handleFilterParentIdChange(value: string) {
+    setFilterParentId(value);
     setPage(1);
   }
 
@@ -179,15 +188,15 @@ export default function ProductsPage() {
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">카테고리</span>
-            <Select value={filterCategory} onValueChange={handleFilterCategoryChange}>
+            <Select value={filterParentId} onValueChange={handleFilterParentIdChange}>
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">전체</SelectItem>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
+                {PARENT_CATEGORIES.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -240,7 +249,7 @@ export default function ProductsPage() {
                 <TableRow key={p.productId}>
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell className="text-muted-foreground">{p.sellerName}</TableCell>
-                  <TableCell className="text-muted-foreground">{p.category ?? '-'}</TableCell>
+                  <TableCell className="text-muted-foreground">{p.categoryName ?? '-'}</TableCell>
                   <TableCell>{p.price.toLocaleString()}원</TableCell>
                   <TableCell>{p.stock}개</TableCell>
                   <TableCell>
@@ -303,7 +312,7 @@ export default function ProductsPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">카테고리</span>
-                <span>{selectedProduct.category ?? '-'}</span>
+                <span>{selectedProduct.categoryName ?? '-'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">판매자</span>

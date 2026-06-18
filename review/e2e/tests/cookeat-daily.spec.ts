@@ -5,7 +5,7 @@ import { test, expect, Page } from "@playwright/test";
 //  - networkidle 금지(Supabase realtime 때문에 멈춤). domcontentloaded + 고정 대기 사용.
 //  - 로그인은 한 번만, 같은 컨텍스트에서 계속 둘러본다.
 //  - 각 시나리오 끝에 풀페이지 스크린샷. 500이 떠도 캡처부터 하고 console.log로 status 기록.
-const DAY = "2026-06-17";
+const DAY = "2026-06-18";
 const SHOT = `../images/${DAY}`;
 const EMAIL = process.env.REVIEW_TEST_EMAIL ?? "cookeat-review@example.com";
 const PASSWORD = process.env.REVIEW_TEST_PASSWORD ?? "Review!2026";
@@ -126,4 +126,28 @@ test("신규 라우트 — /shopping/[id], /seller/settlement/[id]", async ({ br
   console.log(`[C7c/d] settlement SET-001 status=${s1?.status()} url=${page.url()} / SET-999 status=${s2?.status()}`);
 
   await ctx.close();
+});
+
+// ---- C8 판매자 여정: 테스트 계정을 seller 로 승격한 상태에서 신규 seller/info 확인 ----
+// (리뷰 중에만 seller 승격, 끝나면 user 로 원복)
+test("판매자 여정 — 로그인 → /seller/info (신규)", async ({ page }) => {
+  test.setTimeout(90_000);
+  // 로그인
+  await page.goto("/login", { waitUntil: "commit" }).catch(() => {});
+  await settle(page, 1500);
+  await page.fill('input[type="email"]', EMAIL).catch(() => {});
+  await page.fill('input[type="password"]', PASSWORD).catch(() => {});
+  await page.getByRole("button", { name: /^로그인$|처리 중/ }).click().catch(() => {});
+  await settle(page, 3500);
+
+  // 판매자 정보 페이지(신규)
+  const r1 = await gotoAndShoot(page, "/seller/info", "cookeat-C8a-seller-info", 3000);
+  console.log(`[C8a] /seller/info -> status=${r1.status} url=${r1.url}`);
+
+  // 판매자 대시보드 진입(있으면)
+  await gotoAndShoot(page, "/seller", "cookeat-C8b-seller-home", 2500);
+
+  // 정산 상세 — seller 권한으로 SET-001 / SET-999 가 같은 화면인지(params 미사용 회귀)
+  await gotoAndShoot(page, "/seller/settlement/SET-001", "cookeat-C8c-settlement-001", 2000);
+  await gotoAndShoot(page, "/seller/settlement/SET-999", "cookeat-C8d-settlement-999", 2000);
 });

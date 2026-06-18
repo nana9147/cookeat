@@ -5,11 +5,13 @@ import { ProductOption, ProductPurchasePanelProps } from './types';
 import { ProductInfoSection } from './ProductInfoSection';
 import { PurchaseControls } from './PurchaseControls';
 import { PurchaseActionButtons } from './PurchaseActionButtons';
+import { useAddToCart } from '@/hooks/useAddToCart';
 
 export type { ProductOption };
 export type { ProductPurchasePanelProps };
 
 export default function ProductPurchasePanel({
+  productId,
   name,
   category,
   rating,
@@ -28,6 +30,7 @@ export default function ProductPurchasePanel({
     options.length === 0 ? { label: name, price } : options.length === 1 ? options[0] : null
   );
   const [qty, setQty] = useState(1);
+  const addToCart = useAddToCart();
 
   const discountedPrice = discountRate ? Math.round(price * (1 - discountRate / 100)) : price;
   const unitPrice = selectedOption
@@ -36,6 +39,12 @@ export default function ProductPurchasePanel({
       : selectedOption.price
     : discountedPrice;
   const totalPrice = selectedOption ? unitPrice * qty : 0;
+
+  const handleAddToCart = () => {
+    if (!selectedOption) return;
+    addToCart(productId, qty);
+    onAddToCart?.(selectedOption.label, qty);
+  };
 
   return (
     <div className="flex flex-col gap-4 bg-card rounded-2xl p-4 h-full">
@@ -56,7 +65,7 @@ export default function ProductPurchasePanel({
         liked={liked}
         onToggleLike={() => setLiked((p) => !p)}
         disabled={!selectedOption}
-        onAddToCart={() => selectedOption && onAddToCart?.(selectedOption.label, qty)}
+        onAddToCart={handleAddToCart}
       />
     </div>
   );

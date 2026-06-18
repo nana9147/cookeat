@@ -1,6 +1,8 @@
 'use client';
 
+import { toast } from 'sonner';
 import api from '@/lib/api';
+import type { CartStoreItem } from '@/store/cartStore';
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!;
 
@@ -24,51 +26,65 @@ async function loadTossV1() {
   return (window as TossWindow).TossPayments!(TOSS_CLIENT_KEY);
 }
 
+const ALLOWED_KAKAO_HOSTS = ['kauth.kakao.com', 'pg.pay.kakao.com', 'online-pay.kakao.com'];
+
 interface DeliveryInfo {
   recipient: string;
   phone: string;
   address: string;
 }
 
-export function useCheckoutPayment(paymentMethod: string, finalAmount: number, deliveryInfo: DeliveryInfo | null) {
+export function useCheckoutPayment(
+  paymentMethod: string,
+  cartItems: CartStoreItem[],
+  deliveryInfo: DeliveryInfo | null
+) {
   return async () => {
+    if (cartItems.length === 0) {
+      toast.warning('장바구니가 비어있습니다.');
+      return;
+    }
     try {
       const { data: order } = await api.post<{ orderId: string; finalAmount: number }>('/order', {
-        finalAmount,
+        items: cartItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         paymentMethod,
         recipient: deliveryInfo?.recipient ?? '',
         phone: deliveryInfo?.phone ?? '',
         address: deliveryInfo?.address ?? '',
       });
-      const { orderId, finalAmount: confirmedAmount } = order;
+      const { orderId, finalAmount } = order;
 
       if (paymentMethod === 'kakao') {
-        try {
-          const { data } = await api.post<{ tid: string; redirectUrl: string }>('/payment/kakao/ready', {
-            orderId, itemName: 'Cookeat 주문', quantity: 1, totalAmount: confirmedAmount,
-          });
-          sessionStorage.setItem('kakaoTid', data.tid);
-          sessionStorage.setItem('kakaoOrderId', orderId);
-          window.location.href = data.redirectUrl;
-        } catch (err) {
-          alert(`카카오페이 오류: ${(err as Error).message}`);
+        const { data } = await api.post<{ tid: string; redirectUrl: string }>(
+          '/payment/kakao/ready',
+          { orderId, itemName: 'Cookeat 주문', quantity: 1, totalAmount: finalAmount }
+        );
+        const redirectUrl = new URL(data.redirectUrl);
+        if (!ALLOWED_KAKAO_HOSTS.includes(redirectUrl.hostname)) {
+          toast.error('유효하지 않은 결제 URL입니다.');
+          return;
         }
+        sessionStorage.setItem('kakaoTid', data.tid);
+        sessionStorage.setItem('kakaoOrderId', orderId);
+        window.location.href = data.redirectUrl;
         return;
       }
 
       if (paymentMethod === 'card' || paymentMethod === 'toss') {
         const toss = await loadTossV1();
         toss.requestPayment(paymentMethod === 'card' ? '카드' : '토스페이', {
-          amount: confirmedAmount, orderId, orderName: 'Cookeat 주문',
+          amount: finalAmount,
+          orderId,
+          orderName: 'Cookeat 주문',
           successUrl: `${window.location.origin}/cart/complete`,
           failUrl: `${window.location.origin}/cart/checkout`,
         });
         return;
       }
 
-      alert('해당 결제 수단은 준비 중입니다.');
+      toast.warning('해당 결제 수단은 준비 중입니다.');
     } catch (err) {
-      alert(`결제 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(`결제 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 }

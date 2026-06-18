@@ -1,11 +1,26 @@
 import CartItemRow from './CartItemRow';
-import type { RecipeGroup } from './cartData';
+import type { MergedCartItem } from './useCartItems';
+import type { RecipeGroup, CartItem } from './cartData';
 
 type Props = {
   group: RecipeGroup;
   selectedIds: number[];
   onToggle: (id: number) => void;
 };
+
+function toMergedItem(item: CartItem, seller: string): MergedCartItem {
+  return {
+    productId: item.id,
+    quantity: item.qty,
+    name: item.name,
+    price: item.price,
+    image: null,
+    stock: 999,
+    origin: item.origin,
+    seller,
+    available: true,
+  };
+}
 
 export default function RecipeGroupCard({ group, selectedIds, onToggle }: Props) {
   return (
@@ -33,9 +48,11 @@ export default function RecipeGroupCard({ group, selectedIds, onToggle }: Props)
         {group.items.map((item) => (
           <CartItemRow
             key={item.id}
-            item={item}
+            item={toMergedItem(item, group.seller)}
             checked={selectedIds.includes(item.id)}
             onToggle={() => onToggle(item.id)}
+            onQtyChange={() => {}}
+            onDelete={() => {}}
           />
         ))}
       </div>

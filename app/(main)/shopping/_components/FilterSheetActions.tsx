@@ -11,7 +11,7 @@ export default function FilterSheetActions({ onReset, onClose }: FilterSheetActi
           onReset();
           onClose();
         }}
-        className="flex-1 h-11 rounded-xl border border-border text-sm text-gray-text hover:bg-hover transition-colors"
+        className="flex-1 h-11 rounded-xl bg-white border border-border text-sm text-dark-text font-medium hover:bg-hover transition-colors"
       >
         초기화
       </button>

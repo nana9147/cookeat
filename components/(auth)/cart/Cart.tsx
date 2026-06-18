@@ -1,81 +1,76 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import CartList from './CartList';
-import RecommendedItems from './RecommendedItems';
 import CircleCheckbox from './CircleCheckbox';
-import { RECIPE_GROUPS, INDIVIDUAL_ITEMS, type RecipeGroup, type CartItem } from './cartData';
+import type { MergedCartItem } from './useCartItems';
 
-export default function Cart() {
-  const [groups, setGroups] = useState<RecipeGroup[]>(RECIPE_GROUPS);
-  const [individuals, setIndividuals] = useState<CartItem[]>(INDIVIDUAL_ITEMS);
+type Props = {
+  items: MergedCartItem[];
+  loading: boolean;
+  error: boolean;
+  selectedIds: number[];
+  allSelected: boolean;
+  onToggleAll: () => void;
+  onToggle: (id: number) => void;
+  onQtyChange: (productId: number, qty: number) => void;
+  onDelete: (productId: number) => void;
+  onDeleteSelected: () => void;
+};
 
-  const allItems = useMemo(
-    () => [...groups.flatMap((g) => g.items), ...individuals],
-    [groups, individuals],
-  );
-  const allIds = useMemo(() => allItems.map((i) => i.id), [allItems]);
-
-  const [selectedIds, setSelectedIds] = useState<number[]>(() =>
-    [...RECIPE_GROUPS.flatMap((g) => g.items), ...INDIVIDUAL_ITEMS]
-      .filter((i) => i.checked)
-      .map((i) => i.id),
-  );
-
-  const allSelected = allIds.length > 0 && selectedIds.length === allIds.length;
-
-  const toggleAll = () => setSelectedIds(allSelected ? [] : allIds);
-
-  const toggleItem = (id: number) =>
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-
-  const deleteSelected = () => {
-    setGroups((prev) =>
-      prev
-        .map((g) => ({ ...g, items: g.items.filter((i) => !selectedIds.includes(i.id)) }))
-        .filter((g) => g.items.length > 0),
+export default function Cart({
+  items,
+  loading,
+  error,
+  selectedIds,
+  allSelected,
+  onToggleAll,
+  onToggle,
+  onQtyChange,
+  onDelete,
+  onDeleteSelected,
+}: Props) {
+  if (error && items.length === 0) {
+    return (
+      <div className="bg-white border border-border rounded-xl px-4 py-12 text-center">
+        <p className="text-gray-text text-sm">장바구니를 불러오는 데 실패했습니다. 새로고침 해주세요.</p>
+      </div>
     );
-    setIndividuals((prev) => prev.filter((i) => !selectedIds.includes(i.id)));
-    setSelectedIds([]);
-  };
+  }
 
-  const deleteOutOfStock = () => {
-    const outOfStockIds = allItems.filter((i) => i.qty === 0).map((i) => i.id);
-    setGroups((prev) =>
-      prev
-        .map((g) => ({ ...g, items: g.items.filter((i) => i.qty > 0) }))
-        .filter((g) => g.items.length > 0),
+  if (loading && items.length === 0) {
+    return (
+      <div className="bg-white border border-border rounded-xl px-4 py-12 text-center">
+        <p className="text-gray-text text-sm">불러오는 중...</p>
+      </div>
     );
-    setIndividuals((prev) => prev.filter((i) => i.qty > 0));
-    setSelectedIds((prev) => prev.filter((id) => !outOfStockIds.includes(id)));
-  };
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="bg-white border border-border rounded-xl px-4 tablet:px-5 py-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <CircleCheckbox checked={allSelected} onChange={toggleAll} />
+          <CircleCheckbox checked={allSelected} onChange={onToggleAll} />
           <span
             className="text-sm font-medium text-dark-text cursor-pointer truncate"
-            onClick={toggleAll}
+            onClick={onToggleAll}
           >
-            전체 선택 ({selectedIds.length}/{allIds.length})
+            전체 선택 ({selectedIds.length}/{items.length})
           </span>
         </div>
         <div className="flex items-center gap-2 tablet:gap-4 text-xs tablet:text-sm text-gray-text shrink-0">
-          <button onClick={deleteSelected} className="hover:text-dark-text whitespace-nowrap">선택 삭제</button>
-          <span className="text-border">|</span>
-          <button onClick={deleteOutOfStock} className="hover:text-dark-text whitespace-nowrap">품절 삭제</button>
+          <button onClick={onDeleteSelected} className="hover:text-dark-text whitespace-nowrap">
+            선택 삭제
+          </button>
         </div>
       </div>
 
       <CartList
-        groups={groups}
-        individuals={individuals}
+        items={items}
         selectedIds={selectedIds}
-        onToggle={toggleItem}
+        onToggle={onToggle}
+        onQtyChange={onQtyChange}
+        onDelete={onDelete}
       />
-      <RecommendedItems />
     </div>
   );
 }
