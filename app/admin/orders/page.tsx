@@ -67,6 +67,7 @@ export default function OrdersPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
 
@@ -88,6 +89,7 @@ export default function OrdersPage() {
 
     const load = async () => {
       setLoading(true);
+      setError(null);
       try {
         const params: Record<string, string> = {
           page: String(page),
@@ -96,11 +98,13 @@ export default function OrdersPage() {
         if (debouncedSearch) params.keyword = debouncedSearch;
         if (filterStatus !== 'all') params.status = filterStatus;
 
-        const { data } = await api.get('./admin/orders', { params });
+        const { data } = await api.get('/admin/orders', { params });
         if (!cancelled) {
           setOrderList(data.orders as Order[]);
           setTotal(data.pagination.total as number);
         }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -182,6 +186,9 @@ export default function OrdersPage() {
         />
       </div>
 
+      {error && (
+        <p className="text-sm text-red-500">{error}</p>
+      )}
       <div className="overflow-x-auto rounded-md border bg-white">
         <Table>
           <TableHeader className="bg-beige">
