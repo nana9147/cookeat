@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const keyword = searchParams.get('keyword') ?? '';
   const status = searchParams.get('status') ?? '';
-  const category = searchParams.get('category') ?? '';
+  const parentId = parseInt(searchParams.get('parentId') ?? '');
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
   const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') ?? '50')));
   const from = (page - 1) * limit;
@@ -28,16 +28,16 @@ export async function GET(req: NextRequest) {
     matchingSellerIds = (sellers ?? []).map((s) => s.seller_id as number);
   }
 
-  // category로 일치하는 ingredient_id 먼저 조회
-  let matchingIngredientIds: number[] = [];
-  if (category) {
-    const { data: ingredients } = await supabaseAdmin
-      .from('ingredients')
-      .select('ingredient_id')
-      .eq('category', category);
-    matchingIngredientIds = (ingredients ?? []).map((i) => i.ingredient_id as number);
+  // parentId로 일치하는 category_id 먼저 조회
+  let matchingCategoryIds: number[] = [];
+  if (!isNaN(parentId)) {
+    const { data: cats } = await supabaseAdmin
+      .from('categories')
+      .select('category_id')
+      .eq('parent_id', parentId);
+    matchingCategoryIds = (cats ?? []).map((c) => c.category_id as number);
 
-    if (matchingIngredientIds.length === 0) {
+    if (matchingCategoryIds.length === 0) {
       return NextResponse.json({
         products: [],
         pagination: { page, limit, total: 0, hasNext: false },
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     .select(
       `product_id, name, brand, price, stock, status, sales_count, image, created_at,
        sellers!inner(seller_id, store_name),
-       ingredients(name, category)`,
+       categories(category_id, name, parent_id)`,
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -68,8 +68,8 @@ export async function GET(req: NextRequest) {
     query = query.eq('status', status);
   }
 
-  if (category) {
-    query = query.in('ingredient_id', matchingIngredientIds);
+  if (!isNaN(parentId) && matchingCategoryIds.length > 0) {
+    query = query.in('category_id', matchingCategoryIds);
   }
 
   const { data, error, count } = await query;
@@ -78,9 +78,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  type RawSeller = { seller_id: number; store_name: string };
+  type RawCategory = { category_id: number; name: string; parent_id: number };
+
   const products = (data ?? []).map((p) => {
-    const seller = (p.sellers as unknown) as { seller_id: number; store_name: string } | null;
-    const ingredient = (p.ingredients as unknown) as { name: string; category: string } | null;
+    const seller = p.sellers as unknown as RawSeller | null;
+    const category = p.categories as unknown as RawCategory | null;
     return {
       productId: p.product_id,
       name: p.name,
@@ -93,8 +96,9 @@ export async function GET(req: NextRequest) {
       createdAt: p.created_at,
       sellerId: seller?.seller_id ?? null,
       sellerName: seller?.store_name ?? '',
-      ingredientName: ingredient?.name ?? null,
-      category: ingredient?.category ?? null,
+      categoryId: category?.category_id ?? null,
+      categoryName: category?.name ?? null,
+      parentId: category?.parent_id ?? null,
     };
   });
 
