@@ -30,23 +30,36 @@ export default function AdminPage() {
   const [statCards, setStatCards] = useState<StatCard[]>([]);
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get('/admin/dashboard').then(({ data }) => {
-      const s = data.statCards;
+    const load = async () => {
+      try {
+        const { data } = await api.get('/admin/dashboard');
+        const s = data.statCards;
 
-      setStatCards([
-        { label: '오늘 총 매출', value: `${s.todayRevenue.toLocaleString()}원`, trend: '', up: true },
-        { label: '주문 건수', value: `${s.orderCount}건`, trend: '', up: true },
-        { label: '신규 가입자', value: `${s.newMembers}명`, trend: '', up: true },
-        { label: '판매자 가입', value: `${s.newSellers}명`, trend: '', up: true },
-        { label: '취소/환불', value: `${s.cancelCount}건`, trend: '', up: false },
-        { label: '문의 건수', value: `${s.inquiryCount}건`, trend: '', up: true },
-      ]);
-      setPopularProducts(data.popularProducts);
-      setCategoryStats(data.categoryStats);
-    });
+        setStatCards([
+          { label: '오늘 총 매출', value: `${s.todayRevenue.toLocaleString()}원`, trend: '', up: true },
+          { label: '주문 건수', value: `${s.orderCount}건`, trend: '', up: true },
+          { label: '신규 가입자', value: `${s.newMembers}명`, trend: '', up: true },
+          { label: '판매자 가입', value: `${s.newSellers}명`, trend: '', up: true },
+          { label: '취소/환불', value: `${s.cancelCount}건`, trend: '', up: false },
+          { label: '문의 건수', value: `${s.inquiryCount}건`, trend: '', up: true },
+        ]);
+        setPopularProducts(data.popularProducts);
+        setCategoryStats(data.categoryStats);
+      } catch {
+        setError('대시보드 데이터를 불러오지 못했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
+
+  if (loading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
+  if (error) return <div className="p-6 text-red">{error}</div>;
 
   return (
     <div className="p-6 space-y-6">
