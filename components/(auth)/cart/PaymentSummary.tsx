@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 
 interface PaymentSummaryProps {
@@ -9,7 +8,6 @@ interface PaymentSummaryProps {
   paymentMethodLabel?: string;
   allAgreed?: boolean;
   onPay?: () => void;
-  onAmountChange?: (amount: number) => void;
   productTotal?: number;
   productDiscount?: number;
   couponDiscount?: number;
@@ -23,15 +21,13 @@ export default function PaymentSummary({
   paymentMethodLabel,
   allAgreed = false,
   onPay,
-  onAmountChange,
-  productTotal = 39930,
-  productDiscount = 1520,
-  couponDiscount = 3000,
+  productTotal = 0,
+  productDiscount = 0,
+  couponDiscount = 0,
   shippingFee = 0,
   pointRate = 0.01,
 }: PaymentSummaryProps) {
   const finalAmount = productTotal - productDiscount - couponDiscount + shippingFee;
-  useEffect(() => { onAmountChange?.(finalAmount); }, [finalAmount, onAmountChange]);
   const earnPoints = Math.floor(finalAmount * pointRate);
   const rows = [
     { label: '상품 금액', value: `${productTotal.toLocaleString()}원`, red: false },

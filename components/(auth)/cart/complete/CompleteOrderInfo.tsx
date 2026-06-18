@@ -1,20 +1,25 @@
 import PaymentSummary from '@/components/(auth)/cart/PaymentSummary';
-import { DELIVERY } from './completeData';
+import type { OrderDetail } from './types';
 
-const DELIVERY_ROWS = [
-  { label: '배송지', text: DELIVERY.label },
-  { label: '수취인', text: DELIVERY.name },
-  { label: '연락처', text: DELIVERY.phone },
-  { label: '주소', text: DELIVERY.address },
-];
+export default function CompleteOrderInfo({
+  orderDetail,
+  paymentMethodLabel,
+}: {
+  orderDetail: OrderDetail | null;
+  paymentMethodLabel: string;
+}) {
+  const deliveryRows = [
+    { label: '수취인', text: orderDetail?.recipient ?? '-' },
+    { label: '연락처', text: orderDetail?.phone ?? '-' },
+    { label: '주소', text: orderDetail?.address ?? '-' },
+  ];
 
-export default function CompleteOrderInfo({ paymentMethodLabel }: { paymentMethodLabel: string }) {
   return (
     <div className="flex-1 min-w-0 bg-white rounded-2xl border border-border p-5 flex flex-col gap-5">
       <section>
         <h3 className="text-h4 font-bold text-dark-text mb-4">배송 정보</h3>
         <div className="flex flex-col gap-2 text-sm">
-          {DELIVERY_ROWS.map(({ label, text }) => (
+          {deliveryRows.map(({ label, text }) => (
             <div key={label} className="flex gap-3">
               <span className="text-gray-text w-14 shrink-0">{label}</span>
               <span className="text-dark-text">{text}</span>
@@ -30,7 +35,15 @@ export default function CompleteOrderInfo({ paymentMethodLabel }: { paymentMetho
 
       <section>
         <h3 className="text-h4 font-bold text-dark-text mb-4">결제 정보</h3>
-        <PaymentSummary noCard mode="complete" paymentMethodLabel={paymentMethodLabel} />
+        <PaymentSummary
+          noCard
+          mode="complete"
+          paymentMethodLabel={paymentMethodLabel}
+          productTotal={orderDetail?.totalAmount ?? 0}
+          shippingFee={orderDetail?.shippingFee ?? 0}
+          couponDiscount={orderDetail?.couponDiscount ?? 0}
+          productDiscount={0}
+        />
       </section>
     </div>
   );

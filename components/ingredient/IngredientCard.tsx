@@ -1,17 +1,38 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { ShoppingCart, Minus, Plus } from 'lucide-react';
 import { ShoppingProduct } from '@/types/ingredient';
 import IngredientCardImage from './IngredientCardImage';
+import { useCartStore } from '@/store/cartStore';
+import { useAddToCart } from '@/hooks/useAddToCart';
 
 interface IngredientCardProps {
   product: ShoppingProduct;
 }
 
 export default function IngredientCard({ product }: IngredientCardProps) {
-  const [qty, setQty] = useState(0);
+  const items = useCartStore((s) => s.items);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const addToCart = useAddToCart();
+
+  const productId = Number(product.id);
+  const cartItem = items.find((i) => i.productId === productId);
+  const qty = cartItem?.quantity ?? 0;
+
+  const handleAddToCart = () => addToCart(productId, 1);
+  const handleIncrement = () => {
+    if (qty >= product.stock) return;
+    updateQuantity(productId, qty + 1);
+  };
+  const handleDecrement = () => {
+    if (qty <= 1) {
+      removeItem(productId);
+    } else {
+      updateQuantity(productId, qty - 1);
+    }
+  };
 
   const discountedPrice = product.discountRate
     ? Math.round(product.price * (1 - product.discountRate / 100))
@@ -19,7 +40,6 @@ export default function IngredientCard({ product }: IngredientCardProps) {
 
   return (
     <div className="rounded-xl overflow-hidden border border-border bg-white flex flex-col">
-      {/* 이미지 + 텍스트 정보 → 상세 페이지 이동 */}
       <Link href={`/shopping/${product.id}`} className="flex flex-col flex-1">
         <IngredientCardImage product={product} />
 
@@ -44,11 +64,10 @@ export default function IngredientCard({ product }: IngredientCardProps) {
         </div>
       </Link>
 
-      {/* 담기 버튼 — 링크 밖에서 독립 동작 */}
       <div className="px-3 pb-3">
         {qty === 0 ? (
           <button
-            onClick={() => setQty(1)}
+            onClick={handleAddToCart}
             className="flex items-center justify-center gap-1 w-full h-8 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-hover transition-colors"
           >
             <ShoppingCart className="w-3.5 h-3.5" />
@@ -57,7 +76,7 @@ export default function IngredientCard({ product }: IngredientCardProps) {
         ) : (
           <div className="flex items-center border border-primary rounded-lg overflow-hidden h-8">
             <button
-              onClick={() => setQty((prev) => Math.max(0, prev - 1))}
+              onClick={handleDecrement}
               className="w-8 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors h-full shrink-0"
               aria-label="수량 감소"
             >
@@ -65,7 +84,7 @@ export default function IngredientCard({ product }: IngredientCardProps) {
             </button>
             <span className="text-sm font-semibold text-dark-text flex-1 text-center">{qty}</span>
             <button
-              onClick={() => setQty((prev) => Math.min(product.stock, prev + 1))}
+              onClick={handleIncrement}
               className="w-8 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors h-full shrink-0"
               aria-label="수량 증가"
             >
