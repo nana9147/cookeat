@@ -8,9 +8,9 @@
 
 ```text
 [재료 쇼핑 카테고리]
-categories (재료 쇼핑 대카테고리, 예: 채소, 육류)
-  └── ingredients (재료 쇼핑 소카테고리, 예: 대파, 계란)
-                   └── products (ingredient_id FK) ─── product_images
+ingredients (재료 쇼핑 대카테고리, 예: 채소, 과일·견과·쌀)
+  └── categories (재료 쇼핑 소카테고리, 예: 고구마/감자/당근, 과일)
+products (ingredient_id FK → ingredients) ─── product_images
                             │  (shipping_template_id FK → shipping_templates)
                             │  (return_policy_template_id FK → return_policy_templates)
                             └── sellers ──┬── shipping_templates
@@ -80,13 +80,14 @@ users ──────────────┬── sellers (위 참조)
 
 ### categories
 
-> 재료 쇼핑 **대카테고리** (예: 채소, 육류, 해산물). `ingredients`가 소카테고리 역할을 한다.
+> 재료 쇼핑 **소카테고리** (예: 고구마/감자/당근, 생선류). `parent_id`로 `ingredients` 대카테고리에 연결된다.
 
-| 컬럼          | 타입          | 제약      | 설명            |
-| ------------- | ------------- | --------- | --------------- |
-| `category_id` | `INT`         | PK, AI    | 카테고리 ID     |
-| `name`        | `VARCHAR(50)` | NOT NULL  | 카테고리명      |
-| `sort_order`  | `INT`         | DEFAULT 0 | 노출 순서       |
+| 컬럼          | 타입          | 제약                       | 설명                  |
+| ------------- | ------------- | -------------------------- | --------------------- |
+| `category_id` | `INT`         | PK, AI                     | 카테고리 ID           |
+| `name`        | `VARCHAR(50)` | NOT NULL                   | 소카테고리명          |
+| `parent_id`   | `INT`         | FK → ingredients, NOT NULL | 대카테고리(ingredient_id) |
+| `sort_order`  | `INT`         | DEFAULT 0                  | 노출 순서             |
 
 ### recipe_categories
 
@@ -100,13 +101,12 @@ users ──────────────┬── sellers (위 참조)
 
 ### ingredients
 
-> 재료 쇼핑 **소카테고리** (예: 대파, 계란, 돼지앞다리살). `products`가 이 소카테고리에 연결된다.
+> 재료 쇼핑 **대카테고리** (예: 채소, 과일·견과·쌀, 수산·해산물·건어물). `products.ingredient_id`가 여기에 연결된다.
 
-| 컬럼            | 타입           | 제약                      | 설명                        |
-| --------------- | -------------- | ------------------------- | --------------------------- |
-| `ingredient_id` | `INT`          | PK, AI                    | 식재료 고유 ID              |
-| `name`          | `VARCHAR(100)` | UNIQUE, NOT NULL          | 식재료명                    |
-| `category_id`   | `INT`          | FK → categories, NOT NULL | 대카테고리 ID               |
+| 컬럼            | 타입           | 제약             | 설명                                      |
+| --------------- | -------------- | ---------------- | ----------------------------------------- |
+| `ingredient_id` | `INT`          | PK, AI           | 대카테고리 고유 ID                        |
+| `category`      | `VARCHAR(100)` | UNIQUE, NOT NULL | 대카테고리명 (예: 채소, 과일·견과·쌀)    |
 
 ### products
 
