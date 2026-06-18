@@ -104,7 +104,8 @@ export default function OrdersPage() {
           setTotal(data.pagination.total as number);
         }
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -186,9 +187,7 @@ export default function OrdersPage() {
         />
       </div>
 
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red">{error}</p>}
       <div className="overflow-x-auto rounded-md border bg-white">
         <Table>
           <TableHeader className="bg-beige">
