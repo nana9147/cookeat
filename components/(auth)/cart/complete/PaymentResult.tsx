@@ -4,15 +4,18 @@ import CompleteHeader from './CompleteHeader';
 import CompleteOrderInfo from './CompleteOrderInfo';
 import CompleteOrderItems from './CompleteOrderItems';
 import CompleteNotice from './CompleteNotice';
+import type { OrderDetail } from './types';
 
 type Status = 'loading' | 'success' | 'fail';
 
 export default function PaymentResult({
   status,
   paymentMethod = 'card',
+  orderDetail,
 }: {
   status: Status;
   paymentMethod?: PaymentType;
+  orderDetail: OrderDetail | null;
 }) {
   if (status === 'loading') {
     return <p className="py-20 text-center text-gray-text">결제 확인 중...</p>;
@@ -32,12 +35,14 @@ export default function PaymentResult({
     );
   }
 
+  const paymentLabel = PAYMENT_LABEL[paymentMethod] ?? orderDetail?.paymentMethod ?? paymentMethod;
+
   return (
     <div className="flex flex-col gap-4">
       <CompleteHeader />
       <div className="flex flex-col desktop:flex-row gap-4 desktop:items-stretch">
-        <CompleteOrderInfo paymentMethodLabel={PAYMENT_LABEL[paymentMethod]} />
-        <CompleteOrderItems />
+        <CompleteOrderInfo orderDetail={orderDetail} paymentMethodLabel={paymentLabel} />
+        <CompleteOrderItems orderDetail={orderDetail} />
       </div>
       <CompleteNotice />
     </div>
