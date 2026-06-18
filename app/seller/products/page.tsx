@@ -1,99 +1,93 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Filter, Plus } from 'lucide-react';
 import ProductTable from '@/app/seller/components/ProductTable';
 import FilterTabs from '@/app/seller/components/FilterTabs';
-import type { CategoryName, ProductStatus, Product } from '@/types/seller/product';
+import Pagination from '@/components/ui/Pagination';
+import { getPageNumbers } from '@/lib/utils';
+import type { ProductStatus, Product, CategoryNode } from '@/types/seller/product';
 import Link from 'next/link';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
-// 나중에 API로 교체
-const products: Product[] = [
-  {
-    id: 'veg-0000001',
-    name: '신선 토마토 (500g)',
-    category: '채소',
-    price: 8500,
-    stock: 45,
-    linkedRecipeCount: 12,
-    status: '판매중',
-    imageUrl: 'https://cdn-icons-png.flaticon.com/128/15115/15115165.png',
-    store: '하나로마트',
-    createdAt: '2026-06-05',
-  },
-  {
-    id: 'sau-0000001',
-    name: '프리미엄 올리브유',
-    category: '오일/소스',
-    price: 32000,
-    stock: 28,
-    linkedRecipeCount: 24,
-    status: '판매중',
-    imageUrl: 'https://cdn-icons-png.flaticon.com/128/7493/7493117.png',
-    store: '하나로마트',
-    createdAt: '2026-06-05',
-  },
-  {
-    id: 'veg-0000002',
-    name: '유기농 양파 (1kg)',
-    category: '채소',
-    price: 5500,
-    stock: 0,
-    linkedRecipeCount: 35,
-    status: '품절',
-    imageUrl: 'https://cdn-icons-png.flaticon.com/128/862/862847.png',
-    store: '하나로마트',
-    createdAt: '2026-06-05',
-  },
-  {
-    id: 'dai-0000001',
-    name: '생크림 (200ml)',
-    category: '유제품',
-    price: 4800,
-    stock: 62,
-    linkedRecipeCount: 18,
-    status: '판매중',
-    imageUrl: 'https://cdn-icons-png.flaticon.com/128/5816/5816136.png',
-    store: '하나로마트',
-    createdAt: '2026-06-05',
-  },
-];
-
-const categories: (CategoryName | '전체')[] = [
-  '전체',
-  '채소',
-  '과일·견과',
-  '정육·계란',
-  '수산·해산물',
-  '쌀·잡곡',
-  '유제품',
-  '오일/소스',
-  '밀키트',
-];
-
-const statuses: (ProductStatus | '전체')[] = ['전체', '판매중', '품절', '판매종료'];
+const statuses: (ProductStatus | '전체')[] = ['전체', '판매중', '품절', '판매종료', '숨김'];
+const LIMIT = 10;
 
 export default function ProductsPage() {
-  const [category, setCategory] = useState<CategoryName | '전체'>('전체');
   const [status, setStatus] = useState<ProductStatus | '전체'>('전체');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [isSuggestOpen, setIsSuggestOpen] = useState(false);
+  const [keyword, setKeyword] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [isLodding, setIsLodding] = useState(true);
 
-  const suggestions = search ? products.filter((p) => p.name.includes(search)) : [];
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
-  const filtered = products.filter((p) => {
-    const matchCategory = category === '전체' || p.category === category;
-    const matchStatus = status === '전체' || p.status === status;
-    const matchSearch = p.name.includes(search);
-    return matchCategory && matchStatus && matchSearch;
-  });
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const { data } = await api.get('/categories');
+        setCategories(data.data);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    async function load() {
+      setIsLodding(true);
+      try {
+        const params: Record<string, string | number> = { page, limit: LIMIT };
+        if (keyword) params.keyword = keyword;
+        if (status !== '전체') params.status = status;
+        if (selectedCategoryId) params.categoryId = selectedCategoryId;
+        else if (selectedParentId) params.parentId = selectedParentId;
+
+        const { data } = await api.get('/seller/products', { params });
+        if (data) {
+          setProducts(data.data.products);
+          setTotal(data.data.pagination.total);
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.');
+      } finally {
+        setIsLodding(false);
+      }
+    }
+    load();
+  }, [page, keyword, status, selectedParentId, selectedCategoryId]);
+
+  const totalPages = Math.ceil(total / LIMIT);
+
+  const handleSearchSubmit = (value: string) => {
+    setKeyword(value);
+    setPage(1);
+  };
+
+  const handleSelectParent = (parentId: number | null) => {
+    setSelectedParentId(parentId);
+    setSelectedCategoryId(null);
+    setPage(1);
+  };
+
+  const handleSelectChild = (categoryId: number | null) => {
+    setSelectedCategoryId(categoryId);
+    setPage(1);
+  };
+
+  const selectedParent = categories.find((c) => c.categoryId === selectedParentId);
 
   return (
     <div className="bg-background p-8">
-      {/* 헤더 */}
       <div className="mb-8 pr-5 flex items-center justify-between">
         <h1 className="text-h2 font-bold text-dark-text">상품 관리</h1>
         <Link href="/seller/products/new">
@@ -103,38 +97,15 @@ export default function ProductsPage() {
         </Link>
       </div>
 
-      {/* 검색 */}
-      <div className="flex flex-col gap-4 ">
+      <div className="flex flex-col gap-4">
         <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Input
-              placeholder="상품명으로 검색"
-              className="py-5 bg-card"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setIsSuggestOpen(true);
-              }}
-              onBlur={() => setTimeout(() => setIsSuggestOpen(false), 150)}
-            />
-
-            {isSuggestOpen && suggestions.length > 0 && (
-              <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-md z-10 overflow-hidden">
-                {suggestions.map((p) => (
-                  <li
-                    key={p.id}
-                    className="px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                    onMouseDown={() => {
-                      setSearch(p.name);
-                      setIsSuggestOpen(false);
-                    }}
-                  >
-                    {p.name}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <Input
+            placeholder="상품명으로 검색"
+            className="py-5 bg-card"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(search)}
+          />
           <Button
             onClick={() => setIsFilterOpen((prev) => !prev)}
             variant="outline"
@@ -144,21 +115,93 @@ export default function ProductsPage() {
             필터
           </Button>
         </div>
-        {/* 필터 탭 */}
+
         {isFilterOpen && (
           <>
-            <FilterTabs options={categories} value={category} onChange={setCategory} />
-            <FilterTabs options={statuses} value={status} onChange={setStatus} />
+            {/* 대카테고리 */}
+            <div className="flex gap-1.5 flex-wrap">
+              <button
+                onClick={() => handleSelectParent(null)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                  selectedParentId === null
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-white border border-gray-200 text-gray-600'
+                }`}
+              >
+                전체
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c.categoryId}
+                  onClick={() => handleSelectParent(c.categoryId)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                    selectedParentId === c.categoryId
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-white border border-gray-200 text-gray-600'
+                  }`}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+
+            {/* 소카테고리*/}
+            {selectedParent && selectedParent.children.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap">
+                <button
+                  onClick={() => handleSelectChild(null)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                    selectedCategoryId === null
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-white border border-gray-200 text-gray-600'
+                  }`}
+                >
+                  전체
+                </button>
+                {selectedParent.children.map((child) => (
+                  <button
+                    key={child.categoryId}
+                    onClick={() => handleSelectChild(child.categoryId)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                      selectedCategoryId === child.categoryId
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-white border border-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {child.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <FilterTabs
+              options={statuses}
+              value={status}
+              onChange={(v) => {
+                setStatus(v);
+                setPage(1);
+              }}
+            />
           </>
         )}
 
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm text-gray-500">
-            전체 상품 수 <span className="font-semibold text-gray-800">{filtered.length}</span>개
-          </p>
-        </div>
-        {/* 테이블 */}
-        <ProductTable products={filtered} />
+        <p className="text-sm text-gray-500">
+          전체 상품 수 <span className="font-semibold text-gray-800">{total}</span>개
+        </p>
+
+        {isLodding ? (
+          <p className="text-center py-16 text-gray-400 text-sm">불러오는 중...</p>
+        ) : (
+          <>
+            <ProductTable products={products} />
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              getPageNumbers={() => getPageNumbers(page, totalPages)}
+            />
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,15 @@
-import { CategoryName } from './seller/product';
+//import { CategoryName } from './seller/product';
 
-export type { CategoryName };
+//export type { CategoryName };
+export type CategoryName =
+  | '채소'
+  | '과일·견과'
+  | '정육·계란'
+  | '수산·해산물'
+  | '쌀·잡곡'
+  | '유제품'
+  | '오일/소스'
+  | '밀키트';
 
 export type IngredientCategory = CategoryName | '전체';
 

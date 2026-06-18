@@ -1,31 +1,34 @@
 import { ShippingData } from './shipping';
 
-export type CategoryCode = 'veg' | 'fru' | 'mea' | 'sea' | 'gra' | 'dai' | 'sau' | 'kit';
-
 export type CategoryName =
   | '채소'
-  | '과일·견과'
-  | '정육·계란'
-  | '수산·해산물'
-  | '쌀·잡곡'
+  | '과일·견과·쌀'
+  | '수산·해산물·건어물'
+  | '정육·가공육·달걀'
+  | '면·양념·오일'
   | '유제품'
-  | '오일/소스'
-  | '밀키트';
+  | '베이커리';
 
 export type FoodType = CategoryName | '기타';
 
-export type ProductStatus = '판매대기' | '판매중' | '품절' | '판매종료';
+export type ProductStatus = '판매중' | '품절' | '판매종료' | '숨김';
+export interface CategoryNode {
+  categoryId: number;
+  name: string;
+  children: { categoryId: number; name: string }[];
+}
 
 export interface Product {
-  id: string;
+  productId: number;
   name: string;
-  category: CategoryName;
   price: number;
-  stock: number;
+  stock: number | null;
   linkedRecipeCount: number;
-  status: ProductStatus;
-  imageUrl?: string;
-  store: string;
+  status: ProductStatus | null;
+  image: string;
+  brand: string | null;
+  categoryId: number | null;
+  categories: { name: string; parent_id: number | null } | null;
   createdAt: string;
 }
 
@@ -148,7 +151,7 @@ export const initialProductForm: ProductFormData = {
     name: '',
     manufacturer: '',
     origin: '',
-    status: '판매대기',
+    status: '판매중',
   },
   // 판매 정보
   pricingInfo: {

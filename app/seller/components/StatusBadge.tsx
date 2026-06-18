@@ -2,10 +2,10 @@ import type { BadgeStatus } from '@/types/seller/status';
 
 export default function StatusBadge({ status }: { status: BadgeStatus }) {
   const styles: Record<BadgeStatus, string> = {
-    판매대기: 'bg-blue-100 text-blue-700',
-    판매중: 'bg-green-100 text-green-700',
-    품절: 'bg-red-100 text-red-600',
-    판매종료: 'bg-gray-100 text-gray-500',
+    판매중: 'bg-emerald-50 text-primary border border-emerald-200',
+    품절: 'bg-red-50 text-red border border-red-200',
+    판매종료: 'bg-beige-50 text-muted border border-border',
+    숨김: 'bg-gray-50 text-light-gray border border-border',
 
     결제완료: 'bg-emerald-50 text-primary border border-emerald-200',
     배송준비중: 'bg-amber-50 text-yellow border border-amber-200',

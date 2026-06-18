@@ -13,16 +13,15 @@ import {
 } from '@/components/ui/select';
 
 export default function BasicInfoField({ data, onChange }: BasicInfoFieldProps) {
-  const STATUS_OPTIONS: ProductStatus[] = ['판매대기', '판매중'];
+  const STATUS_OPTIONS: ProductStatus[] = ['판매중', '판매종료'];
   const CATEGORY_OPTIONS: CategoryName[] = [
     '채소',
-    '과일·견과',
-    '정육·계란',
-    '수산·해산물',
-    '쌀·잡곡',
+    '과일·견과·쌀',
+    '수산·해산물·건어물',
+    '정육·가공육·달걀',
+    '면·양념·오일',
     '유제품',
-    '오일/소스',
-    '밀키트',
+    '베이커리',
   ];
 
   return (
