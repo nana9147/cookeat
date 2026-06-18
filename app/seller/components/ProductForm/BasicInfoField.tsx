@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 
 export default function BasicInfoField({ data, onChange }: BasicInfoFieldProps) {
-  const STATUS_OPTIONS: ProductStatus[] = ['판매대기', '판매중'];
+  const STATUS_OPTIONS: ProductStatus[] = ['판매중', '판매종료'];
   const CATEGORY_OPTIONS: CategoryName[] = [
     '채소',
     '과일·견과',
