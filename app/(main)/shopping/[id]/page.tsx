@@ -46,11 +46,12 @@ export default async function ProductDetailPage({ params }: Props) {
       <div className="grid grid-cols-1 desktop:grid-cols-2 desktop:gap-12 gap-6">
         <ProductImageGallery images={product.images} name={product.name} />
         <ProductPurchasePanel
+          productId={product.productId}
           name={product.name}
           category={product.category}
           rating={product.rating}
           reviewCount={product.reviewCount}
-          qnaCount={0} // TODO: QnA API 연동 후 실제 값으로 교체
+          qnaCount={0}
           price={product.price}
           details={details}
           options={options}

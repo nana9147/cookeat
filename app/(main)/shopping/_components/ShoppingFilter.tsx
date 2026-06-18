@@ -33,7 +33,7 @@ export default function ShoppingFilter({
         <FilterSeller sellers={sellers} selectedSellers={selectedSellers} onSellerToggle={onSellerToggle} />
         <button
           onClick={onReset}
-          className="w-full h-8 rounded-lg border border-border text-xs text-gray-text hover:bg-hover transition-colors"
+          className="w-full h-8 rounded-lg bg-white border border-border text-xs text-dark-text font-medium hover:bg-hover transition-colors"
         >
           필터 초기화
         </button>

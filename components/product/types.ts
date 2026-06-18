@@ -4,6 +4,7 @@ export interface ProductOption {
 }
 
 export interface ProductPurchasePanelProps {
+  productId: number;
   name: string;
   category: string;
   rating: number;
