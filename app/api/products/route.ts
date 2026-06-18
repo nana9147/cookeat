@@ -62,9 +62,8 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin
     .from('products')
     .select(
-      `product_id, name, brand, price, stock, image, sales_count, created_at,
-       sellers!inner ( store_name ),
-       ingredients ( category )`,
+      `product_id, name, brand, price, stock, image, sales_count, ingredient_id, created_at,
+       sellers!inner ( store_name )`,
       { count: 'exact' }
     )
     .eq('status', '판매중');
@@ -106,15 +105,33 @@ export async function GET(req: NextRequest) {
   }
 
   const productIds = (products ?? []).map((p: { product_id: number }) => p.product_id);
+  const ingredientIds2 = [
+    ...new Set(
+      (products ?? [])
+        .map((p: { ingredient_id: number | null }) => p.ingredient_id)
+        .filter((id): id is number => id !== null)
+    ),
+  ];
 
-  // 리뷰 평점 집계
-  const { data: reviews } =
+  // 리뷰 평점 집계 + 카테고리 조회를 병렬 실행
+  const [{ data: reviews }, { data: ingredientRows }] = await Promise.all([
     productIds.length > 0
-      ? await supabaseAdmin
-          .from('reviews')
-          .select('product_id, rating')
-          .in('product_id', productIds)
-      : { data: [] };
+      ? supabaseAdmin.from('reviews').select('product_id, rating').in('product_id', productIds)
+      : Promise.resolve({ data: [] }),
+    ingredientIds2.length > 0
+      ? supabaseAdmin
+          .from('ingredients')
+          .select('ingredient_id, category')
+          .in('ingredient_id', ingredientIds2)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const ingredientCategoryMap = new Map<number, string>(
+    (ingredientRows ?? []).map((r: { ingredient_id: number; category: string }) => [
+      r.ingredient_id,
+      r.category,
+    ])
+  );
 
   const ratingMap = new Map<number, { sum: number; count: number }>();
   for (const r of reviews ?? []) {
@@ -124,7 +141,6 @@ export async function GET(req: NextRequest) {
     stat.count++;
   }
 
-  // Supabase는 JOIN 결과를 배열로 추론하지만 단일 FK 관계에서는 런타임에 단일 객체를 반환
   type RawProduct = {
     product_id: number;
     name: string;
@@ -132,18 +148,14 @@ export async function GET(req: NextRequest) {
     price: number;
     stock: number;
     image: string;
+    ingredient_id: number | null;
     created_at: string;
     sellers: { store_name: string }[] | { store_name: string } | null;
-    ingredients: { category: string }[] | { category: string } | null;
   };
 
   const sellerName = (s: RawProduct['sellers']): string => {
     if (!s) return '';
     return Array.isArray(s) ? (s[0]?.store_name ?? '') : s.store_name;
-  };
-  const categoryName = (c: RawProduct['ingredients']): string => {
-    if (!c) return '';
-    return Array.isArray(c) ? (c[0]?.category ?? '') : c.category;
   };
 
   const toFormatted = (p: RawProduct) => {
@@ -154,7 +166,9 @@ export async function GET(req: NextRequest) {
       brand: p.brand ?? '',
       price: p.price,
       image: p.image,
-      category: categoryName(p.ingredients) as CategoryName,
+      category: (p.ingredient_id !== null
+        ? (ingredientCategoryMap.get(p.ingredient_id) ?? '')
+        : '') as CategoryName,
       seller: sellerName(p.sellers),
       rating: calcRating(stat?.sum ?? 0, stat?.count ?? 0),
       reviewCount: stat?.count ?? 0,
