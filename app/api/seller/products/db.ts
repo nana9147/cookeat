@@ -68,3 +68,104 @@ export async function getSellerProducts(sellerId: number, filters: ProductFilter
 
   return { products: productsWithCount, total: count ?? 0 };
 }
+
+const BUCKET = 'product-images';
+
+interface CreateProductInput {
+  sellerId: number;
+  name: string;
+  brand: string;
+  origin: string;
+  categoryId: number;
+  status: string;
+  price: number;
+  stock: number;
+  description: string;
+  shippingTemplateId: number | null;
+  returnPolicyTemplateId: number | null;
+}
+
+async function uploadProductImage(productId: number, file: File): Promise<string> {
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const path = `${productId}/${Date.now()}-${safeName}`;
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from(BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function createSellerProduct(
+  input: CreateProductInput,
+  representativeImage: File,
+  subImages: File[]
+) {
+  const { data: categoryRow, error: categoryError } = await supabaseAdmin
+    .from('categories')
+    .select('category_id')
+    .eq('category_id', input.categoryId)
+    .maybeSingle();
+
+  if (categoryError) throw categoryError;
+  if (!categoryRow) {
+    throw new Error('존재하지 않는 카테고리입니다.');
+  }
+
+  const { data: inserted, error: insertError } = await supabaseAdmin
+    .from('products')
+    .insert({
+      seller_id: input.sellerId,
+      name: input.name,
+      brand: input.brand || null,
+      origin: input.origin,
+      category_id: input.categoryId,
+      status: input.status,
+      price: input.price,
+      stock: input.stock,
+      description: input.description || null,
+      shipping_template_id: input.shippingTemplateId,
+      return_policy_template_id: input.returnPolicyTemplateId,
+      image: 'pending',
+    })
+    .select('product_id')
+    .single();
+
+  if (insertError) throw insertError;
+
+  const productId = inserted.product_id;
+
+  try {
+    const representativeUrl = await uploadProductImage(productId, representativeImage);
+
+    const { error: updateError } = await supabaseAdmin
+      .from('products')
+      .update({ image: representativeUrl })
+      .eq('product_id', productId);
+
+    if (updateError) throw updateError;
+
+    if (subImages.length > 0) {
+      const subImageUrls = await Promise.all(
+        subImages.map((file) => uploadProductImage(productId, file))
+      );
+
+      const rows = subImageUrls.map((url, index) => ({
+        product_id: productId,
+        url,
+        sort_order: index + 1,
+      }));
+
+      const { error: imagesError } = await supabaseAdmin.from('product_images').insert(rows);
+      if (imagesError) throw imagesError;
+    }
+
+    return { productId };
+  } catch (err) {
+    await supabaseAdmin.from('products').delete().eq('product_id', productId);
+    throw err;
+  }
+}
