@@ -27,8 +27,9 @@ export interface ShippingData {
   returnAddress: string;
 }
 export interface ShippingSectionProps {
-  data: ShippingData;
-  onChange: (field: keyof ShippingData, value: string) => void;
+  templates: ShippingTemplateOption[];
+  value: number | null;
+  onChange: (templateId: number | null) => void;
 }
 
 export interface ShippingOrder {
@@ -55,6 +56,18 @@ export interface ShippingTableProps {
 }
 
 /** 배송 템플릿  */
+export interface ShippingTemplateOption {
+  templateId: number;
+  name: string;
+  feeType: ShippingFeeType;
+  fee: number;
+  freeThreshold: number | null;
+  returnFee: number;
+  originAddress: string;
+  returnAddress: string;
+  isDefault: boolean;
+}
+
 export interface ShippingTemplate {
   id: string;
   name: string;
@@ -106,6 +119,15 @@ export interface AddressFormProps {
 }
 
 /* 반품 템플릿 */
+export interface ReturnPolicyTemplateOption {
+  templateId: number;
+  name: string;
+  returnPeriod: number;
+  refundPeriod: number;
+  nonReturnReasons: NonReturnReason[];
+  isDefault: boolean;
+}
+
 export interface ReturnPolicyContent {
   returnPeriod: number; // 반품 가능 기간 (일)
   defectShippingPayer: '판매자'; // 판매자 귀책 배송비 부담 (항상 판매자)
@@ -126,6 +148,12 @@ export interface ReturnPolicyFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (form: Omit<ReturnPolicy, 'id'>) => void;
+}
+
+export interface ReturnPolicyFieldProps {
+  templates: ReturnPolicyTemplateOption[];
+  value: number | null;
+  onChange: (templateId: number | null) => void;
 }
 
 export interface ReturnPolicyTableProps {
