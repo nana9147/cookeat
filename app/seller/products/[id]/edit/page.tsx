@@ -4,9 +4,10 @@ import { ProductFormData } from '@/types/seller/product';
 
 const MOCK_PRODUCT: ProductFormData = {
   basicInfo: {
-    category: '채소',
+    parentCategoryId: '2',
+    categoryId: '1',
     name: '유기농 토마토 500g',
-    manufacturer: '멋사농장',
+    brand: '멋사농장',
     origin: '국내산',
     status: '판매중',
   },
@@ -27,26 +28,8 @@ const MOCK_PRODUCT: ProductFormData = {
     ],
   },
   description: { content: '이건 멋사농장 토마토~' },
-  shippingInfo: {
-    shippingFeeType: '유료',
-    shippingFee: '3000',
-    returnFee: '3000',
-    freeThreshold: '',
-    originAddress: '',
-    returnAddress: '',
-  },
-  productInfo: {
-    infoItemName: '토마토',
-    infoFoodType: '채소',
-    infoProducer: '멋사농장',
-    infoOrigin: '국내산',
-    infoExpirationDate: '수확일로부터 7일',
-    infoStorageMethod: '냉장보관',
-    infoWeight: '500g',
-  },
-  returnPolicy: {
-    content: '신선식품 특성상 단순 변심 반품 불가',
-  },
+  shippingTemplateId: 1,
+  returnPolicyTemplateId: 1,
 };
 
 export default async function ProductEditPage({ params }: { params: Promise<{ id: string }> }) {

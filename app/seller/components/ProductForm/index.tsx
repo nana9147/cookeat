@@ -33,7 +33,7 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
       .then(({ data }) => setReturnPolicyTemplates(data.data));
   }, []);
 
-  const handleChange = <S extends keyof ProductFormData, K extends keyof ProductFormData[S]>(
+  const handleChange = <S extends 'basicInfo' | 'pricingInfo', K extends keyof ProductFormData[S]>(
     section: S,
     field: K,
     value: ProductFormData[S][K]
