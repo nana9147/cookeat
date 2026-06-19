@@ -167,16 +167,6 @@ export default function SellersPage() {
     setPage(1);
   }
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  function getPageNumbers(): (number | string)[] {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (page >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', page - 1, page, page + 1, '...', totalPages];
-  }
-
   const handleViewDetail = (seller: Seller) => setSelectedSeller(seller);
   const handleEdit = (seller: Seller) => setEditSeller({ ...seller });
 
@@ -211,6 +201,19 @@ export default function SellersPage() {
     if (filterRating === 'low') return s.rating < 4.0;
     return true;
   });
+
+  const filteredTotal = filterRating !== 'all' ? filtered.length : total;
+  const totalPages = Math.ceil(filteredTotal / PAGE_SIZE);
+  const pagedSellers =
+    filterRating !== 'all' ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : filtered;
+
+  function getPageNumbers(): (number | string)[] {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    if (page >= totalPages - 3)
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', page - 1, page, page + 1, '...', totalPages];
+  }
 
   return (
     <div className="p-6 space-y-4">
@@ -315,14 +318,14 @@ export default function SellersPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : pagedSellers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   판매자가 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((s) => (
+              pagedSellers.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell className="font-medium">{s.name}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{s.number}</TableCell>
@@ -361,9 +364,9 @@ export default function SellersPage() {
       </div>
 
       <div className="text-sm text-muted-foreground">
-        {total > 0 && (
+        {filteredTotal > 0 && (
           <div className="text-sm text-muted-foreground">
-            {total}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}명
+            {filteredTotal}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredTotal)}명
           </div>
         )}
       </div>
