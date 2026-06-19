@@ -57,3 +57,28 @@
 - **[제안] RLS 무한재귀(42P17)**: anon users/sellers/orders 읽기 시 — 데이터유출X, 7차 [] 차단에서 퇴보. service role로 가려짐.
 - tsc 0. (참고) 긴 serial 첫 테스트 하네스 타임아웃 → 신규는 독립 테스트로 확보.
 - 환경: 홈 500은 강사 로컬 node_modules에 sonner/next-themes 없어서(학생버그 아님). npm install 복구, npm ci 통과(lock 정상).
+
+## 9차 (2026-06-19) — 사용자→판매자→관리자 여정, 임시 seller/admin 승격, 포트 3301
+
+스펙을 사용자/판매자/관리자/가드 4개 테스트로 재구성. 로그인 settle 4.5s(쿠키·리다이렉트 안정화).
+
+| ID | 시나리오 | 대상 | 기대 | 결과 (2026-06-19) |
+|----|----------|------|------|--------------------|
+| C1 | 메인(desktop+mobile) | `/` | 렌더 | pass(200) |
+| C2 | 마켓 목록(desktop+mobile) | `/shopping` | 그리드/필터 | pass(200) |
+| C2c | **상품 상세** | `/shopping/4`(판매중 실상품) | 상세 렌더 | **fail — 404. getProductDetail이 없는 `ingredients` 조인(PGRST200)으로 항상 null** |
+| C2d | 없는 상품 | `/shopping/999999` | 404 | pass(404) |
+| C4 | 로그인→마이페이지/주문내역 | `/mypage`,`/mypage/orders` | 200 | pass |
+| C5 | 장바구니→체크아웃 | `/cart`,`/cart/checkout` | 200 | pass |
+| S1~S3 | 판매자 정보/상품/정산목록 | `/seller/*` | 200(seller 승격) | pass |
+| S4a/b | **정산 상세 params** | `/seller/settlement/SET-001` vs `/SET-999` | 다른 화면 | **fail — 두 PNG md5 동일(MOCK SET-001). 8차 [필수] 미해결** |
+| A1~A6 | 어드민 대시보드/회원/상품/판매자/주문/정산 | `/admin/*` | 200(admin 승격) | pass · 정산 실DB(완료 375만원·수수료 75만원) |
+| 가드 | 비로그인 /seller·/admin | `/seller/*`,`/admin/*` | login 리다이렉트 | pass(`?next=` 보존, admin→`/admin/login`) |
+
+발견(9차):
+- **[필수·신규] `/shopping/[id]` 상품 상세 전부 404.** `lib/products.ts:13-20`의 select가 존재하지 않는 `ingredients(...)` 관계를 조인 → PGRST200 에러 → `if (error||!product) return null` → 모든 상세 404. 실제 FK는 `category_id`(categories). 사용자 구매 동선이 상세에서 끊김. (d9e917b에서 유입)
+- **[필수·이월] 정산 상세 params 미연결.** seller/settlement/[id]/page.tsx 여전히 MOCK_SETTLEMENT_DETAIL 하드코딩, useParams 미사용 → SET-001/SET-999 화면 동일(md5 일치). (7차부터 3회째)
+- **[필수·신규/보안] sellers 테이블 anon 노출.** anon 키로 `/rest/v1/sellers` 직접 GET 시 business_number·bank_account·representative_name·cs_phone 2행 유출. users/orders/settlements는 정상 차단([]). 8차 42P17(재귀)에서 정책이 바뀌며 sellers가 열림.
+- **[칭찬] 신규 주문/결제 흐름 견고.** `/api/order`가 서버에서 가격 재계산(클라 amount 불신뢰)+CAS 재고 차감/원복+order_items 실패 시 롤백. 어드민 주문/정산 라우트 requireAdmin+상태 화이트리스트+정산 완료 멱등성.
+- **[제안·이월] admin keyword .or() 필터 인젝션** — products/route.ts:61 + orders/route.ts:38(이번에 1곳 추가). anon으로 `or=(name.ilike.*,status.eq.숨김)` 직접 호출 시 필터 탈출 실증. admin 게이트라 실해는 낮음.
+- tsc 0 · build 통과(둘 다 green). 임시 seller(seller_id=18)·role 승격은 리뷰 후 원복/삭제 완료.
