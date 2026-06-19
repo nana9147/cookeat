@@ -33,10 +33,10 @@ export async function GET(req: NextRequest) {
   const sellersParam = searchParams.get('sellers') ?? '';
   const sort = searchParams.get('sort') ?? '추천순';
 
-  // 카테고리 → ingredient_id 조회, 판매자 → seller_id 조회, 전체 판매자 목록을 병렬 실행
+  // 카테고리 → category_id 조회, 판매자 → seller_id 조회, 전체 판매자 목록을 병렬 실행
   const sellerNames = sellersParam ? sellersParam.split(',').filter(Boolean) : [];
 
-  const [ingredientResult, sellerFilterResult, allSellers] = await Promise.all([
+  const [parentCategoryResult, sellerFilterResult, allSellers] = await Promise.all([
     category && category !== '전체'
       ? supabaseAdmin.from('ingredients').select('ingredient_id').eq('category', category)
       : Promise.resolve({ data: null }),
@@ -46,10 +46,17 @@ export async function GET(req: NextRequest) {
     fetchAllSellers(),
   ]);
 
-  let ingredientIds: number[] | null = null;
-  if (ingredientResult.data !== null) {
-    ingredientIds = ingredientResult.data.map((i: { ingredient_id: number }) => i.ingredient_id);
-    if (ingredientIds.length === 0) return emptyResult(page, limit, allSellers);
+  // 대카테고리 ingredient_id → 소카테고리 category_id 목록으로 변환
+  let filterCategoryIds: number[] | null = null;
+  if (parentCategoryResult.data !== null) {
+    const parentIds = parentCategoryResult.data.map((i: { ingredient_id: number }) => i.ingredient_id);
+    if (parentIds.length === 0) return emptyResult(page, limit, allSellers);
+    const { data: catRows } = await supabaseAdmin
+      .from('categories')
+      .select('category_id')
+      .in('parent_id', parentIds);
+    filterCategoryIds = (catRows ?? []).map((c: { category_id: number }) => c.category_id);
+    if (filterCategoryIds.length === 0) return emptyResult(page, limit, allSellers);
   }
 
   let filterSellerIds: number[] | null = null;
@@ -62,14 +69,14 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin
     .from('products')
     .select(
-      `product_id, name, brand, price, stock, image, sales_count, ingredient_id, created_at,
+      `product_id, name, brand, price, stock, image, sales_count, category_id, created_at,
        sellers!inner ( store_name )`,
       { count: 'exact' }
     )
     .eq('status', '판매중');
 
   if (keyword) query = query.ilike('name', `%${keyword}%`);
-  if (ingredientIds !== null) query = query.in('ingredient_id', ingredientIds);
+  if (filterCategoryIds !== null) query = query.in('category_id', filterCategoryIds);
   if (filterSellerIds !== null) query = query.in('seller_id', filterSellerIds);
   const minPriceNum = Number(minPrice);
   const maxPriceNum = Number(maxPrice);
@@ -105,31 +112,34 @@ export async function GET(req: NextRequest) {
   }
 
   const productIds = (products ?? []).map((p: { product_id: number }) => p.product_id);
-  const ingredientIds2 = [
+  const categoryIds = [
     ...new Set(
       (products ?? [])
-        .map((p: { ingredient_id: number | null }) => p.ingredient_id)
+        .map((p: { category_id: number | null }) => p.category_id)
         .filter((id): id is number => id !== null)
     ),
   ];
 
   // 리뷰 평점 집계 + 카테고리 조회를 병렬 실행
-  const [{ data: reviews }, { data: ingredientRows }] = await Promise.all([
+  // categories → parent_id → ingredients 순으로 대카테고리명 확보
+  const [{ data: reviews }, { data: categoryRows }] = await Promise.all([
     productIds.length > 0
       ? supabaseAdmin.from('reviews').select('product_id, rating').in('product_id', productIds)
       : Promise.resolve({ data: [] }),
-    ingredientIds2.length > 0
+    categoryIds.length > 0
       ? supabaseAdmin
-          .from('ingredients')
-          .select('ingredient_id, category')
-          .in('ingredient_id', ingredientIds2)
+          .from('categories')
+          .select('category_id, ingredients ( category )')
+          .in('category_id', categoryIds)
       : Promise.resolve({ data: [] }),
   ]);
 
+  // category_id → 대카테고리명 맵 (ingredients는 many-to-one이므로 단일 객체)
+  type CategoryJoinRow = { category_id: number; ingredients: { category: string } | null };
   const ingredientCategoryMap = new Map<number, string>(
-    (ingredientRows ?? []).map((r: { ingredient_id: number; category: string }) => [
-      r.ingredient_id,
-      r.category,
+    (categoryRows as unknown as CategoryJoinRow[]).map((r) => [
+      r.category_id,
+      r.ingredients?.category ?? '',
     ])
   );
 
@@ -148,7 +158,7 @@ export async function GET(req: NextRequest) {
     price: number;
     stock: number;
     image: string;
-    ingredient_id: number | null;
+    category_id: number | null;
     created_at: string;
     sellers: { store_name: string }[] | { store_name: string } | null;
   };
@@ -166,8 +176,8 @@ export async function GET(req: NextRequest) {
       brand: p.brand ?? '',
       price: p.price,
       image: p.image,
-      category: (p.ingredient_id !== null
-        ? (ingredientCategoryMap.get(p.ingredient_id) ?? '')
+      category: (p.category_id !== null
+        ? (ingredientCategoryMap.get(p.category_id) ?? '')
         : '') as CategoryName,
       seller: sellerName(p.sellers),
       rating: calcRating(stat?.sum ?? 0, stat?.count ?? 0),

@@ -1,8 +1,8 @@
 import { IngredientCategory } from '@/types/ingredient';
 
 const CATEGORIES: IngredientCategory[] = [
-  '전체', '채소', '과일·견과', '정육·계란', '수산·해산물',
-  '쌀·잡곡', '유제품', '오일/소스', '밀키트',
+  '전체', '채소', '과일·견과·쌀', '수산·해산물·건어물',
+  '정육·가공육·달걀', '면·양념·오일', '유제품', '베이커리',
 ];
 
 interface FilterCategoryProps {
