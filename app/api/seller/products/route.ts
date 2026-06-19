@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
-import { getSellerProducts } from './db';
+import { getSellerProducts, createSellerProduct } from './db';
 
 export async function GET(req: NextRequest) {
   const sellerCtx = await requireSellerContext(req);
@@ -27,4 +27,67 @@ export async function GET(req: NextRequest) {
     success: true,
     data: { products, pagination: { page, limit, total, hasNext: page * limit < total } },
   });
+}
+
+export async function POST(req: NextRequest) {
+  const sellerCtx = await requireSellerContext(req);
+  if (sellerCtx instanceof NextResponse) return sellerCtx;
+
+  const formData = await req.formData();
+
+  const name = formData.get('name') as string | null;
+  const brand = (formData.get('brand') as string | null) ?? '';
+  const origin = formData.get('origin') as string | null;
+  const categoryId = formData.get('categoryId') as string | null;
+  const status = formData.get('status') as string | null;
+  const price = formData.get('price') as string | null;
+  const stock = formData.get('stock') as string | null;
+  const description = (formData.get('description') as string | null) ?? '';
+  const shippingTemplateId = formData.get('shippingTemplateId') as string | null;
+  const returnPolicyTemplateId = formData.get('returnPolicyTemplateId') as string | null;
+
+  const representativeImage = formData.get('image');
+  const subImages = formData.getAll('subImages').filter((f): f is File => f instanceof File);
+
+  if (!name || !origin || !categoryId || !status || !price || !stock) {
+    return NextResponse.json(
+      { success: false, error: '필수 항목이 누락되었습니다.' },
+      { status: 400 }
+    );
+  }
+  if (!(representativeImage instanceof File)) {
+    return NextResponse.json(
+      { success: false, error: '대표 이미지가 필요합니다.' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const { productId } = await createSellerProduct(
+      {
+        sellerId: sellerCtx.sellerId,
+        name,
+        brand,
+        origin,
+        categoryId: Number(categoryId),
+        status,
+        price: Number(price),
+        stock: Number(stock),
+        description,
+        shippingTemplateId: shippingTemplateId ? Number(shippingTemplateId) : null,
+        returnPolicyTemplateId: returnPolicyTemplateId ? Number(returnPolicyTemplateId) : null,
+      },
+      representativeImage,
+      subImages
+    );
+
+    return NextResponse.json({ success: true, data: { productId } }, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '상품 등록에 실패했습니다.';
+    const isClientError = message === '존재하지 않는 카테고리입니다.';
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: isClientError ? 400 : 500 }
+    );
+  }
 }

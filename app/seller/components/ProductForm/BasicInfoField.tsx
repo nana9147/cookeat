@@ -3,7 +3,7 @@
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { BasicInfoFieldProps, CategoryName, ProductStatus } from '@/types/seller/product';
+import type { BasicInfoFieldProps, ProductStatus } from '@/types/seller/product';
 import {
   Select,
   SelectContent,
@@ -12,17 +12,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-export default function BasicInfoField({ data, onChange }: BasicInfoFieldProps) {
+export default function BasicInfoField({ data, categories, onChange }: BasicInfoFieldProps) {
   const STATUS_OPTIONS: ProductStatus[] = ['판매중', '판매종료'];
-  const CATEGORY_OPTIONS: CategoryName[] = [
-    '채소',
-    '과일·견과·쌀',
-    '수산·해산물·건어물',
-    '정육·가공육·달걀',
-    '면·양념·오일',
-    '유제품',
-    '베이커리',
-  ];
+  const selectedParent = categories.find((c) => String(c.categoryId) === data.parentCategoryId);
 
   return (
     <Card>
@@ -35,18 +27,42 @@ export default function BasicInfoField({ data, onChange }: BasicInfoFieldProps) 
           <label className="block text-sm font-medium text-gray-700 mb-1">
             카테고리 <span className="text-red-500">*</span>
           </label>
-          <Select value={data.category} onValueChange={(value) => onChange('category', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="카테고리을 선택하세요" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORY_OPTIONS.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-4">
+            <Select
+              value={data.parentCategoryId}
+              onValueChange={(value) => {
+                onChange('parentCategoryId', value);
+                onChange('categoryId', '');
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="카테고리을 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c.categoryId} value={String(c.categoryId)}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={data.categoryId}
+              onValueChange={(value) => onChange('categoryId', value)}
+              disabled={!selectedParent}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="세부 카테고리를 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {(selectedParent?.children ?? []).map((child) => (
+                  <SelectItem key={child.categoryId} value={String(child.categoryId)}>
+                    {child.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* 상품명 */}
@@ -68,8 +84,8 @@ export default function BasicInfoField({ data, onChange }: BasicInfoFieldProps) 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">제조사</label>
             <Input
-              value={data.manufacturer}
-              onChange={(e) => onChange('manufacturer', e.target.value)}
+              value={data.brand}
+              onChange={(e) => onChange('brand', e.target.value)}
               placeholder="제조사"
             />
           </div>

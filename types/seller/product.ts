@@ -1,4 +1,4 @@
-import { ShippingData } from './shipping';
+import { NonReturnReason, ShippingFeeType } from './shipping';
 
 export type CategoryName =
   | '채소'
@@ -62,14 +62,16 @@ export interface DescriptionEditorProps {
 
 // 상품등록 - 기본 정보
 export interface BasicInfoData {
-  category: string;
+  parentCategoryId: string;
+  categoryId: string;
   name: string;
-  manufacturer: string;
+  brand: string;
   origin: string;
   status: ProductStatus;
 }
 export interface BasicInfoFieldProps {
   data: BasicInfoData;
+  categories: CategoryNode[];
   onChange: (field: keyof BasicInfoData, value: string) => void;
 }
 
@@ -111,14 +113,10 @@ export interface ProductInfoFieldProps {
   onChange: <K extends keyof ProductInfoData>(field: K, value: ProductInfoData[K]) => void;
 }
 
+
 //반품정책
 export interface ReturnPolicyData {
   content: string;
-}
-
-export interface ReturnPolicyFieldProps {
-  data: ReturnPolicyData;
-  onChange: <K extends keyof ReturnPolicyData>(field: K, value: ReturnPolicyData[K]) => void;
 }
 
 export interface FormActionButtonsProps {
@@ -139,17 +137,17 @@ export interface ProductFormData {
   pricingInfo: PricingData;
   images: ImageUploadData;
   description: DescriptionData;
-  shippingInfo: ShippingData;
-  productInfo: ProductInfoData;
-  returnPolicy: ReturnPolicyData;
+  shippingTemplateId: number | null;
+  returnPolicyTemplateId: number | null;
 }
 
 export const initialProductForm: ProductFormData = {
   // 기본 정보
   basicInfo: {
-    category: '',
+    parentCategoryId: '',
+    categoryId: '',
     name: '',
-    manufacturer: '',
+    brand: '',
     origin: '',
     status: '판매중',
   },
@@ -169,26 +167,8 @@ export const initialProductForm: ProductFormData = {
     content: '',
   },
   //배송 정보
-  shippingInfo: {
-    shippingFeeType: '유료',
-    shippingFee: '',
-    returnFee: '',
-    freeThreshold: '',
-    originAddress: '',
-    returnAddress: '',
-  },
-  //정보제공고시
-  productInfo: {
-    infoItemName: '',
-    infoFoodType: '채소',
-    infoProducer: '',
-    infoOrigin: '',
-    infoExpirationDate: '',
-    infoStorageMethod: '',
-    infoWeight: '',
-  },
+  shippingTemplateId: null,
+
   //반품정책
-  returnPolicy: {
-    content: '',
-  },
+  returnPolicyTemplateId: null,
 };

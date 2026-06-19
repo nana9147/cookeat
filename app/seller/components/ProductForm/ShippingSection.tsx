@@ -1,227 +1,103 @@
 'use client';
 
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ShippingSectionProps } from '@/types/seller/shipping';
 
-const SHIPPING_FEE_TYPES = ['무료', '유료', '조건부 무료'];
+export default function ShippingSection({ templates, value, onChange }: ShippingSectionProps) {
+  const [openModal, setOpenModal] = useState(false);
 
-// TODO: API로 교체
-const MOCK_ADDRESSES = [
-  {
-    id: '1',
-    name: '본사 창고',
-    zipCode: '06234',
-    baseAddress: '서울시 강남구 테헤란로 123',
-    detailAddress: '4층',
-  },
-  {
-    id: '2',
-    name: '경기 물류센터',
-    zipCode: '17384',
-    baseAddress: '경기도 이천시 물류로 456',
-    detailAddress: '창고동',
-  },
-  {
-    id: '3',
-    name: '부산 창고',
-    zipCode: '48058',
-    baseAddress: '부산시 해운대구 센텀로 789',
-    detailAddress: 'B동',
-  },
-];
+  const selectedTemplate = templates.find((t) => t.templateId === value) ?? null;
 
-export default function ShippingSection({ data, onChange }: ShippingSectionProps) {
-  const [openModal, setOpenModal] = useState<'origin' | 'return' | null>(null);
-
-  const handleSelectAddress = (item: (typeof MOCK_ADDRESSES)[0]) => {
-    const fullAddress = `(${item.zipCode}) ${item.baseAddress} ${item.detailAddress}`;
-    if (openModal === 'origin') onChange('originAddress', fullAddress);
-    if (openModal === 'return') onChange('returnAddress', fullAddress);
-    setOpenModal(null);
-  };
-
-  const handleFeeTypeChange = (type: string) => {
-    onChange('shippingFeeType', type);
-    if (type === '무료') onChange('shippingFee', '0');
-    else onChange('shippingFee', '');
+  const handleSelect = (templateId: number) => {
+    onChange(templateId);
+    setOpenModal(false);
   };
 
   return (
     <>
       <Card>
         <CardHeader className="border-b">
-          <CardTitle>배송 정보</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            배송 정보
+            {selectedTemplate && (
+              <span className="text-xs text-green-700 font-normal bg-green-50 px-2 py-1 rounded-md border border-green-200">
+                {selectedTemplate.name} 적용됨
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-5 pt-5">
-          {/* 배송비 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              배송비 <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-6 items-center flex-wrap ">
-              {/* 배송비 유형 select */}
-              <select
-                value={data.shippingFeeType}
-                onChange={(e) =>
-                  handleFeeTypeChange(e.target.value as '무료' | '유료' | '조건부 무료')
-                }
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 "
-              >
-                {SHIPPING_FEE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
+        <CardContent className="flex flex-col gap-4 pt-5">
+          <Button type="button" variant="outline" onClick={() => setOpenModal(true)}>
+            배송 템플릿 선택
+          </Button>
 
-              {data.shippingFeeType === '유료' && (
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={data.shippingFee}
-                    onChange={(e) => onChange('shippingFee', e.target.value)}
-                    placeholder="배송비를 입력하세요"
-                    min={0}
-                    className="w-48 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
-                  />
-                  <span className="absolute right-3 top-1.5 text-sm text-gray-400">원</span>
-                </div>
-              )}
+          {selectedTemplate ? (
+            <dl className="grid grid-cols-2 gap-y-2 text-sm bg-gray-50 rounded-md p-4">
+              <dt className="text-gray-500">배송비 유형</dt>
+              <dd className="text-gray-800">{selectedTemplate.feeType}</dd>
 
-              {data.shippingFeeType === '조건부 무료' && (
-                <div className="flex flex-col gap-2 mt-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 w-24 shrink-0">기본 배송비</span>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        value={data.shippingFee}
-                        onChange={(e) => onChange('shippingFee', e.target.value)}
-                        placeholder="0"
-                        min={0}
-                        className="w-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
-                      />
-                      <span className="absolute right-3 top-1.5 text-sm text-gray-400">원</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 w-24 shrink-0">무료배송 기준</span>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        value={data.freeThreshold}
-                        onChange={(e) => onChange('freeThreshold', e.target.value)}
-                        placeholder="0"
-                        min={0}
-                        className="w-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
-                      />
-                      <span className="absolute right-3 top-1.5 text-sm text-gray-400">원</span>
-                    </div>
-                    <span className="text-sm text-gray-500">이상 무료</span>
-                  </div>
-                </div>
-              )}
+              <dt className="text-gray-500">배송비</dt>
+              <dd className="text-gray-800">
+                {selectedTemplate.fee.toLocaleString()}원
+                {selectedTemplate.feeType === '조건부 무료' &&
+                  selectedTemplate.freeThreshold !== null &&
+                  ` (${selectedTemplate.freeThreshold.toLocaleString()}원 이상 무료)`}
+              </dd>
 
-              {data.shippingFeeType === '무료' && (
-                <span className="text-sm text-green-700 font-medium">전체 무료배송</span>
-              )}
-            </div>
-          </div>
+              <dt className="text-gray-500">반품/교환 배송비</dt>
+              <dd className="text-gray-800">{selectedTemplate.returnFee.toLocaleString()}원</dd>
 
-          {/* 반품비 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              반품/교환 배송비 <span className="text-red-500">*</span>
-            </label>
-            <div className="relative w-48">
-              <Input
-                type="number"
-                value={data.returnFee}
-                onChange={(e) => onChange('returnFee', e.target.value)}
-                placeholder="0"
-                min={0}
-                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-7"
-              />
-              <span className="absolute right-3 top-1.5 text-sm text-gray-400">원</span>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">편도 기준 금액을 입력하세요</p>
-          </div>
+              <dt className="text-gray-500">출고지</dt>
+              <dd className="text-gray-800">{selectedTemplate.originAddress}</dd>
 
-          {/* 출고지 주소 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              출고지 주소 <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2 items-center">
-              <Input
-                value={data.originAddress}
-                readOnly
-                placeholder="출고지를 선택해주세요"
-                className="cursor-pointer"
-                onClick={() => setOpenModal('origin')}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setOpenModal('origin')}
-              >
-                선택
-              </Button>
-            </div>
-          </div>
-
-          {/* 반품/교환지 주소 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              반품/교환지 주소 <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2 items-center">
-              <Input
-                value={data.returnAddress}
-                readOnly
-                placeholder="반품/교환지를 선택해주세요"
-                className="cursor-pointer"
-                onClick={() => setOpenModal('return')}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setOpenModal('return')}
-              >
-                선택
-              </Button>
-            </div>
-          </div>
+              <dt className="text-gray-500">반품/교환지</dt>
+              <dd className="text-gray-800">{selectedTemplate.returnAddress}</dd>
+            </dl>
+          ) : (
+            <p className="text-sm text-gray-400">
+              아직 선택된 배송 템플릿이 없어요. 배송 템플릿을 선택해주세요.
+            </p>
+          )}
         </CardContent>
       </Card>
 
-      {/* 주소 선택 모달 */}
-      <Dialog open={openModal !== null} onOpenChange={(open) => !open && setOpenModal(null)}>
+      {/* 템플릿 선택 모달 */}
+      <Dialog open={openModal} onOpenChange={setOpenModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{openModal === 'origin' ? '출고지 선택' : '반품/교환지 선택'}</DialogTitle>
+            <DialogTitle>배송 템플릿 선택</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2 mt-2">
-            {MOCK_ADDRESSES.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleSelectAddress(item)}
-                className="flex flex-col items-start gap-1 px-4 py-3 rounded-md border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-colors text-left"
-              >
-                <span className="text-sm font-medium text-gray-800">{item.name}</span>
-                <span className="text-xs text-gray-400">
-                  ({item.zipCode}) {item.baseAddress}
-                </span>
-                <span className="text-xs text-gray-500">{item.detailAddress}</span>
-              </button>
-            ))}
+            {templates.length === 0 ? (
+              <p className="text-sm text-gray-400 py-6 text-center">
+                등록된 배송 템플릿이 없어요. 배송 관리에서 먼저 만들어주세요.
+              </p>
+            ) : (
+              templates.map((t) => (
+                <button
+                  key={t.templateId}
+                  type="button"
+                  onClick={() => handleSelect(t.templateId)}
+                  className="flex flex-col items-start gap-1 px-4 py-3 rounded-md border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-colors text-left"
+                >
+                  <span className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                    {t.name}
+                    {t.isDefault && (
+                      <span className="text-2xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
+                        기본
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {t.feeType} · {t.fee.toLocaleString()}원
+                  </span>
+                  <span className="text-xs text-gray-400">{t.originAddress}</span>
+                </button>
+              ))
+            )}
           </div>
         </DialogContent>
       </Dialog>
