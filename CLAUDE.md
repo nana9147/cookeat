@@ -76,6 +76,7 @@ npm run format    # Prettier 일괄 포맷
 | `app/seller/` | 판매자 | Header + Sidebar |
 | `app/admin/` | 관리자 | Header + Sidebar + `AdminAuthGuard` |
 
+
 ### ⚠️ Supabase 클라이언트 이중 구조 — 혼용 금지
 
 | 파일 | 키 | 사용 위치 |
@@ -103,16 +104,33 @@ if (result instanceof NextResponse) return result
 // 성공: AuthedUser { authId, userId, role }
 ```
 
+### 판매자 컨텍스트 헬퍼
+
+판매자 API 라우트에서는 `requireSeller` 대신 `requireSellerContext`를 사용한다. admin이 `?sellerId=` 쿼리로 특정 판매자를 대리 조회하는 경우까지 처리한다.
+
+```ts
+// lib/sellerContext.ts 패턴
+const sellerCtx = await requireSellerContext(req)
+if (sellerCtx instanceof NextResponse) return sellerCtx
+// 성공: SellerContext { userId, sellerId, role }
+```
+
 ### 컴포넌트 위치 규칙
 
 - `components/` — 앱 전체 공유 (Header, Footer, `ui/` shadcn)
 - `app/seller/components/`, `app/admin/components/` — 포털 전용
-- 페이지 로컬 컴포넌트 → 해당 페이지 폴더 아래 `components/` 서브폴더
+- 페이지 로컬 컴포넌트 → 해당 페이지 폴더 아래 `_components/` 서브폴더
 
 ### 상태 관리
 
 - `store/authStore.ts` — 인증 토큰·사용자 정보·keepLogin
 - `store/headerStore.ts` — 헤더 사이드바 UI 상태
+- `store/cartStore.ts` — 장바구니 (Zustand persist)
+
+### 서버 전용 lib
+
+- `lib/products.ts` — `server-only` 선언. 클라이언트 번들에 임포트하면 빌드 에러.
+- `lib/shipping.ts` — 배송비 상수(`FREE_SHIPPING_THRESHOLD`, `SHIPPING_FEE`)와 `calcShipping()`. 클라이언트·서버 모두 이 파일을 참조해야 하드코딩 분산을 막는다.
 
 ## 보안 요구사항
 

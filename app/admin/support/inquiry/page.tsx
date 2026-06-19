@@ -206,9 +206,9 @@ export default function InquiryPage() {
           <TableHeader className="bg-beige">
             <TableRow>
               <TableHead>제목</TableHead>
-              <TableHead>고객</TableHead>
-              <TableHead>대상</TableHead>
-              <TableHead>날짜</TableHead>
+              <TableHead className="hidden md:table-cell">고객</TableHead>
+              <TableHead className="hidden md:table-cell">대상</TableHead>
+              <TableHead className="hidden md:table-cell">날짜</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>관리</TableHead>
             </TableRow>
@@ -226,14 +226,14 @@ export default function InquiryPage() {
                     )}
                   </span>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{inq.customer}</TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{inq.customer}</TableCell>
+                <TableCell className="hidden md:table-cell">
                   <span className="flex items-center gap-1 text-muted-foreground text-sm">
                     {inq.target === '관리자' ? <User size={14} /> : <Store size={14} />}
                     {inq.target}
                   </span>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{inq.date}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{inq.date}</TableCell>
                 <TableCell>
                   <StatusBadge status={inq.state} />
                 </TableCell>

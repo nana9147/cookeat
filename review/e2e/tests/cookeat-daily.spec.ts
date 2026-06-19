@@ -1,16 +1,15 @@
 import { test, expect, Page } from "@playwright/test";
 
-// Cookeat 데일리 E2E (2026-06-16) — 실제 사용자처럼 둘러보는 회귀 스위트.
+// Cookeat 데일리 E2E (2026-06-19, 9차) — 실제 사용자/판매자/관리자 흐름 회귀 스위트.
 // 원칙:
 //  - networkidle 금지(Supabase realtime 때문에 멈춤). domcontentloaded + 고정 대기 사용.
-//  - 로그인은 한 번만, 같은 컨텍스트에서 계속 둘러본다.
 //  - 각 시나리오 끝에 풀페이지 스크린샷. 500이 떠도 캡처부터 하고 console.log로 status 기록.
-const DAY = "2026-06-18";
+//  - 판매자/관리자 흐름은 계정 role을 임시 승격한 상태에서만 의미가 있음(리뷰 셋업에서 승격→원복).
+const DAY = "2026-06-19";
 const SHOT = `../images/${DAY}`;
 const EMAIL = process.env.REVIEW_TEST_EMAIL ?? "cookeat-review@example.com";
 const PASSWORD = process.env.REVIEW_TEST_PASSWORD ?? "Review!2026";
 
-// realtime 때문에 networkidle 대신 쓰는 안정 대기 헬퍼
 async function settle(page: Page, ms = 2000) {
   await page.waitForLoadState("domcontentloaded").catch(() => {});
   await page.waitForTimeout(ms);
@@ -18,9 +17,6 @@ async function settle(page: Page, ms = 2000) {
 
 async function gotoAndShoot(page: Page, path: string, id: string, ms = 2000) {
   let status = 0;
-  page.once("response", (r) => {
-    if (r.url().includes(path) || r.request().resourceType() === "document") status = r.status();
-  });
   const resp = await page.goto(path, { waitUntil: "commit" }).catch(() => null);
   if (resp) status = resp.status();
   await settle(page, ms);
@@ -29,125 +25,101 @@ async function gotoAndShoot(page: Page, path: string, id: string, ms = 2000) {
   return { status, url: page.url() };
 }
 
-test.describe.configure({ mode: "serial" });
-
-test("Cookeat 데일리 — 실사용자 흐름", async ({ page }) => {
-  test.setTimeout(120_000);
-
-  // ---- C1: 메인 (desktop) ----
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await gotoAndShoot(page, "/", "cookeat-C1-main-desktop");
-
-  // ---- C1b: 메인 (mobile 390) ----
-  await page.setViewportSize({ width: 390, height: 844 });
-  await gotoAndShoot(page, "/", "cookeat-C1-main-mobile");
-  await page.setViewportSize({ width: 1280, height: 900 });
-
-  // ---- C2: 재료 쇼핑(마켓) 목록 ----
-  await gotoAndShoot(page, "/shopping", "cookeat-C2-shopping-list");
-
-  // ---- C2b: 상품 카테고리 필터 클릭 후 ----
-  const catBtn = page.getByRole("button", { name: /채소|과일|육류|수산/ }).first();
-  if (await catBtn.count()) {
-    await catBtn.click().catch(() => {});
-    await settle(page, 1200);
-  }
-  await page.screenshot({ path: `${SHOT}/cookeat-C2b-shopping-filtered.png`, fullPage: true }).catch(() => {});
-  console.log(`[cookeat-C2b] filtered url=${page.url()}`);
-
-  // ---- C3: 장바구니 (비로그인 상태) ----
-  await gotoAndShoot(page, "/cart", "cookeat-C3-cart");
-
-  // ---- C4: 로그인 (이메일) ----
-  await gotoAndShoot(page, "/login", "cookeat-C4a-login-page");
-  await page.fill('input[type="email"]', EMAIL).catch(() => {});
-  await page.fill('input[type="password"]', PASSWORD).catch(() => {});
-  await page.screenshot({ path: `${SHOT}/cookeat-C4b-login-filled.png`, fullPage: true }).catch(() => {});
-  await page.getByRole("button", { name: /^로그인$|처리 중/ }).click().catch(() => {});
-  await settle(page, 3500);
-  await page.screenshot({ path: `${SHOT}/cookeat-C4c-login-after.png`, fullPage: true }).catch(() => {});
-  console.log(`[cookeat-C4] after login url=${page.url()}`);
-
-  // ---- C5: 로그인 후 마이페이지(주문/배송) ----
-  await gotoAndShoot(page, "/mypage", "cookeat-C5a-mypage");
-  await gotoAndShoot(page, "/mypage/profile", "cookeat-C5b-mypage-profile");
-
-  // ---- C6: 가드 — 로그인 사용자도 일반 권한일 때 /seller, /admin 동작 ----
-  await gotoAndShoot(page, "/seller", "cookeat-C6a-seller-loggedin");
-  await gotoAndShoot(page, "/seller/products/new", "cookeat-C6b-seller-new-loggedin");
-  await gotoAndShoot(page, "/admin", "cookeat-C6c-admin-loggedin");
-});
-
-// ---- C6 가드(비로그인): 별도 컨텍스트로 깨끗하게 확인 ----
-test("비로그인 가드 — /seller, /admin", async ({ browser }) => {
-  const ctx = await browser.newContext();
-  const page = await ctx.newPage();
-  const g1 = await gotoAndShoot(page, "/seller/products/new", "cookeat-C6d-seller-new-noauth");
-  const g2 = await gotoAndShoot(page, "/admin", "cookeat-C6e-admin-noauth");
-  // 이번 회차 신규 셀러 라우트도 비로그인 가드 확인
-  const g3 = await gotoAndShoot(page, "/seller/settlement", "cookeat-C6f-settlement-noauth");
-  const g4 = await gotoAndShoot(page, "/seller/reviews", "cookeat-C6g-seller-reviews-noauth");
-  console.log(`[guard] seller/new noauth -> ${g1.url}`);
-  console.log(`[guard] admin noauth     -> ${g2.url}`);
-  console.log(`[guard] settlement noauth-> ${g3.url}`);
-  console.log(`[guard] seller/reviews   -> ${g4.url}`);
-  await ctx.close();
-});
-
-// ---- C7 신규 라우트: 상품 상세(서버 컴포넌트) + 정산 상세 params 확인 ----
-test("신규 라우트 — /shopping/[id], /seller/settlement/[id]", async ({ browser }) => {
-  const ctx = await browser.newContext();
-  const page = await ctx.newPage();
-  await page.setViewportSize({ width: 1280, height: 900 });
-
-  // 상품 목록에서 첫 상품 클릭 → 상세
-  await page.goto("/shopping", { waitUntil: "commit" }).catch(() => {});
-  await page.waitForTimeout(2500);
-  const card = page.locator('a[href*="/shopping/"]').first();
-  if (await card.count()) {
-    await card.click().catch(() => {});
-    await page.waitForTimeout(2500);
-    await page.screenshot({ path: `${SHOT}/cookeat-C7a-shopping-detail.png`, fullPage: true }).catch(() => {});
-    console.log(`[C7a] shopping detail url=${page.url()}`);
-  }
-  // 없는 상품 id → notFound 404 기대
-  const nf = await page.goto("/shopping/99999999", { waitUntil: "commit" }).catch(() => null);
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${SHOT}/cookeat-C7b-shopping-notfound.png`, fullPage: true }).catch(() => {});
-  console.log(`[C7b] /shopping/99999999 status=${nf?.status()}`);
-
-  // 정산 상세: 서로 다른 두 id가 같은 화면인지(params 미사용 버그 실증) — 비로그인이면 가드로 리다이렉트될 수 있음
-  const s1 = await page.goto("/seller/settlement/SET-001", { waitUntil: "commit" }).catch(() => null);
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${SHOT}/cookeat-C7c-settlement-SET-001.png`, fullPage: true }).catch(() => {});
-  const s2 = await page.goto("/seller/settlement/SET-999", { waitUntil: "commit" }).catch(() => null);
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${SHOT}/cookeat-C7d-settlement-SET-999.png`, fullPage: true }).catch(() => {});
-  console.log(`[C7c/d] settlement SET-001 status=${s1?.status()} url=${page.url()} / SET-999 status=${s2?.status()}`);
-
-  await ctx.close();
-});
-
-// ---- C8 판매자 여정: 테스트 계정을 seller 로 승격한 상태에서 신규 seller/info 확인 ----
-// (리뷰 중에만 seller 승격, 끝나면 user 로 원복)
-test("판매자 여정 — 로그인 → /seller/info (신규)", async ({ page }) => {
-  test.setTimeout(90_000);
-  // 로그인
+async function login(page: Page) {
   await page.goto("/login", { waitUntil: "commit" }).catch(() => {});
   await settle(page, 1500);
   await page.fill('input[type="email"]', EMAIL).catch(() => {});
   await page.fill('input[type="password"]', PASSWORD).catch(() => {});
   await page.getByRole("button", { name: /^로그인$|처리 중/ }).click().catch(() => {});
-  await settle(page, 3500);
+  await settle(page, 4500);
+  console.log(`[login] url=${page.url()}`);
+}
 
-  // 판매자 정보 페이지(신규)
-  const r1 = await gotoAndShoot(page, "/seller/info", "cookeat-C8a-seller-info", 3000);
-  console.log(`[C8a] /seller/info -> status=${r1.status} url=${r1.url}`);
+test.describe.configure({ mode: "serial" });
 
-  // 판매자 대시보드 진입(있으면)
-  await gotoAndShoot(page, "/seller", "cookeat-C8b-seller-home", 2500);
+// 1) 사용자 여정 (비로그인 → 로그인 → 마켓)
+test("Cookeat 9차 — 사용자 여정", async ({ page }) => {
+  test.setTimeout(120_000);
 
-  // 정산 상세 — seller 권한으로 SET-001 / SET-999 가 같은 화면인지(params 미사용 회귀)
-  await gotoAndShoot(page, "/seller/settlement/SET-001", "cookeat-C8c-settlement-001", 2000);
-  await gotoAndShoot(page, "/seller/settlement/SET-999", "cookeat-C8d-settlement-999", 2000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await gotoAndShoot(page, "/", "cookeat-C1-main-desktop");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoAndShoot(page, "/", "cookeat-C1-main-mobile");
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await gotoAndShoot(page, "/shopping", "cookeat-C2-shopping-list");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoAndShoot(page, "/shopping", "cookeat-C2-shopping-list-mobile");
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await gotoAndShoot(page, "/shopping/4", "cookeat-C2c-shopping-detail");
+  await gotoAndShoot(page, "/shopping/999999", "cookeat-C2d-shopping-detail-404");
+
+  await gotoAndShoot(page, "/cart", "cookeat-C3-cart-guest");
+
+  await login(page);
+  await gotoAndShoot(page, "/mypage", "cookeat-C4-mypage");
+  await gotoAndShoot(page, "/mypage/orders", "cookeat-C4b-mypage-orders");
+  await gotoAndShoot(page, "/cart", "cookeat-C5-cart-loggedin");
+  await gotoAndShoot(page, "/cart/checkout", "cookeat-C5b-checkout");
+});
+
+// 2) 판매자 여정 + 8차 [필수] 정산상세 버그 실증
+test("Cookeat 9차 — 판매자 여정 + 정산상세 버그", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await login(page);
+  await gotoAndShoot(page, "/seller", "cookeat-S0-seller-home");
+  await gotoAndShoot(page, "/seller/info", "cookeat-S1-seller-info");
+  await gotoAndShoot(page, "/seller/products", "cookeat-S2-seller-products");
+  await gotoAndShoot(page, "/seller/settlement", "cookeat-S3-seller-settlement-list");
+
+  // 8차 [필수] — 정산 상세가 id를 안 읽어 SET-001/SET-999가 같은 화면인지
+  await gotoAndShoot(page, "/seller/settlement/SET-001", "cookeat-S4a-settlement-SET-001");
+  await gotoAndShoot(page, "/seller/settlement/SET-999", "cookeat-S4b-settlement-SET-999");
+});
+
+// 3) 관리자 여정
+test("Cookeat 9차 — 관리자 여정", async ({ page }) => {
+  test.setTimeout(150_000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await login(page);
+  await gotoAndShoot(page, "/admin", "cookeat-A1-admin-dashboard");
+  await gotoAndShoot(page, "/admin/members", "cookeat-A2-admin-members");
+  await gotoAndShoot(page, "/admin/products", "cookeat-A3-admin-products");
+
+  const search = page.locator('input[type="search"], input[type="text"]').first();
+  if (await search.count()) {
+    await search.fill("고추").catch(() => {});
+    await search.press("Enter").catch(() => {});
+    await settle(page, 1800);
+  }
+  await page.screenshot({ path: `${SHOT}/cookeat-A3b-admin-products-search.png`, fullPage: true }).catch(() => {});
+  console.log(`[cookeat-A3b] search url=${page.url()}`);
+
+  await gotoAndShoot(page, "/admin/sellers", "cookeat-A4-admin-sellers");
+  await gotoAndShoot(page, "/admin/orders", "cookeat-A5-admin-orders");
+  await gotoAndShoot(page, "/admin/settlements", "cookeat-A6-admin-settlements");
+});
+
+// 4) 비로그인 가드 회귀
+test("Cookeat 9차 — 비로그인 가드 회귀", async ({ browser }) => {
+  test.setTimeout(90_000);
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  const guarded: [string, string][] = [
+    ["/seller/products/new", "cookeat-G1-seller-new"],
+    ["/seller/settlement/SET-001", "cookeat-G2-seller-settlement"],
+    ["/admin", "cookeat-G3-admin"],
+    ["/admin/orders", "cookeat-G4-admin-orders"],
+  ];
+  for (const [path, id] of guarded) {
+    const r = await gotoAndShoot(page, path, id);
+    console.log(`[guard] ${path} -> ${r.url} (redirected=${!r.url.includes(path)})`);
+  }
+  await ctx.close();
 });

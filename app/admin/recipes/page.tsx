@@ -157,9 +157,9 @@ export default function RecipesPage() {
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead className="text-left px-4 py-3 font-medium">레시피명</TableHead>
-              <TableHead className="text-left px-4 py-3 font-medium">작성자</TableHead>
-              <TableHead className="text-right px-4 py-3 font-medium">조회수</TableHead>
-              <TableHead className="text-right px-4 py-3 font-medium">수익</TableHead>
+              <TableHead className="hidden md:table-cell text-left px-4 py-3 font-medium">작성자</TableHead>
+              <TableHead className="hidden md:table-cell text-right px-4 py-3 font-medium">조회수</TableHead>
+              <TableHead className="hidden md:table-cell text-right px-4 py-3 font-medium">수익</TableHead>
               <TableHead className="text-center px-4 py-3 font-medium">상태</TableHead>
               <TableHead className="text-center px-4 py-3 font-medium">관리</TableHead>
             </TableRow>
@@ -168,11 +168,11 @@ export default function RecipesPage() {
             {recipes.map((recipe) => (
               <TableRow key={recipe.id} className="hover:bg-muted/30 transition-colors">
                 <TableCell className="px-4 py-3 font-medium">{recipe.title}</TableCell>
-                <TableCell className="px-4 py-3 text-muted-foreground">{recipe.author}</TableCell>
-                <TableCell className="px-4 py-3 text-right">
+                <TableCell className="hidden md:table-cell px-4 py-3 text-muted-foreground">{recipe.author}</TableCell>
+                <TableCell className="hidden md:table-cell px-4 py-3 text-right">
                   {recipe.views.toLocaleString()}
                 </TableCell>
-                <TableCell className="px-4 py-3 text-right">
+                <TableCell className="hidden md:table-cell px-4 py-3 text-right">
                   {Math.floor(recipe.points / 10)}백P
                 </TableCell>
                 <TableCell className="px-4 py-3 text-center">
