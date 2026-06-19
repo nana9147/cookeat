@@ -187,10 +187,10 @@ export default function FaqPage() {
         <Table>
           <TableHeader className="bg-beige">
             <TableRow>
-              <TableHead>카테고리</TableHead>
+              <TableHead className="hidden md:table-cell">카테고리</TableHead>
               <TableHead>질문</TableHead>
-              <TableHead>조회수</TableHead>
-              <TableHead>작성일</TableHead>
+              <TableHead className="hidden md:table-cell">조회수</TableHead>
+              <TableHead className="hidden md:table-cell">작성일</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>관리</TableHead>
             </TableRow>
@@ -198,14 +198,14 @@ export default function FaqPage() {
           <TableBody>
             {filtered.map((faq) => (
               <TableRow key={faq.id}>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <StatusBadge status={faq.category} />
                 </TableCell>
                 <TableCell className="font-medium">{faq.title}</TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell className="hidden md:table-cell text-muted-foreground">
                   {faq.views.toLocaleString()}
                 </TableCell>
-                <TableCell className="text-muted-foreground">{faq.date}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{faq.date}</TableCell>
                 <TableCell>
                   <StatusBadge status={faq.status} />
                 </TableCell>

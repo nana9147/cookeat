@@ -103,9 +103,9 @@ export default function SupportPage() {
           <TableHeader className="bg-beige">
             <TableRow>
               <TableHead>제목</TableHead>
-              <TableHead>문의자</TableHead>
-              <TableHead>카테고리</TableHead>
-              <TableHead>날짜</TableHead>
+              <TableHead className="hidden md:table-cell">문의자</TableHead>
+              <TableHead className="hidden md:table-cell">카테고리</TableHead>
+              <TableHead className="hidden md:table-cell">날짜</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>관리</TableHead>
             </TableRow>
@@ -114,11 +114,11 @@ export default function SupportPage() {
             {inquiries.map((inq) => (
               <TableRow key={inq.id}>
                 <TableCell className="font-medium">{inq.title}</TableCell>
-                <TableCell className="text-muted-foreground">{inq.author}</TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{inq.author}</TableCell>
+                <TableCell className="hidden md:table-cell">
                   <StatusBadge status={inq.category} />
                 </TableCell>
-                <TableCell className="text-muted-foreground">{inq.date}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{inq.date}</TableCell>
                 <TableCell>
                   <StatusBadge status={inq.state} />
                 </TableCell>

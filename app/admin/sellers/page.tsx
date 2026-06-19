@@ -299,11 +299,11 @@ export default function SellersPage() {
           <TableHeader className="bg-beige">
             <TableRow>
               <TableHead>판매자명</TableHead>
-              <TableHead>사업자번호</TableHead>
-              <TableHead>가입일</TableHead>
-              <TableHead>상품수</TableHead>
-              <TableHead>평점</TableHead>
-              <TableHead>수수료율</TableHead>
+              <TableHead className="hidden md:table-cell">사업자번호</TableHead>
+              <TableHead className="hidden md:table-cell">가입일</TableHead>
+              <TableHead className="hidden lg:table-cell">상품수</TableHead>
+              <TableHead className="hidden lg:table-cell">평점</TableHead>
+              <TableHead className="hidden md:table-cell">수수료율</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>관리</TableHead>
             </TableRow>
@@ -325,13 +325,13 @@ export default function SellersPage() {
               filtered.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{s.number}</TableCell>
-                  <TableCell className="text-muted-foreground">{s.joinedAt}</TableCell>
-                  <TableCell>{s.productCount}건</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{s.number}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{s.joinedAt}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{s.productCount}건</TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     <StarRating rating={s.rating} />
                   </TableCell>
-                  <TableCell>{s.charge}</TableCell>
+                  <TableCell className="hidden md:table-cell">{s.charge}</TableCell>
                   <TableCell>
                     <StatusBadge status={s.status} />
                   </TableCell>

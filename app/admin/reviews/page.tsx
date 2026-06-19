@@ -152,10 +152,10 @@ export default function ReviewsPage() {
           <TableHeader className="bg-beige">
             <TableRow>
               <TableHead>상품명</TableHead>
-              <TableHead>작성자</TableHead>
+              <TableHead className="hidden md:table-cell">작성자</TableHead>
               <TableHead>평점</TableHead>
-              <TableHead>작성일</TableHead>
-              <TableHead>신고수</TableHead>
+              <TableHead className="hidden md:table-cell">작성일</TableHead>
+              <TableHead className="hidden md:table-cell">신고수</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>관리</TableHead>
             </TableRow>
@@ -164,12 +164,12 @@ export default function ReviewsPage() {
             {reviews.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="font-medium">{r.productName}</TableCell>
-                <TableCell className="text-muted-foreground">{r.author}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{r.author}</TableCell>
                 <TableCell>
                   <StarRating rating={r.rating} />
                 </TableCell>
-                <TableCell className="text-muted-foreground">{r.date}</TableCell>
-                <TableCell className="text-red font-medium">{r.reportCount}건</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{r.date}</TableCell>
+                <TableCell className="hidden md:table-cell text-red font-medium">{r.reportCount}건</TableCell>
                 <TableCell>
                   <StatusBadge status={r.state} />
                 </TableCell>

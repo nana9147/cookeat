@@ -217,10 +217,10 @@ export default function ProductsPage() {
           <TableHeader className="bg-beige">
             <TableRow>
               <TableHead>상품명</TableHead>
-              <TableHead>판매자</TableHead>
-              <TableHead>카테고리</TableHead>
-              <TableHead>가격</TableHead>
-              <TableHead>재고</TableHead>
+              <TableHead className="hidden md:table-cell">판매자</TableHead>
+              <TableHead className="hidden lg:table-cell">카테고리</TableHead>
+              <TableHead className="hidden md:table-cell">가격</TableHead>
+              <TableHead className="hidden lg:table-cell">재고</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>관리</TableHead>
             </TableRow>
@@ -242,10 +242,10 @@ export default function ProductsPage() {
               productList.map((p) => (
                 <TableRow key={p.productId}>
                   <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{p.sellerName}</TableCell>
-                  <TableCell className="text-muted-foreground">{p.categoryName ?? '-'}</TableCell>
-                  <TableCell>{p.price.toLocaleString()}원</TableCell>
-                  <TableCell>{p.stock}개</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{p.sellerName}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground">{p.categoryName ?? '-'}</TableCell>
+                  <TableCell className="hidden md:table-cell">{p.price.toLocaleString()}원</TableCell>
+                  <TableCell className="hidden lg:table-cell">{p.stock}개</TableCell>
                   <TableCell>
                     <StatusBadge status={p.status} />
                   </TableCell>
