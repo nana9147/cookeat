@@ -45,25 +45,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // 통계용: 전체 대기/완료 합산 (페이지네이션과 별도로 조회)
-  const { data: statsData, error: statsError } = await supabaseAdmin
-    .from('settlements')
-    .select('status, amount, fee');
+  const [pendingData, completedData, allFeeData] = await Promise.all([
+    supabaseAdmin.from('settlements').select('amount', { count: 'exact' }).eq('status', '대기'),
+    supabaseAdmin.from('settlements').select('amount', { count: 'exact' }).eq('status', '완료'),
+    supabaseAdmin.from('settlements').select('fee'),
+  ]);
 
-  if (statsError) {
-    console.error('[GET /admin/settlements] stats error:', statsError);
-    return NextResponse.json({ error: statsError.message }, { status: 500 });
+  if (pendingData.error || completedData.error || allFeeData.error) {
+    const err = pendingData.error ?? completedData.error ?? allFeeData.error;
+    console.error('[GET /admin/settlements] stats error:', err);
+    return NextResponse.json({ error: err!.message }, { status: 500 });
   }
 
-  const pendingItems = (statsData ?? []).filter((s) => s.status === '대기');
-  const completedItems = (statsData ?? []).filter((s) => s.status === '완료');
-
   const stats = {
-    pendingCount: pendingItems.length,
-    pendingAmount: pendingItems.reduce((sum, s) => sum + (s.amount ?? 0), 0),
-    completedCount: completedItems.length,
-    completedAmount: completedItems.reduce((sum, s) => sum + (s.amount ?? 0), 0),
-    totalFee: (statsData ?? []).reduce((sum, s) => sum + (s.fee ?? 0), 0),
+    pendingCount: pendingData.count ?? 0,
+    pendingAmount: (pendingData.data ?? []).reduce((s, r) => s + (r.amount ?? 0), 0),
+    completedCount: completedData.count ?? 0,
+    completedAmount: (completedData.data ?? []).reduce((s, r) => s + (r.amount ?? 0), 0),
+    totalFee: (allFeeData.data ?? []).reduce((s, r) => s + (r.fee ?? 0), 0),
   };
 
   type RawSeller = {
