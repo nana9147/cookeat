@@ -3,13 +3,12 @@
 //export type { CategoryName };
 export type CategoryName =
   | '채소'
-  | '과일·견과'
-  | '정육·계란'
-  | '수산·해산물'
-  | '쌀·잡곡'
+  | '과일·견과·쌀'
+  | '수산·해산물·건어물'
+  | '정육·가공육·달걀'
+  | '면·양념·오일'
   | '유제품'
-  | '오일/소스'
-  | '밀키트';
+  | '베이커리';
 
 export type IngredientCategory = CategoryName | '전체';
 
@@ -55,7 +54,6 @@ export interface ProductDetail {
   description: string;
   origin: string;
   stock: number;
-  ingredientId: number | null;
   category: string;
   sellerId: number | null;
   seller: string;

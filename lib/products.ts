@@ -5,7 +5,7 @@ import type { ProductDetail } from '@/types/ingredient';
 
 // Supabase는 JOIN 결과 타입을 정확히 추론하지 못하므로 로컬 타입으로 명시
 type SellerRow = { seller_id: number; store_name: string; cs_phone: string };
-type IngredientRow = { ingredient_id: number; category: string };
+type CategoryRow = { category_id: number; name: string };
 
 export async function getProductDetail(id: number): Promise<ProductDetail | null> {
   const { data: product, error } = await supabaseAdmin
@@ -13,7 +13,7 @@ export async function getProductDetail(id: number): Promise<ProductDetail | null
     .select(
       `product_id, name, brand, price, stock, image, description, origin,
        sellers!inner ( seller_id, store_name, cs_phone ),
-       ingredients ( ingredient_id, category )`
+       categories ( category_id, name )`
     )
     .eq('product_id', id)
     .eq('status', '판매중')
@@ -38,7 +38,7 @@ export async function getProductDetail(id: number): Promise<ProductDetail | null
   const rating = calcRating(ratingSum, reviewCount);
 
   const seller = product.sellers as unknown as SellerRow | null;
-  const ingredient = product.ingredients as unknown as IngredientRow | null;
+  const category = product.categories as unknown as CategoryRow | null;
 
   const images = [product.image, ...extraImages.map((img) => img.url)].filter(
     Boolean
@@ -54,8 +54,7 @@ export async function getProductDetail(id: number): Promise<ProductDetail | null
     description: product.description ?? '',
     origin: product.origin ?? '',
     stock: product.stock,
-    ingredientId: ingredient?.ingredient_id ?? null,
-    category: ingredient?.category ?? '',
+    category: category?.name ?? '',
     sellerId: seller?.seller_id ?? null,
     seller: seller?.store_name ?? '',
     sellerPhone: seller?.cs_phone ?? '',
