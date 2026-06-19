@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Pencil, Ban, Filter, Search } from 'lucide-react';
+import { Eye, Pencil, Filter, Search } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -141,12 +141,6 @@ export default function ProductsPage() {
     setEditProduct(null);
   };
 
-  const handleDelete = async (productId: number) => {
-    await api.delete(`/admin/products/${productId}`);
-    setProductList((prev) => prev.filter((p) => p.productId !== productId));
-    setTotal((prev) => prev - 1);
-  };
-
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -271,13 +265,6 @@ export default function ProductsPage() {
                       >
                         <Pencil size={16} />
                       </button>
-                      <button
-                        className="text-red"
-                        aria-label="삭제"
-                        onClick={() => handleDelete(p.productId)}
-                      >
-                        <Ban size={16} />
-                      </button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -370,6 +357,7 @@ export default function ProductsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
