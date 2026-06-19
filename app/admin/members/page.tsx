@@ -80,8 +80,12 @@ export default function MembersPage() {
         const params = new URLSearchParams();
         if (debouncedSearch) params.set('keyword', debouncedSearch);
         if (filterStatus !== 'all') params.set('status', filterStatus);
-        params.set('page', String(page));
-        params.set('limit', String(PAGE_SIZE));
+        if (filterGrade !== 'all') {
+          params.set('limit', '1000');
+        } else {
+          params.set('page', String(page));
+          params.set('limit', String(PAGE_SIZE));
+        }
         const { data } = await api.get(`/admin/users?${params}`);
         if (!cancelled) {
           setMembers(data.users);
@@ -96,10 +100,15 @@ export default function MembersPage() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, filterStatus, page]);
+  }, [debouncedSearch, filterStatus, filterGrade, page]);
 
   function handleFilterStatusChange(value: Status | 'all') {
     setFilterStatus(value);
+    setPage(1);
+  }
+
+  function handleFilterGradeChange(value: Grade | 'all') {
+    setFilterGrade(value);
     setPage(1);
   }
 
@@ -121,7 +130,11 @@ export default function MembersPage() {
     }
   }
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const filtered = members.filter((m) => filterGrade === 'all' || m.grade === filterGrade);
+  const displayTotal = filterGrade !== 'all' ? filtered.length : total;
+  const totalPages = Math.ceil(displayTotal / PAGE_SIZE);
+  const displayMembers =
+    filterGrade !== 'all' ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : members;
 
   function getPageNumbers() {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -130,10 +143,6 @@ export default function MembersPage() {
       return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
     return [1, '...', page - 1, page, page + 1, '...', totalPages];
   }
-
-  const filtered = members.filter(
-    (m) => filterGrade === 'all' || m.grade === filterGrade
-  );
 
   return (
     <div className="p-6 space-y-4">
@@ -157,7 +166,7 @@ export default function MembersPage() {
         <div className="flex flex-wrap items-end gap-3 rounded-md border bg-white p-4">
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">등급</span>
-            <Select value={filterGrade} onValueChange={(v) => setFilterGrade(v as Grade | 'all')}>
+            <Select value={filterGrade} onValueChange={(v) => handleFilterGradeChange(v as Grade | 'all')}>
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
@@ -220,14 +229,14 @@ export default function MembersPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : displayMembers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
                   회원이 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((member) => (
+              displayMembers.map((member) => (
                 <TableRow key={member.userId}>
                   <TableCell className="font-medium">{member.nickname}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{member.email}</TableCell>
@@ -267,7 +276,7 @@ export default function MembersPage() {
       </div>
 
       <div className="text-sm text-muted-foreground">
-        {total}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}명
+        {displayTotal}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, displayTotal)}명
       </div>
       <Pagination
         currentPage={page}
