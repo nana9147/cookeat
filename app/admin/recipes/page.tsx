@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye } from 'lucide-react';
-import StatusBadge from '@/components/common/StatusBadge';
 import {
   Table,
   TableHeader,
@@ -15,98 +14,102 @@ import {
   TableBody,
   TableCell,
 } from '@/components/ui/table';
-
-type RecipeStatus = '공개' | '비공개' | '신고';
+import api from '@/lib/api';
 
 interface Recipe {
-  id: number;
+  recipeId: number;
   title: string;
   author: string;
-  email: string;
-  createdAt: string;
-  cookTime: string;
-  difficulty: string;
+  authorEmail: string;
   category: string;
-  description: string;
-  ingredients: string[];
-  views: number;
-  likes: number;
-  points: number;
-  reportCount: number;
-  status: RecipeStatus;
+  difficulty: '쉬움' | '보통' | '어려움';
+  cookingTime: number;
+  likeCount: number;
+  scrapCount: number;
+  createdAt: string;
 }
 
-const recipes: Recipe[] = [
-  {
-    id: 1,
-    title: '김치찌개',
-    author: '김쿡잇',
-    email: 'user1@example.com',
-    createdAt: '2024.05.20',
-    cookTime: '30분',
-    difficulty: '쉬움',
-    category: '찌개',
-    description: '깊은 맛의 묵은지 김치찌개 레시피입니다.',
-    ingredients: ['묵은지 200g', '돼지고기 150g', '두부 1/2모', '대파 1대', '양파 1/2개'],
-    views: 1234,
-    likes: 89,
-    points: 1560,
-    reportCount: 0,
-    status: '공개',
-  },
-  {
-    id: 2,
-    title: '된장찌개',
-    author: '이레시피',
-    email: 'user2@example.com',
-    createdAt: '2024.06.03',
-    cookTime: '25분',
-    difficulty: '쉬움',
-    category: '찌개',
-    description: '구수하고 담백한 된장찌개 레시피입니다.',
-    ingredients: ['된장 2큰술', '두부 1/2모', '애호박 1/4개', '대파 1대', '바지락 100g'],
-    views: 892,
-    likes: 54,
-    points: 1130,
-    reportCount: 0,
-    status: '공개',
-  },
-  {
-    id: 3,
-    title: '불고기',
-    author: '박요리',
-    email: 'user3@example.com',
-    createdAt: '2024.04.15',
-    cookTime: '40분',
-    difficulty: '보통',
-    category: '구이',
-    description: '달콤짭짤한 소불고기 레시피입니다.',
-    ingredients: ['소고기 300g', '간장 3큰술', '설탕 1큰술', '참기름 1큰술', '배 1/4개'],
-    views: 2341,
-    likes: 201,
-    points: 2950,
-    reportCount: 2,
-    status: '신고',
-  },
-];
-
+interface PointStats {
+  totalEarned: number;
+  totalUsed: number;
+  netOutstanding: number;
+  totalRecipes: number;
+}
 
 export default function RecipesPage() {
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pointStats, setPointStats] = useState<PointStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [pointsPerView, setPointsPerView] = useState(5);
   const [registerBonus, setRegisterBonus] = useState(500);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const selectedRecipes = recipes.find((s) => s.id === selectedId) ?? null;
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const totalUnsettled = recipes
-    .filter((r) => r.status !== '신고')
-    .reduce((sum, r) => sum + r.points, 0);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchRecipes() {
+      setLoading(true);
+      try {
+        const { data } = await api.get('/admin/recipes', {
+          params: { keyword: search, page, limit: 20 },
+        });
+        if (!cancelled) {
+          setRecipes(data.recipes);
+          setTotal(data.pagination.total);
+        }
+      } catch {
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchRecipes();
+    return () => {
+      cancelled = true;
+    };
+  }, [search, page]);
+
+  useEffect(() => {
+    api
+      .get('/admin/recipes/points')
+      .then(({ data }) => setPointStats(data))
+      .catch(() => {});
+  }, []);
+
+  function handleSearchChange(value: string) {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(value);
+      setPage(1);
+    }, 300);
+  }
+
+  async function handleDelete(recipeId: number) {
+    if (!confirm('레시피를 삭제하시겠습니까? ')) return;
+    try {
+      await api.delete(`/admin/recipes/${recipeId}`);
+      setRecipes((prev) => prev.filter((r) => r.recipeId !== recipeId));
+      setTotal((prev) => prev - 1);
+      if (selectedId === recipeId) setSelectedId(null);
+    } catch {
+      alert('삭제에 실패했습니다. 다시 시도해주세요.');
+    }
+  }
+
+  const selected = recipes.find((r) => r.recipeId === selectedId) ?? null;
+
+  const totalPages = Math.max(1, Math.ceil(total / 20));
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">레시피/포인트 관리</h1>
-        <p className="text-sm text-muted-foreground">전체: 1,567개</p>
+        <p className="text-sm text-muted-foreground">전체: {total.toLocaleString()}개</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -131,25 +134,42 @@ export default function RecipesPage() {
                 className="w-24 text-right"
               />
             </div>
-            <Button className="w-full">정책 저장</Button>
+            <Button className="w-full" disabled>
+              정책 저장
+            </Button>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-5 flex flex-col gap-4">
-            <p className="font-bold">포인트 정산</p>
+            <p className="font-bold">포인트 현황</p>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">미정산</p>
+              <p className="text-sm text-muted-foreground">총 적립</p>
               <p className="text-xl font-bold text-yellow">
-                {(totalUnsettled / 1000).toFixed(1)}만P
+                {pointStats ? `${(pointStats.totalEarned / 10000).toFixed(1)}만P` : '-'}
               </p>
             </div>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">정산 완료</p>
-              <p className="text-xl font-bold text-primary">324.6만P</p>
+              <p className="text-sm text-muted-foreground">총 사용</p>
+              <p className="text-xl font-bold text-primary">
+                {pointStats ? `${(pointStats.totalUsed / 10000).toFixed(1)}만P` : '-'}
+              </p>
             </div>
-            <Button className="w-full">일괄 정산</Button>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">잔여 (적립 - 사용)</p>
+              <p className="text-xl font-bold">
+                {pointStats ? `${(pointStats.netOutstanding / 10000).toFixed(1)}만P` : '-'}
+              </p>
+            </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="relative">
+        <Input
+          className="pl-4 bg-white"
+          placeholder="레시피 제목 검색"
+          onChange={(e) => handleSearchChange(e.target.value)}
+        />
       </div>
 
       <div className="rounded-lg border overflow-x-auto bg-white">
@@ -157,129 +177,151 @@ export default function RecipesPage() {
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead className="text-left px-4 py-3 font-medium">레시피명</TableHead>
-              <TableHead className="hidden md:table-cell text-left px-4 py-3 font-medium">작성자</TableHead>
-              <TableHead className="hidden md:table-cell text-right px-4 py-3 font-medium">조회수</TableHead>
-              <TableHead className="hidden md:table-cell text-right px-4 py-3 font-medium">수익</TableHead>
-              <TableHead className="text-center px-4 py-3 font-medium">상태</TableHead>
+              <TableHead className="hidden md:table-cell text-left px-4 py-3 font-medium">
+                작성자
+              </TableHead>
+              <TableHead className="hidden md:table-cell text-left px-4 py-3 font-medium">
+                카테고리
+              </TableHead>
+              <TableHead className="hidden md:table-cell text-right px-4 py-3 font-medium">
+                좋아요
+              </TableHead>
+              <TableHead className="hidden md:table-cell text-right px-4 py-3 font-medium">
+                스크랩
+              </TableHead>
               <TableHead className="text-center px-4 py-3 font-medium">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y">
-            {recipes.map((recipe) => (
-              <TableRow key={recipe.id} className="hover:bg-muted/30 transition-colors">
-                <TableCell className="px-4 py-3 font-medium">{recipe.title}</TableCell>
-                <TableCell className="hidden md:table-cell px-4 py-3 text-muted-foreground">{recipe.author}</TableCell>
-                <TableCell className="hidden md:table-cell px-4 py-3 text-right">
-                  {recipe.views.toLocaleString()}
-                </TableCell>
-                <TableCell className="hidden md:table-cell px-4 py-3 text-right">
-                  {Math.floor(recipe.points / 10)}백P
-                </TableCell>
-                <TableCell className="px-4 py-3 text-center">
-                  <StatusBadge status={recipe.status} />
-                </TableCell>
-                <TableCell className="px-4 py-3 text-center">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 w-7 p-0"
-                    onClick={() => setSelectedId(recipe.id)}
-                  >
-                    <Eye size={16} />
-                  </Button>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                  불러오는 중...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : recipes.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                  레시피가 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              recipes.map((recipe) => (
+                <TableRow key={recipe.recipeId} className="hover:bg-muted/30 transition-colors">
+                  <TableCell className="px-4 py-3 font-medium">{recipe.title}</TableCell>
+                  <TableCell className="hidden md:table-cell px-4 py-3 text-muted-foreground">
+                    {recipe.author}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell px-4 py-3 text-muted-foreground">
+                    {recipe.category}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell px-4 py-3 text-right">
+                    {recipe.likeCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell px-4 py-3 text-right">
+                    {recipe.scrapCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setSelectedId(recipe.recipeId)}
+                    >
+                      <Eye size={16} />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
-      <Dialog open={!!selectedRecipes} onOpenChange={() => setSelectedId(null)}>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            이전
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {page} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            다음
+          </Button>
+        </div>
+      )}
+
+      <Dialog open={!!selected} onOpenChange={() => setSelectedId(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>레시피 상세 정보</DialogTitle>
           </DialogHeader>
-          {selectedRecipes && (
+          {selected && (
             <div className="space-y-5 text-sm">
-              <p className="text-muted-foreground">레시피 ID: {selectedRecipes.id}</p>
+              <p className="text-muted-foreground">레시피 ID: {selected.recipeId}</p>
 
               <div className="space-y-3">
                 <p className="font-semibold">기본 정보</p>
                 <div className="grid grid-cols-2 gap-y-3">
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">레시피명</p>
-                    <p className="font-medium">{selectedRecipes.title}</p>
+                    <p className="font-medium">{selected.title}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">작성자</p>
-                    <p>{selectedRecipes.author}</p>
+                    <p>{selected.author}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">이메일</p>
-                    <p>{selectedRecipes.email}</p>
+                    <p>{selected.authorEmail}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">작성일</p>
-                    <p>{selectedRecipes.createdAt}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">조리시간</p>
-                    <p>{selectedRecipes.cookTime}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">난이도</p>
-                    <p>{selectedRecipes.difficulty}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">상태</p>
-                    <StatusBadge status={selectedRecipes.status} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">신고 횟수</p>
-                    <p>{selectedRecipes.reportCount}</p>
+                    <p>{new Date(selected.createdAt).toLocaleDateString('ko-KR')}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">카테고리</p>
-                    <p>{selectedRecipes.category}</p>
+                    <p>{selected.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">난이도</p>
+                    <p>{selected.difficulty}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">조리 시간</p>
+                    <p>{selected.cookingTime}분</p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="font-semibold">레시피 설명</p>
-                <p className="text-muted-foreground">{selectedRecipes.description}</p>
-              </div>
-
-              <div className="space-y-2">
-                <p className="font-semibold">재료</p>
-                <ul className="space-y-1">
-                  {selectedRecipes.ingredients.map((item) => (
-                    <li key={item} className="text-muted-foreground">
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="space-y-2">
-                <p className="font-semibold">통계</p>
-                <div className="grid grid-cols-3 text-center rounded-lg border divide-x">
-                  <div className="p-3">
-                    <p className="text-xs text-muted-foreground mb-1">조회수</p>
-                    <p className="font-bold">{selectedRecipes.views.toLocaleString()}</p>
-                  </div>
-                  <div className="p-3">
-                    <p className="text-xs text-muted-foreground mb-1">좋아요</p>
-                    <p className="font-bold">{selectedRecipes.likes}</p>
-                  </div>
-                  <div className="p-3">
-                    <p className="text-xs text-muted-foreground mb-1">포인트 수익</p>
-                    <p className="font-bold">{Math.floor(selectedRecipes.points / 10)}백P</p>
-                  </div>
+              <div className="grid grid-cols-2 text-center rounded-lg border divide-x">
+                <div className="p-3">
+                  <p className="text-xs text-muted-foreground mb-1">좋아요</p>
+                  <p className="font-bold">{selected.likeCount.toLocaleString()}</p>
+                </div>
+                <div className="p-3">
+                  <p className="text-xs text-muted-foreground mb-1">스크랩</p>
+                  <p className="font-bold">{selected.scrapCount.toLocaleString()}</p>
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <Button variant="destructive" className="flex-1">
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => handleDelete(selected.recipeId)}
+                >
                   삭제
                 </Button>
                 <Button variant="outline" className="flex-1" onClick={() => setSelectedId(null)}>
