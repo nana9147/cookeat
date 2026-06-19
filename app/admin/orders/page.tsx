@@ -194,9 +194,9 @@ export default function OrdersPage() {
             <TableRow>
               <TableHead>주문번호</TableHead>
               <TableHead>주문자</TableHead>
-              <TableHead>주문일시</TableHead>
-              <TableHead>상품수</TableHead>
-              <TableHead>결제금액</TableHead>
+              <TableHead className="hidden md:table-cell">주문일시</TableHead>
+              <TableHead className="hidden md:table-cell">상품수</TableHead>
+              <TableHead className="hidden md:table-cell">결제금액</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>관리</TableHead>
             </TableRow>
@@ -219,9 +219,11 @@ export default function OrdersPage() {
                 <TableRow key={o.orderId}>
                   <TableCell className="font-medium">{o.orderId}</TableCell>
                   <TableCell className="text-muted-foreground">{o.recipient}</TableCell>
-                  <TableCell className="text-muted-foreground">{o.createdAt}</TableCell>
-                  <TableCell>{o.orderItems.length}개</TableCell>
-                  <TableCell>{o.finalAmount.toLocaleString()}원</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {new Date(o.createdAt).toLocaleDateString('ko-KR')}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">{o.orderItems.length}개</TableCell>
+                  <TableCell className="hidden md:table-cell">{o.finalAmount.toLocaleString()}원</TableCell>
                   <TableCell>
                     <StatusBadge status={o.status} />
                   </TableCell>

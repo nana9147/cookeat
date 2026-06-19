@@ -65,33 +65,3 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ productId: string }> },
-) {
-  try {
-    const authed = await requireAdmin(req);
-    if (authed instanceof NextResponse) return authed;
-
-    const { productId } = await params;
-    const productIdNum = parseInt(productId);
-    if (isNaN(productIdNum)) {
-      return NextResponse.json({ error: 'invalid productId' }, { status: 400 });
-    }
-
-    const { error } = await supabaseAdmin
-      .from('products')
-      .delete()
-      .eq('product_id', productIdNum);
-
-    if (error) {
-      console.error('[DELETE /admin/products/:productId] supabase error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true });
-  } catch (e) {
-    console.error('[DELETE /admin/products/:productId] unexpected error:', e);
-    return NextResponse.json({ error: 'internal server error' }, { status: 500 });
-  }
-}

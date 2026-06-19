@@ -205,10 +205,10 @@ export default function MembersPage() {
           <TableHeader className="bg-beige">
             <TableRow>
               <TableHead>회원명</TableHead>
-              <TableHead>이메일</TableHead>
-              <TableHead>가입일</TableHead>
-              <TableHead>등급</TableHead>
-              <TableHead>주문수</TableHead>
+              <TableHead className="hidden md:table-cell">이메일</TableHead>
+              <TableHead className="hidden md:table-cell">가입일</TableHead>
+              <TableHead className="hidden md:table-cell">등급</TableHead>
+              <TableHead className="hidden md:table-cell">주문수</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>관리</TableHead>
             </TableRow>
@@ -230,14 +230,14 @@ export default function MembersPage() {
               filtered.map((member) => (
                 <TableRow key={member.userId}>
                   <TableCell className="font-medium">{member.nickname}</TableCell>
-                  <TableCell className="text-muted-foreground">{member.email}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{member.email}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
                     {new Date(member.createdAt).toLocaleDateString('ko-KR')}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <StatusBadge status={member.grade} />
                   </TableCell>
-                  <TableCell>{member.orderCount}건</TableCell>
+                  <TableCell className="hidden md:table-cell">{member.orderCount}건</TableCell>
                   <TableCell>
                     <StatusBadge status={statusLabel[member.status]} />
                   </TableCell>

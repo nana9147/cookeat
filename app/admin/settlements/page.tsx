@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
 import api from '@/lib/api';
+import { fail } from 'assert';
 
 type Status = '대기' | '완료';
 
@@ -109,19 +110,37 @@ export default function SettlementsPage() {
     const pending = settlements.filter((s) => s.status === '대기');
     if (pending.length === 0) return;
 
-    await Promise.all(
+    const results = await Promise.allSettled(
       pending.map((s) => api.patch(`/admin/settlements/${s.settlementId}`, { status: '완료' }))
     );
 
+    const succeededIds = pending
+      .filter((_, i) => results[i].status === 'fulfilled')
+      .map((s) => s.settlementId);
+
+    const failCount = results.filter((r) => r.status === 'rejected').length;
+    if (failCount > 0) {
+      alert(`${failCount}건 처리에 실패했습니다. 목록을 다시 확인해주세요`);
+    }
+
     const now = new Date().toISOString();
     setSettlements((prev) =>
-      prev.map((s) => (s.status === '대기' ? { ...s, status: '완료' as const, settledAt: now } : s))
+      prev.map((s) =>
+        succeededIds.includes(s.settlementId)
+          ? { ...s, status: '완료' as const, settledAt: now }
+          : s
+      )
     );
+
+    const succeededAmount = pending
+      .filter((s) => succeededIds.includes(s.settlementId))
+      .reduce((sum, s) => sum + s.amount, 0);
+
     setStats((prev) => ({
-      pendingCount: 0,
-      pendingAmount: 0,
-      completedCount: prev.completedCount + prev.pendingCount,
-      completedAmount: prev.completedAmount + prev.pendingAmount,
+      pendingCount: prev.pendingCount - succeededIds.length,
+      pendingAmount: prev.pendingAmount - succeededAmount,
+      completedCount: prev.completedCount + succeededIds.length,
+      completedAmount: prev.completedAmount + succeededAmount,
       totalFee: prev.totalFee,
     }));
   }
