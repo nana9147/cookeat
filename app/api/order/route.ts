@@ -126,6 +126,18 @@ export async function POST(req: NextRequest) {
     decremented.push({ productId: item.productId, quantity: item.quantity, prevStock: item.prevStock });
   }
 
+  // 재고가 0이 된 상품을 품절로 전환 (숨김 상태는 유지)
+  const zeroStockIds = decremented
+    .filter((item) => item.prevStock - item.quantity === 0)
+    .map((item) => item.productId);
+  if (zeroStockIds.length > 0) {
+    await supabaseAdmin
+      .from('products')
+      .update({ status: '품절' })
+      .in('product_id', zeroStockIds)
+      .eq('status', '판매중');
+  }
+
   const orderId = `ORD-${crypto.randomUUID()}`;
 
   // orders 생성
