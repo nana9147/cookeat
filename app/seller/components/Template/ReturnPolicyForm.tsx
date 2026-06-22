@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
-const EMPTY_RETURN_POLICY: Omit<ReturnPolicy, 'id'> = {
+const EMPTY_RETURN_POLICY: Omit<ReturnPolicy, 'returnId'> = {
   name: '',
   content: {
     returnPeriod: 7,
@@ -33,7 +33,7 @@ export default function ReturnPolicyForm({
   onClose,
   onSubmit,
 }: ReturnPolicyFormProps) {
-  const [form, setForm] = useState<Omit<ReturnPolicy, 'id'>>(EMPTY_RETURN_POLICY);
+  const [form, setForm] = useState<Omit<ReturnPolicy, 'returnId'>>(EMPTY_RETURN_POLICY);
 
   useEffect(() => {
     setForm(policy ?? EMPTY_RETURN_POLICY);

@@ -115,7 +115,7 @@ export interface AddressFormProps {
   address?: AddressItem;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (form: Omit<AddressItem, 'templateIdid'>) => void;
+  onSubmit: (form: Omit<AddressItem, 'id'>) => void;
 }
 
 /* 반품 템플릿 */

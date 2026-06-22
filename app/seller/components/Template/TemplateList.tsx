@@ -167,20 +167,20 @@ export default function TemplateList() {
   };
 
   // return
-  const handleReturnSetDefault = (id: string) => {
-    setReturnTemplate((prev) => prev.map((t) => ({ ...t, isDefault: t.id === id })));
+  const handleReturnSetDefault = (returnId: number) => {
+    setReturnTemplate((prev) => prev.map((t) => ({ ...t, isDefault: t.returnId === returnId })));
   };
 
-  const handleReturnSubmit = (form: Omit<ReturnPolicy, 'id'>) => {
+  const handleReturnSubmit = (form: Omit<ReturnPolicy, 'returnId'>) => {
     if (formMode === '등록') {
-      const newPolicy = { ...form, id: String(Date.now()) };
+      const newPolicy = { ...form, returnId: Date.now() };
       setReturnTemplate((prev) =>
         prev.map((a) => (form.isDefault ? { ...a, isDefault: false } : a)).concat(newPolicy)
       );
     } else {
       setReturnTemplate((prev) =>
         prev.map((a) => {
-          if (a.id === selectedReturn?.id) return { ...a, ...form };
+          if (a.returnId === selectedReturn?.returnId) return { ...a, ...form };
           if (form.isDefault) return { ...a, isDefault: false };
           return a;
         })
@@ -189,8 +189,8 @@ export default function TemplateList() {
     setIsReturnFormOpen(false);
   };
 
-  const handleReturnDelete = (id: string) => {
-    setReturnTemplate((prev) => prev.filter((a) => a.id !== id));
+  const handleReturnDelete = (returnId: number) => {
+    setReturnTemplate((prev) => prev.filter((a) => a.returnId !== returnId));
   };
 
   return (
