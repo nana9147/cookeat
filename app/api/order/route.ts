@@ -8,6 +8,14 @@ interface OrderItem {
   quantity: number;
 }
 
+const PAYMENT_METHOD_MAP: Record<string, string> = {
+  card: '카드',
+  kakao: '카카오페이',
+  toss: '토스페이',
+  bankbook: '무통장입금',
+  mobile: '휴대폰결제',
+};
+
 type DecrementedItem = {
   productId: number;
   quantity: number;
@@ -138,7 +146,10 @@ export async function POST(req: NextRequest) {
       .eq('status', '판매중');
   }
 
-  const orderId = `ORD-${crypto.randomUUID()}`;
+  const now = new Date();
+  const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const randomPart = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
+  const orderId = `ORD-${datePart}-${randomPart}`;
 
   // orders 생성
   const { data: order, error: orderError } = await supabaseAdmin
@@ -150,8 +161,7 @@ export async function POST(req: NextRequest) {
       shipping_fee: shippingFee,
       coupon_discount: 0,
       final_amount: finalAmount,
-      payment_method: paymentMethod ?? '미정',
-      status: '결제전',
+      payment_method: PAYMENT_METHOD_MAP[paymentMethod] ?? paymentMethod,
       recipient,
       phone,
       address,
