@@ -11,7 +11,7 @@ import type { CategoryNode, ProductFormData, ProductFormProps } from '@/types/se
 import { initialProductForm } from '@/types/seller/product';
 import ReturnPolicyField from './ReturnPolicyField';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { ReturnPolicyTemplateOption, ShippingTemplateOption } from '@/types/seller/shipping';
 
@@ -68,17 +68,10 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
     formData.append('description', form.description.content);
     formData.append('discountType', form.pricingInfo.discountType);
     formData.append('discountValue', form.pricingInfo.discountValue);
-    formData.append('minQuantity', form.pricingInfo.minQuantity);
-    formData.append('maxQuantity', form.pricingInfo.maxQuantity);
 
     if (representativeImage?.file) {
       formData.append('image', representativeImage.file);
     }
-    subImages.forEach((img) => {
-      if (img.file) {
-        formData.append('subImages', img.file);
-      }
-    });
 
     if (form.shippingTemplateId !== null) {
       formData.append('shippingTemplateId', String(form.shippingTemplateId));
@@ -89,16 +82,37 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
 
     try {
       if (mode === 'create') {
+        subImages.forEach((img) => {
+          if (img.file) {
+            formData.append('subImages', img.file);
+          }
+        });
+
         await api.post('/seller/products', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         toast.success('상품이 등록되었습니다.');
         router.push('/seller/products');
       } else {
-        toast.success('나중에 수정하자');
+        const meta = subImages.map((img) =>
+          img.imageId !== undefined ? { imageId: img.imageId } : { isNew: true }
+        );
+        formData.append('subImages_meta', JSON.stringify(meta));
+
+        subImages.forEach((img) => {
+          if (img.file) {
+            formData.append('subImages_files', img.file);
+          }
+        });
+
+        await api.patch(`/seller/products/${form.productId}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        toast.success('상품이 수정되었습니다.');
+        router.push('/seller/products');
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '등록에 실패했습니다.');
+      toast.error(e instanceof Error ? e.message : '처리에 실패했습니다.');
     }
   };
 

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-
+import { uploadProductImage } from '@/lib/productImage';
 interface ProductFilters {
   keyword?: string;
   status?: string;
@@ -69,8 +69,6 @@ export async function getSellerProducts(sellerId: number, filters: ProductFilter
   return { products: productsWithCount, total: count ?? 0 };
 }
 
-const BUCKET = 'product-images';
-
 interface CreateProductInput {
   sellerId: number;
   name: string;
@@ -83,20 +81,6 @@ interface CreateProductInput {
   description: string;
   shippingTemplateId: number | null;
   returnPolicyTemplateId: number | null;
-}
-
-async function uploadProductImage(productId: number, file: File): Promise<string> {
-  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const path = `${productId}/${Date.now()}-${safeName}`;
-
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false });
-
-  if (uploadError) throw uploadError;
-
-  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
 }
 
 export async function createSellerProduct(
