@@ -137,11 +137,6 @@ export default function ReviewsPage() {
     };
   }, [page]);
 
-  function handleBlind(id: number) {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, state: '처리완료' as const } : r)));
-    setSelectedId(null);
-  }
-
   async function handleDelete(id: number) {
     try {
       await api.delete(`/admin/reviews/${id}`);
@@ -333,14 +328,6 @@ export default function ReviewsPage() {
                   onClick={() => setSelectedId(null)}
                 >
                   목록
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleBlind(selected.id)}
-                >
-                  블라인드 처리
                 </Button>
                 <Button
                   size="sm"
