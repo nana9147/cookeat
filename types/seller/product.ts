@@ -98,20 +98,6 @@ export interface SortableImageProps {
   onMoveFirst: (id: string) => void;
 }
 
-// 정보 제공 고시
-export interface ProductInfoData {
-  infoItemName: string; // 품목 또는 명칭
-  infoFoodType: FoodType; // 식품의 유형
-  infoProducer: string; // 생산자/수입자
-  infoOrigin: string; // 원산지
-  infoExpirationDate: string; // 제조연월일/유통기한
-  infoStorageMethod: string; // 보관방법
-  infoWeight: string; // 중량/용량
-}
-export interface ProductInfoFieldProps {
-  data: ProductInfoData;
-  onChange: <K extends keyof ProductInfoData>(field: K, value: ProductInfoData[K]) => void;
-}
 
 
 //반품정책
