@@ -1,5 +1,4 @@
 import ProductForm from '@/app/seller/components/ProductForm';
-import TempSaveButton from '@/app/seller/components/ProductForm/TempSaveButton';
 import { ProductFormData } from '@/types/seller/product';
 
 const MOCK_PRODUCT: ProductFormData = {
@@ -39,7 +38,6 @@ export default async function ProductEditPage({ params }: { params: Promise<{ id
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <h1>상품 수정</h1>
-        <TempSaveButton />
       </div>
       <ProductForm mode="edit" initialData={MOCK_PRODUCT} />
     </div>

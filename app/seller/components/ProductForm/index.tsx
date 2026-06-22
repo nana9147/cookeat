@@ -9,7 +9,6 @@ import ShippingSection from './ShippingSection';
 import FormActionButtons from './FormActionButtons';
 import type { CategoryNode, ProductFormData, ProductFormProps } from '@/types/seller/product';
 import { initialProductForm } from '@/types/seller/product';
-import ProductInfoField from './ProductInfoField';
 import ReturnPolicyField from './ReturnPolicyField';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -137,10 +136,6 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         value={form.shippingTemplateId}
         onChange={(templateId) => setForm((prev) => ({ ...prev, shippingTemplateId: templateId }))}
       />
-      {/* <ProductInfoField
-        data={form.productInfo}
-        onChange={(field, value) => handleChange('productInfo', field, value)}
-      /> */}
       <ReturnPolicyField
         templates={returnPolicyTemplates}
         value={form.returnPolicyTemplateId}
