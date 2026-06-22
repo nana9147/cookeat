@@ -134,7 +134,10 @@ export async function POST(req: NextRequest) {
     decremented.push({ productId: item.productId, quantity: item.quantity, prevStock: item.prevStock });
   }
 
-  const orderId = `ORD-${crypto.randomUUID()}`;
+  const now = new Date();
+  const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const randomPart = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
+  const orderId = `ORD-${datePart}-${randomPart}`;
 
   // orders 생성
   const { data: order, error: orderError } = await supabaseAdmin
