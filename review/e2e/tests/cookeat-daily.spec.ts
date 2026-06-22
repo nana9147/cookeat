@@ -5,7 +5,7 @@ import { test, expect, Page } from "@playwright/test";
 //  - networkidle 금지(Supabase realtime 때문에 멈춤). domcontentloaded + 고정 대기 사용.
 //  - 각 시나리오 끝에 풀페이지 스크린샷. 500이 떠도 캡처부터 하고 console.log로 status 기록.
 //  - 판매자/관리자 흐름은 계정 role을 임시 승격한 상태에서만 의미가 있음(리뷰 셋업에서 승격→원복).
-const DAY = "2026-06-19";
+const DAY = "2026-06-22";
 const SHOT = `../images/${DAY}`;
 const EMAIL = process.env.REVIEW_TEST_EMAIL ?? "cookeat-review@example.com";
 const PASSWORD = process.env.REVIEW_TEST_PASSWORD ?? "Review!2026";
@@ -54,6 +54,10 @@ test("Cookeat 9차 — 사용자 여정", async ({ page }) => {
 
   await gotoAndShoot(page, "/shopping/4", "cookeat-C2c-shopping-detail");
   await gotoAndShoot(page, "/shopping/999999", "cookeat-C2d-shopping-detail-404");
+
+  // 신규(6/19~) 레시피 목록·상세
+  await gotoAndShoot(page, "/recipes", "cookeat-C6-recipes-list");
+  await gotoAndShoot(page, "/recipes/1", "cookeat-C6b-recipe-detail");
 
   await gotoAndShoot(page, "/cart", "cookeat-C3-cart-guest");
 
