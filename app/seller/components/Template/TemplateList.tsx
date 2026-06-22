@@ -4,15 +4,17 @@ import { Button } from '@/components/ui/button';
 import { FormType, ShippingTemplate, ReturnPolicy } from '@/types/seller/shipping';
 import { Plus, TextSearch } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ShippingTemplateTable from './ShippingTemplateTable';
 import ShippingTemplateForm from './ShippingTemplateForm';
 import ReturnPolicyTable from './ReturnPolicyTable';
 import ReturnPolicyForm from './ReturnPolicyForm';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 const MOCK_ShIPPING_TEMPLATES: ShippingTemplate[] = [
   {
-    id: 't1',
+    templateId: 1,
     name: '기본 배송',
     feeType: '유료',
     fee: 3000,
@@ -23,7 +25,7 @@ const MOCK_ShIPPING_TEMPLATES: ShippingTemplate[] = [
     isDefault: true,
   },
   {
-    id: 't2',
+    templateId: 2,
     name: '무료배송',
     feeType: '무료',
     fee: 0,
@@ -34,7 +36,7 @@ const MOCK_ShIPPING_TEMPLATES: ShippingTemplate[] = [
     isDefault: false,
   },
   {
-    id: 't3',
+    templateId: 3,
     name: '5만원 이상 무료',
     feeType: '조건부 무료',
     fee: 3000,
@@ -48,7 +50,7 @@ const MOCK_ShIPPING_TEMPLATES: ShippingTemplate[] = [
 
 const MOCK_RETURN_POLICIES: ReturnPolicy[] = [
   {
-    id: 'rp1',
+    returnId: 1,
     name: '기본 반품 정책',
     content: {
       returnPeriod: 7,
@@ -59,7 +61,7 @@ const MOCK_RETURN_POLICIES: ReturnPolicy[] = [
     isDefault: true,
   },
   {
-    id: 'rp2',
+    returnId: 2,
     name: '신선식품 반품 정책',
     content: {
       returnPeriod: 7,
@@ -70,7 +72,7 @@ const MOCK_RETURN_POLICIES: ReturnPolicy[] = [
     isDefault: false,
   },
   {
-    id: 'rp3',
+    returnId: 3,
     name: '가공식품 반품 정책',
     content: {
       returnPeriod: 14,
@@ -96,30 +98,72 @@ export default function TemplateList() {
   const [selectedReturn, setSelectedReturn] = useState<ReturnPolicy | undefined>(undefined);
 
   //shipping
-  const handleShippingSetDefault = (id: string) => {
-    setShippingTemplate((prev) => prev.map((t) => ({ ...t, isDefault: t.id === id })));
+  const fetchShippingTemplates = () => {
+    api
+      .get('/seller/shipping/templates')
+      .then(({ data }) => setShippingTemplate(data.data))
+      .catch((e) =>
+        toast.error(e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.')
+      );
   };
 
-  const handleShippingSubmit = (form: Omit<ShippingTemplate, 'id'>) => {
-    if (formMode === '등록') {
-      const newTemplate = { ...form, id: String(Date.now()) };
-      setShippingTemplate((prev) =>
-        prev.map((a) => (form.isDefault ? { ...a, isDefault: false } : a)).concat(newTemplate)
-      );
-    } else {
-      setShippingTemplate((prev) =>
-        prev.map((a) => {
-          if (a.id === selectedShipping?.id) return { ...a, ...form };
-          if (form.isDefault) return { ...a, isDefault: false };
-          return a;
-        })
-      );
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get('/seller/shipping/templates')
+      .then(({ data }) => {
+        if (!cancelled) setShippingTemplate(data.data);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleShippingSetDefault = async (templateId: number) => {
+    try {
+      await api.patch(`/seller/shipping/templates/${templateId}/default`);
+      toast.success('기본 템플릿이 변경되었습니다.');
+      fetchShippingTemplates();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '기본 템플릿 설정에 실패했습니다.');
     }
-    setIsShippingFormOpen(false);
   };
 
-  const handleShippingDelete = (id: string) => {
-    setShippingTemplate((prev) => prev.filter((a) => a.id !== id));
+  const handleShippingSubmit = async (form: Omit<ShippingTemplate, 'templateId'>) => {
+    try {
+      if (formMode === '등록') {
+        await api.post('/seller/shipping/templates', form);
+        toast.success('배송 템플릿이 등록되었습니다.');
+      } else if (selectedShipping) {
+        await api.patch(`/seller/shipping/templates/${selectedShipping.templateId}`, form);
+        toast.success('배송 템플릿이 수정되었습니다.');
+      }
+      setIsShippingFormOpen(false);
+      fetchShippingTemplates();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '배송 템플릿 처리에 실패했습니다.');
+    }
+  };
+
+  const handleShippingDelete = async (templateId: number) => {
+    try {
+      const { data } = await api.delete(`/seller/shipping/templates/${templateId}`);
+      if (data.data?.newDefaultTemplateId) {
+        toast.success('템플릿이 삭제되었고, 기본 템플릿이 변경되었습니다.');
+      } else {
+        toast.success('템플릿이 삭제되었습니다.');
+      }
+      fetchShippingTemplates();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '배송 템플릿 삭제에 실패했습니다.');
+    }
   };
 
   // return
