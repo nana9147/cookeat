@@ -22,16 +22,13 @@ export default function UserPointCard() {
 
       <div className="bg-primary rounded-xl mt-3 p-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-white/70">쿠킷 포인트</p>
+          <p className="text-xs text-white/85">쿠킷 포인트</p>
           <p className="text-2xl font-bold text-white mt-0.5">{point.toLocaleString()}P</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
             <span className="text-white font-bold text-sm">P</span>
           </div>
-          <button className="text-xs text-white/80 hover:text-white transition-colors">
-            더쌓기
-          </button>
         </div>
       </div>
     </div>
