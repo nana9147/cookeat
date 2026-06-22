@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { FormType, ShippingTemplate, ReturnPolicy } from '@/types/seller/shipping';
+import { FormType, ShippingTemplate, ReturnPolicy, NonReturnReason } from '@/types/seller/shipping';
 import { Plus, TextSearch } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useEffect, useState } from 'react';
@@ -12,86 +12,34 @@ import ReturnPolicyForm from './ReturnPolicyForm';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
-const MOCK_ShIPPING_TEMPLATES: ShippingTemplate[] = [
-  {
-    templateId: 1,
-    name: '기본 배송',
-    feeType: '유료',
-    fee: 3000,
-    freeThreshold: 0,
-    returnFee: 3000,
-    originAddress: '(06234) 서울시 강남구 테헤란로 123 4층',
-    returnAddress: '',
-    isDefault: true,
-  },
-  {
-    templateId: 2,
-    name: '무료배송',
-    feeType: '무료',
-    fee: 0,
-    freeThreshold: 0,
-    returnFee: 3000,
-    originAddress: '(06234) 서울시 강남구 테헤란로 123 4층',
-    returnAddress: '',
-    isDefault: false,
-  },
-  {
-    templateId: 3,
-    name: '5만원 이상 무료',
-    feeType: '조건부 무료',
-    fee: 3000,
-    freeThreshold: 50000,
-    returnFee: 3000,
-    originAddress: '(17384) 경기도 이천시 물류로 456 창고동',
-    returnAddress: '',
-    isDefault: false,
-  },
-];
-
-const MOCK_RETURN_POLICIES: ReturnPolicy[] = [
-  {
-    returnId: 1,
-    name: '기본 반품 정책',
+function mapReturnPolicyResponse(t: {
+  templateId: number;
+  name: string;
+  returnPeriod: number;
+  refundPeriod: number;
+  nonReturnReasons: NonReturnReason[];
+  isDefault: boolean;
+}): ReturnPolicy {
+  return {
+    returnId: t.templateId,
+    name: t.name,
     content: {
-      returnPeriod: 7,
+      returnPeriod: t.returnPeriod,
       defectShippingPayer: '판매자',
-      nonReturnReasons: [],
-      refundPeriod: 3,
+      nonReturnReasons: t.nonReturnReasons,
+      refundPeriod: t.refundPeriod,
     },
-    isDefault: true,
-  },
-  {
-    returnId: 2,
-    name: '신선식품 반품 정책',
-    content: {
-      returnPeriod: 7,
-      defectShippingPayer: '판매자',
-      nonReturnReasons: ['신선식품 단순 변심', '개봉/사용/설치 완료'],
-      refundPeriod: 5,
-    },
-    isDefault: false,
-  },
-  {
-    returnId: 3,
-    name: '가공식품 반품 정책',
-    content: {
-      returnPeriod: 14,
-      defectShippingPayer: '판매자',
-      nonReturnReasons: ['개봉/사용/설치 완료'],
-      refundPeriod: 7,
-    },
-    isDefault: false,
-  },
-];
+    isDefault: t.isDefault,
+  };
+}
 
 export default function TemplateList() {
   const [activeTab, setActiveTab] = useState<'shipping' | 'return'>('shipping');
   const [isShippingFormOpen, setIsShippingFormOpen] = useState(false);
   const [isReturnFormOpen, setIsReturnFormOpen] = useState(false);
 
-  const [shippingTemplate, setShippingTemplate] =
-    useState<ShippingTemplate[]>(MOCK_ShIPPING_TEMPLATES);
-  const [returnTemplate, setReturnTemplate] = useState<ReturnPolicy[]>(MOCK_RETURN_POLICIES);
+  const [shippingTemplate, setShippingTemplate] = useState<ShippingTemplate[]>([]);
+  const [returnTemplate, setReturnTemplate] = useState<ReturnPolicy[]>([]);
 
   const [formMode, setFormMode] = useState<FormType>('등록');
   const [selectedShipping, setSelectedShipping] = useState<ShippingTemplate | undefined>(undefined);
@@ -167,30 +115,80 @@ export default function TemplateList() {
   };
 
   // return
-  const handleReturnSetDefault = (returnId: number) => {
-    setReturnTemplate((prev) => prev.map((t) => ({ ...t, isDefault: t.returnId === returnId })));
+  const fetchReturnPolicies = () => {
+    api
+      .get('/seller/return-policy/templates')
+      .then(({ data }) => setReturnTemplate(data.data.map(mapReturnPolicyResponse)))
+      .catch((e) =>
+        toast.error(e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.')
+      );
   };
 
-  const handleReturnSubmit = (form: Omit<ReturnPolicy, 'returnId'>) => {
-    if (formMode === '등록') {
-      const newPolicy = { ...form, returnId: Date.now() };
-      setReturnTemplate((prev) =>
-        prev.map((a) => (form.isDefault ? { ...a, isDefault: false } : a)).concat(newPolicy)
-      );
-    } else {
-      setReturnTemplate((prev) =>
-        prev.map((a) => {
-          if (a.returnId === selectedReturn?.returnId) return { ...a, ...form };
-          if (form.isDefault) return { ...a, isDefault: false };
-          return a;
-        })
-      );
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get('/seller/return-policy/templates')
+      .then(({ data }) => {
+        if (!cancelled) setReturnTemplate(data.data.map(mapReturnPolicyResponse));
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleReturnSetDefault = async (returnId: number) => {
+    try {
+      await api.patch(`/seller/return-policy/templates/${returnId}/default`);
+      toast.success('기본 템플릿이 변경되었습니다.');
+      fetchReturnPolicies();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '기본 템플릿 설정에 실패했습니다.');
     }
-    setIsReturnFormOpen(false);
   };
 
-  const handleReturnDelete = (returnId: number) => {
-    setReturnTemplate((prev) => prev.filter((a) => a.returnId !== returnId));
+  const handleReturnSubmit = async (form: Omit<ReturnPolicy, 'returnId'>) => {
+    try {
+      const payload = {
+        name: form.name,
+        returnPeriod: form.content.returnPeriod,
+        refundPeriod: form.content.refundPeriod,
+        nonReturnReasons: form.content.nonReturnReasons,
+        isDefault: form.isDefault,
+      };
+
+      if (formMode === '등록') {
+        await api.post('/seller/return-policy/templates', payload);
+        toast.success('반품정책 템플릿이 등록되었습니다.');
+      } else if (selectedReturn) {
+        await api.patch(`/seller/return-policy/templates/${selectedReturn.returnId}`, payload);
+        toast.success('반품정책 템플릿이 수정되었습니다.');
+      }
+      setIsReturnFormOpen(false);
+      fetchReturnPolicies();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '반품정책 템플릿 처리에 실패했습니다.');
+    }
+  };
+
+  const handleReturnDelete = async (returnId: number) => {
+    try {
+      const { data } = await api.delete(`/seller/return-policy/templates/${returnId}`);
+      if (data.data?.newDefaultTemplateId) {
+        toast.success('템플릿이 삭제되었고, 기본 템플릿이 변경되었습니다.');
+      } else {
+        toast.success('템플릿이 삭제되었습니다.');
+      }
+      fetchReturnPolicies();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '반품정책 템플릿 삭제에 실패했습니다.');
+    }
   };
 
   return (

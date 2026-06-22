@@ -20,10 +20,11 @@ const EMPTY_RETURN_POLICY: Omit<ReturnPolicy, 'returnId'> = {
 };
 
 const NON_RETURN_REASONS: NonReturnReason[] = [
-  '개봉/사용/설치 완료',
-  '신선식품 단순 변심',
-  '주문제작 상품',
-  '디지털 콘텐츠',
+  '신선식품 단순변심 반품불가',
+  '포장 개봉/사용 후',
+  '소비기한 경과',
+  '보관방법 미준수로 인한 손상/변질',
+  '주문제작(정육손질/소분 등)',
 ];
 
 export default function ReturnPolicyForm({
