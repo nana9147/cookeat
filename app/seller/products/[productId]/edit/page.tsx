@@ -15,8 +15,6 @@ const MOCK_PRODUCT: ProductFormData = {
     stock: '100',
     discountType: 'amount',
     discountValue: '3000',
-    minQuantity: '',
-    maxQuantity: '',
   },
   images: {
     images: [
@@ -31,8 +29,12 @@ const MOCK_PRODUCT: ProductFormData = {
   returnPolicyTemplateId: 1,
 };
 
-export default async function ProductEditPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function ProductEditPage({
+  params,
+}: {
+  params: Promise<{ productId: string }>;
+}) {
+  const { productId } = await params;
 
   return (
     <div className="p-6 max-w-3xl">
