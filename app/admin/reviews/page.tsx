@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, MessageCircle, CheckCircle2, Eye, Trash2, Star } from 'lucide-react';
+import api from '@/lib/api';
 import {
   Table,
   TableBody,
@@ -14,6 +15,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
+import Pagination from '@/components/ui/Pagination';
+
+const PAGE_SIZE = 20;
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -67,64 +71,79 @@ interface Review {
   reports: Report[];
 }
 
-const initialReviews: Review[] = [
-  {
-    id: 1,
-    productName: '신선한 양파',
-    author: '김쿡잇',
-    email: 'user1@example.com',
-    rating: 5,
-    date: '2024.05.28 09:30',
-    reportCount: 0,
-    state: '정상',
-    content: '정말 신선하고 맛있는 양파였어요. 빠른 배송도 만족스러웠습니다.',
-    reports: [],
-  },
-  {
-    id: 2,
-    productName: '국내산 대파',
-    author: '이레시피',
-    email: 'user2@example.com',
-    rating: 4,
-    date: '2024.05.27 14:20',
-    reportCount: 0,
-    state: '정상',
-    content: '대파 상태가 좋았습니다. 다음에도 구매할 예정입니다.',
-    reports: [],
-  },
-  {
-    id: 3,
-    productName: '프리미엄 소고기',
-    author: '박요리',
-    email: 'user3@example.com',
-    rating: 1,
-    date: '2024.05.26 10:15',
-    reportCount: 3,
-    state: '신고',
-    content: '상품 상태가 좋지 않았습니다. 냄새도 이상하고 포장도 엉망이었어요.',
-    reports: [
-      { reporter: '김쿡잇', date: '2024.05.27', reason: '허위 리뷰' },
-      { reporter: '이레시피', date: '2024.05.27', reason: '악의적인 내용' },
-      { reporter: '최맛있', date: '2024.05.28', reason: '부적절한 표현' },
-    ],
-  },
-];
-
-
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = reviews.find((r) => r.id === selectedId) ?? null;
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  function getPageNumbers() {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    if (page >= totalPages - 3)
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', page - 1, page, page + 1, '...', totalPages];
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const { data } = await api.get(`/admin/reviews?page=${page}&limit=${PAGE_SIZE}`);
+        if (cancelled) return;
+        const mapped: Review[] = (data.reviews ?? []).map(
+          (r: {
+            reviewId: number;
+            targetName: string;
+            author: string;
+            authorEmail: string;
+            rating: number;
+            content: string;
+            createdAt: string;
+          }) => ({
+            id: r.reviewId,
+            productName: r.targetName,
+            author: r.author,
+            email: r.authorEmail,
+            rating: r.rating,
+            date: new Date(r.createdAt).toLocaleString('ko-KR'),
+            reportCount: 0,
+            state: '정상' as const,
+            content: r.content,
+            reports: [],
+          })
+        );
+        setReviews(mapped);
+        setTotal(data.pagination.total);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [page]);
 
   function handleBlind(id: number) {
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, state: '처리완료' as const } : r)));
     setSelectedId(null);
   }
 
-  function handleDelete(id: number) {
+  async function handleDelete(id: number) {
+    await api.delete(`/admin/reviews/${id}`);
     setReviews((prev) => prev.filter((r) => r.id !== id));
     setSelectedId(null);
   }
+
+  if (loading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -161,6 +180,13 @@ export default function ReviewsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {reviews.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                  신고된 리뷰가 없습니다.
+                </TableCell>
+              </TableRow>
+            )}
             {reviews.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="font-medium">{r.productName}</TableCell>
@@ -196,6 +222,18 @@ export default function ReviewsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {total > 0 && (
+        <div className="text-sm text-muted-foreground">
+          {total}개 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}개
+        </div>
+      )}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        getPageNumbers={getPageNumbers}
+      />
 
       <Dialog open={!!selected} onOpenChange={() => setSelectedId(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
