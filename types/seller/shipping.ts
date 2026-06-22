@@ -190,3 +190,26 @@ export interface SetDefaultShippingTemplateInput {
   sellerId: number;
   templateId: number;
 }
+
+export interface CreateReturnPolicyTemplateInput {
+  sellerId: number;
+  name: string;
+  returnPeriod: number;
+  refundPeriod: number;
+  nonReturnReasons: NonReturnReason[];
+  isDefault: boolean;
+}
+
+export interface UpdateReturnPolicyTemplateInput {
+  sellerId: number;
+  templateId: number;
+  name: string;
+  returnPeriod: number;
+  refundPeriod: number;
+  nonReturnReasons: NonReturnReason[];
+}
+
+export interface SetDefaultReturnPolicyTemplateInput {
+  sellerId: number;
+  templateId: number;
+}

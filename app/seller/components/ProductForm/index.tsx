@@ -28,7 +28,7 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
     api.get('/categories').then(({ data }) => setCategories(data.data));
     api.get('/seller/shipping/templates').then(({ data }) => setShippingTemplates(data.data));
     api
-      .get('/seller/return-policy-templates')
+      .get('/seller/return-policy/templates')
       .then(({ data }) => setReturnPolicyTemplates(data.data));
   }, []);
 
