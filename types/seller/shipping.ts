@@ -69,7 +69,7 @@ export interface ShippingTemplateOption {
 }
 
 export interface ShippingTemplate {
-  id: string;
+  templateId: number;
   name: string;
   feeType: ShippingFeeType;
   fee: number;
@@ -85,13 +85,13 @@ export interface ShippingTemplateFormProps {
   template?: ShippingTemplate;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (form: Omit<ShippingTemplate, 'id'>) => void;
+  onSubmit: (form: Omit<ShippingTemplate, 'templateId'>) => void;
 }
 export interface ShippingTemplateTableProps {
   shippings: ShippingTemplate[];
   onEdit: (shipping: ShippingTemplate) => void;
-  onDelete: (id: string) => void;
-  onSetDefault: (id: string) => void;
+  onDelete: (templateId: number) => void;
+  onSetDefault: (templateId: number) => void;
 }
 
 export interface AddressItem {
@@ -115,7 +115,7 @@ export interface AddressFormProps {
   address?: AddressItem;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (form: Omit<AddressItem, 'id'>) => void;
+  onSubmit: (form: Omit<AddressItem, 'templateIdid'>) => void;
 }
 
 /* 반품 템플릿 */
@@ -136,7 +136,7 @@ export interface ReturnPolicyContent {
 }
 
 export interface ReturnPolicy {
-  id: string;
+  returnId: number;
   name: string;
   content: ReturnPolicyContent;
   isDefault: boolean;
@@ -147,7 +147,7 @@ export interface ReturnPolicyFormProps {
   policy?: ReturnPolicy;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (form: Omit<ReturnPolicy, 'id'>) => void;
+  onSubmit: (form: Omit<ReturnPolicy, 'returnId'>) => void;
 }
 
 export interface ReturnPolicyFieldProps {
@@ -159,6 +159,34 @@ export interface ReturnPolicyFieldProps {
 export interface ReturnPolicyTableProps {
   policies: ReturnPolicy[];
   onEdit: (policy: ReturnPolicy) => void;
-  onDelete: (id: string) => void;
-  onSetDefault: (id: string) => void;
+  onDelete: (returnId: number) => void;
+  onSetDefault: (returnId: number) => void;
+}
+
+export interface CreateShippingTemplateInput {
+  sellerId: number;
+  name: string;
+  feeType: ShippingFeeType;
+  fee: number;
+  freeThreshold: number | null;
+  returnFee: number;
+  originAddress: string;
+  returnAddress: string;
+  isDefault: boolean;
+}
+
+export interface UpdateShippingTemplateInput {
+  sellerId: number;
+  templateId: number;
+  name: string;
+  feeType: ShippingFeeType;
+  fee: number;
+  freeThreshold: number | null;
+  returnFee: number;
+  originAddress: string;
+  returnAddress: string;
+}
+export interface SetDefaultShippingTemplateInput {
+  sellerId: number;
+  templateId: number;
 }
