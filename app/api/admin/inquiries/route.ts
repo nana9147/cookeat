@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const keyword = searchParams.get('keyword') ?? '';
   const category = searchParams.get('category') ?? '';
-  const answered = searchParams.get('answered'); // 'true' | 'false' | null(전체)
+  const answered = searchParams.get('answered');
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
   const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') ?? '20')));
   const from = (page - 1) * limit;
@@ -31,8 +31,6 @@ export async function GET(req: NextRequest) {
   if (keyword) query = query.ilike('title', `%${keyword}%`);
   if (category) query = query.eq('category', category);
 
-  // answered 필터가 있으면 전체를 가져와 메모리에서 필터+페이지네이션
-  // (PostgREST는 관계 존재 여부로 직접 필터 불가)
   if (answered !== null) {
     const { data, error } = await query;
     if (error) {
@@ -52,7 +50,6 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // 필터 없으면 DB 레벨 페이지네이션
   const { data, error, count } = await query.range(from, to);
   if (error) {
     console.error('[GET /api/admin/inquiries]', error);

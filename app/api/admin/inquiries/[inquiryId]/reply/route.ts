@@ -21,7 +21,6 @@ export async function POST(
     return NextResponse.json({ error: '답변 내용을 입력해 주세요.' }, { status: 400 });
   }
 
-  // 이미 답변된 문의인지 확인
   const { data: existing } = await supabaseAdmin
     .from('inquiry_replies')
     .select('reply_id')
