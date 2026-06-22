@@ -13,6 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import api from '@/lib/api';
 
 interface ProductTableProps {
   products: Product[];
@@ -20,9 +23,20 @@ interface ProductTableProps {
 }
 
 export default function ProductTable({ products, pageSize = 10 }: ProductTableProps) {
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`[${name}] \n\n해당 상품을 정말 삭제하시겠습니까?`)) return;
-    console.log('삭제할 상품 id :', id);
+    setDeletingId(id);
+    try {
+      await api.delete(`/seller/products/${id}`);
+      toast.success('상품이 삭제되었습니다.');
+      window.location.reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '상품 삭제에 실패했습니다.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -96,8 +110,15 @@ export default function ProductTable({ products, pageSize = 10 }: ProductTablePr
                       <Link href={`/seller/products/${product.productId}`}>
                         <Eye />
                       </Link>
-                      <button onClick={() => handleDelete(product.productId, product.name)}>
-                        <Trash2 className="text-red-400" />
+                      <button
+                        onClick={() => handleDelete(product.productId, product.name)}
+                        disabled={deletingId === product.productId}
+                      >
+                        <Trash2
+                          className={
+                            deletingId === product.productId ? 'text-gray-300' : 'text-red-400'
+                          }
+                        />
                       </button>
                     </div>
                   </TableCell>

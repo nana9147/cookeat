@@ -37,8 +37,9 @@ export type ProductData = Omit<Product, 'id' | 'linkedRecipeCount' | 'createdAt'
 // 상품 이미지
 export interface ProductImageItem {
   id: string;
+  imageId?: number;
   preview: string;
-  file?: File; // 신규 업로드는 File, 기존 이미지는 URL만
+  file?: File;
 }
 
 export interface ImageUploadData {
@@ -83,8 +84,6 @@ export interface PricingData {
   stock: string;
   discountType: DiscountType;
   discountValue: string;
-  minQuantity: string;
-  maxQuantity: string;
 }
 export interface PricingFieldProps {
   data: PricingData;
@@ -97,8 +96,6 @@ export interface SortableImageProps {
   onRemove: (id: string) => void;
   onMoveFirst: (id: string) => void;
 }
-
-
 
 //반품정책
 export interface ReturnPolicyData {
@@ -119,6 +116,7 @@ export interface ProductFormProps {
 
 //  상품등록 - 전체 폼 데이터
 export interface ProductFormData {
+  productId?: number;
   basicInfo: BasicInfoData;
   pricingInfo: PricingData;
   images: ImageUploadData;
@@ -143,8 +141,6 @@ export const initialProductForm: ProductFormData = {
     stock: '',
     discountType: 'none',
     discountValue: '',
-    minQuantity: '',
-    maxQuantity: '',
   },
   images: {
     images: [],
@@ -158,3 +154,49 @@ export const initialProductForm: ProductFormData = {
   //반품정책
   returnPolicyTemplateId: null,
 };
+
+export interface CreateProductInput {
+  sellerId: number;
+  name: string;
+  brand: string;
+  origin: string;
+  categoryId: number;
+  status: string;
+  price: number;
+  stock: number;
+  description: string;
+  shippingTemplateId: number | null;
+  returnPolicyTemplateId: number | null;
+  discountType: string;
+  discountValue: number | null;
+}
+export interface UpdateProductInput {
+  sellerId: number;
+  productId: number;
+  name: string;
+  brand: string;
+  origin: string;
+  categoryId: number;
+  status: string;
+  price: number;
+  stock: number;
+  description: string;
+  shippingTemplateId: number | null;
+  returnPolicyTemplateId: number | null;
+  discountType: string;
+  discountValue: number | null;
+}
+
+export interface SubImageInput {
+  imageId?: number;
+  file?: File;
+}
+
+export interface ProductFilters {
+  keyword?: string;
+  status?: string;
+  categoryId?: number;
+  parentId?: number;
+  page: number;
+  limit: number;
+}

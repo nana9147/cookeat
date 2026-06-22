@@ -160,34 +160,6 @@ export default function PricingField({ data, onChange }: PricingFieldProps) {
             </div>
           )}
         </div>
-
-        <Separator />
-
-        {/* 최소/최대 구매 수량 */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">최소 구매 수량</label>
-            <Input
-              type="number"
-              value={data.minQuantity}
-              onChange={(e) => onChange('minQuantity', e.target.value)}
-              placeholder="1"
-              min={1}
-              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">최대 구매 수량</label>
-            <Input
-              type="number"
-              value={data.maxQuantity}
-              onChange={(e) => onChange('maxQuantity', e.target.value)}
-              placeholder="제한 없음"
-              min={1}
-              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

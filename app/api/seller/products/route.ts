@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
 import { getSellerProducts, createSellerProduct } from './db';
+import { resolveDiscountValue } from '@/lib/productPricing';
 
 export async function GET(req: NextRequest) {
   const sellerCtx = await requireSellerContext(req);
@@ -45,6 +46,11 @@ export async function POST(req: NextRequest) {
   const description = (formData.get('description') as string | null) ?? '';
   const shippingTemplateId = formData.get('shippingTemplateId') as string | null;
   const returnPolicyTemplateId = formData.get('returnPolicyTemplateId') as string | null;
+  const discountType = (formData.get('discountType') as string | null) ?? 'none';
+  const discountValue = resolveDiscountValue(
+    discountType,
+    formData.get('discountValue') as string | null
+  );
 
   const representativeImage = formData.get('image');
   const subImages = formData.getAll('subImages').filter((f): f is File => f instanceof File);
@@ -55,6 +61,13 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+  if (!shippingTemplateId || !returnPolicyTemplateId) {
+    return NextResponse.json(
+      { success: false, error: '배송 템플릿과 반품정책을 선택해주세요.' },
+      { status: 400 }
+    );
+  }
+
   if (!(representativeImage instanceof File)) {
     return NextResponse.json(
       { success: false, error: '대표 이미지가 필요합니다.' },
@@ -76,6 +89,8 @@ export async function POST(req: NextRequest) {
         description,
         shippingTemplateId: shippingTemplateId ? Number(shippingTemplateId) : null,
         returnPolicyTemplateId: returnPolicyTemplateId ? Number(returnPolicyTemplateId) : null,
+        discountType,
+        discountValue,
       },
       representativeImage,
       subImages
