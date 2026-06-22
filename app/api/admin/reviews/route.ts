@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
     .select(
       `review_id, rating, content, created_at,
        users!inner(nickname, email),
-       products(name),
-       recipes(title)`,
+       products!left(name),
+       recipes!left(title)`,
       { count: 'exact' }
     )
     .order('created_at', { ascending: false })
