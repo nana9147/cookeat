@@ -76,6 +76,7 @@ export default function ReviewsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = reviews.find((r) => r.id === selectedId) ?? null;
 
@@ -94,6 +95,7 @@ export default function ReviewsPage() {
 
     async function load() {
       setLoading(true);
+      setError(null);
       try {
         const { data } = await api.get(`/admin/reviews?page=${page}&limit=${PAGE_SIZE}`);
         if (cancelled) return;
@@ -120,7 +122,10 @@ export default function ReviewsPage() {
           })
         );
         setReviews(mapped);
-        setTotal(data.pagination.total);
+        setTotal(data.pagination?.total ?? 0);
+      } catch (err) {
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : '리뷰 목록을 불러오지 못했습니다.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -132,18 +137,18 @@ export default function ReviewsPage() {
     };
   }, [page]);
 
-  function handleBlind(id: number) {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, state: '처리완료' as const } : r)));
-    setSelectedId(null);
-  }
-
   async function handleDelete(id: number) {
-    await api.delete(`/admin/reviews/${id}`);
-    setReviews((prev) => prev.filter((r) => r.id !== id));
-    setSelectedId(null);
+    try {
+      await api.delete(`/admin/reviews/${id}`);
+      setReviews((prev) => prev.filter((r) => r.id !== id));
+      setSelectedId(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '삭제에 실패했습니다.');
+    }
   }
 
   if (loading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
+  if (error) return <div className="p-6 text-red">{error}</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -190,12 +195,18 @@ export default function ReviewsPage() {
             {reviews.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="font-medium">{r.productName}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{r.author}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">
+                  {r.author}
+                </TableCell>
                 <TableCell>
                   <StarRating rating={r.rating} />
                 </TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{r.date}</TableCell>
-                <TableCell className="hidden md:table-cell text-red font-medium">{r.reportCount}건</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">
+                  {r.date}
+                </TableCell>
+                <TableCell className="hidden md:table-cell text-red font-medium">
+                  {r.reportCount}건
+                </TableCell>
                 <TableCell>
                   <StatusBadge status={r.state} />
                 </TableCell>
@@ -317,14 +328,6 @@ export default function ReviewsPage() {
                   onClick={() => setSelectedId(null)}
                 >
                   목록
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleBlind(selected.id)}
-                >
-                  블라인드 처리
                 </Button>
                 <Button
                   size="sm"
