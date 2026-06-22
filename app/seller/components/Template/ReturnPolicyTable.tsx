@@ -31,20 +31,23 @@ export default function ReturnPolicyTable({
   onDelete,
   onSetDefault,
 }: ReturnPolicyTableProps) {
-  const defaultId = policies.find((s) => s.isDefault)?.id ?? '';
-  const [selectedId, setSelectedId] = useState(defaultId);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const defaultId = policies.find((s) => s.isDefault)?.returnId ?? null;
+  const [selectedId, setSelectedId] = useState<number | null>(defaultId);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [isDefaultConfirmOpen, setIsDefaultConfirmOpen] = useState(false);
 
   useEffect(() => {
-    const newDefaultId = policies.find((s) => s.isDefault)?.id ?? '';
+    const newDefaultId = policies.find((s) => s.isDefault)?.returnId ?? null;
     setSelectedId(newDefaultId);
   }, [policies]);
 
   return (
     <>
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden py-3">
-        <RadioGroup value={selectedId} onValueChange={setSelectedId}>
+        <RadioGroup
+          value={selectedId !== null ? String(selectedId) : ''}
+          onValueChange={(value) => setSelectedId(Number(value))}
+        >
           <Table>
             <TableHeader>
               <TableRow>
@@ -63,13 +66,13 @@ export default function ReturnPolicyTable({
               ) : (
                 policies.map((policy) => (
                   <TableRow
-                    key={policy.id}
+                    key={policy.returnId}
                     className="cursor-pointer"
-                    onClick={() => setSelectedId(policy.id)}
+                    onClick={() => setSelectedId(policy.returnId)}
                   >
                     <TableCell className="text-center">
                       <div className="flex justify-center">
-                        <RadioGroupItem value={policy.id} />
+                        <RadioGroupItem value={String(policy.returnId)} />
                       </div>
                     </TableCell>
                     <TableCell className="text-center text-gray-700">{policy.name}</TableCell>
@@ -97,7 +100,7 @@ export default function ReturnPolicyTable({
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setDeleteTarget(policy.id);
+                            setDeleteTarget(policy.returnId);
                           }}
                         >
                           <Trash2 size={15} className="text-red-400" />
@@ -115,20 +118,23 @@ export default function ReturnPolicyTable({
         </div>
       </div>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>해당 템플릿을 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              [{policies.find((s) => s.id === deleteTarget)?.name}] 템플릿이 삭제됩니다. 이 작업은
-              되돌릴 수 없습니다.
+              [{policies.find((s) => s.returnId === deleteTarget)?.name}] 템플릿이 삭제됩니다. 이
+              작업은 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                onDelete(deleteTarget!);
+                if (deleteTarget !== null) onDelete(deleteTarget);
                 setDeleteTarget(null);
               }}
             >
@@ -142,14 +148,15 @@ export default function ReturnPolicyTable({
           <AlertDialogHeader>
             <AlertDialogTitle>기본 템플릿을 변경하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              [{policies.find((s) => s.id === selectedId)?.name}] 템플릿이 기본값으로 설정됩니다.
+              [{policies.find((s) => s.returnId === selectedId)?.name}] 템플릿이 기본값으로
+              설정됩니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setSelectedId(defaultId)}>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                onSetDefault(selectedId);
+                if (selectedId !== null) onSetDefault(selectedId);
                 setIsDefaultConfirmOpen(false);
               }}
             >

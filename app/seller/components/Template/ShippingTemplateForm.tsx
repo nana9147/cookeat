@@ -66,7 +66,7 @@ export default function ShippingTemplateForm({
       returnAddress: template?.returnAddress ?? '',
       isDefault: template?.isDefault ?? false,
     });
-  }, [template]);
+  }, [template, isOpen]);
 
   const handleSubmit = () => {
     if (!form.name) {

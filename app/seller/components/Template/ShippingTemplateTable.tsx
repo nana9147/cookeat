@@ -30,27 +30,30 @@ export default function ShippingTemplateTable({
   onDelete,
   onSetDefault,
 }: ShippingTemplateTableProps) {
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const defaultId = shippings.find((s) => s.isDefault)?.id ?? '';
-  const [selectedId, setSelectedId] = useState(defaultId);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const defaultId = shippings.find((s) => s.isDefault)?.templateId ?? null;
+  const [selectedId, setSelectedId] = useState<number | null>(defaultId);
   const [isDefaultConfirmOpen, setIsDefaultConfirmOpen] = useState(false);
 
   const feeDescription = (shipping: ShippingTemplateTableProps['shippings'][0]) => {
     if (shipping.feeType === '무료') return '무료';
     if (shipping.feeType === '조건부 무료')
-      return `${shipping.fee.toLocaleString()}원 (${shipping.freeThreshold.toLocaleString()}원 이상 무료)`;
+      return `${shipping.fee.toLocaleString()}원 (${(shipping.freeThreshold ?? 0).toLocaleString()}원 이상 무료)`;
     return `${shipping.fee.toLocaleString()}원`;
   };
 
   useEffect(() => {
-    const newDefaultId = shippings.find((s) => s.isDefault)?.id ?? '';
+    const newDefaultId = shippings.find((s) => s.isDefault)?.templateId ?? null;
     setSelectedId(newDefaultId);
   }, [shippings]);
 
   return (
     <>
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden py-3">
-        <RadioGroup value={selectedId} onValueChange={setSelectedId}>
+        <RadioGroup
+          value={selectedId !== null ? String(selectedId) : ''}
+          onValueChange={(value) => setSelectedId(Number(value))}
+        >
           <Table>
             <TableHeader>
               <TableRow>
@@ -73,13 +76,13 @@ export default function ShippingTemplateTable({
               ) : (
                 shippings.map((shipping) => (
                   <TableRow
-                    key={shipping.id}
+                    key={shipping.templateId}
                     className="cursor-pointer"
-                    onClick={() => setSelectedId(shipping.id)}
+                    onClick={() => setSelectedId(shipping.templateId)}
                   >
                     <TableCell className="text-center">
                       <div className="flex justify-center">
-                        <RadioGroupItem value={shipping.id} />
+                        <RadioGroupItem value={String(shipping.templateId)} />
                       </div>
                     </TableCell>
                     <TableCell className="font-medium text-gray-800">{shipping.name}</TableCell>
@@ -110,7 +113,7 @@ export default function ShippingTemplateTable({
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setDeleteTarget(shipping.id);
+                            setDeleteTarget(shipping.templateId);
                           }}
                         >
                           <Trash2 size={15} className="text-red-400" />
@@ -128,20 +131,23 @@ export default function ShippingTemplateTable({
         </div>
       </div>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>해당 템플릿을 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              [{shippings.find((s) => s.id === deleteTarget)?.name}] 템플릿이 삭제됩니다. 이 작업은
-              되돌릴 수 없습니다.
+              [{shippings.find((s) => s.templateId === deleteTarget)?.name}] 템플릿이 삭제됩니다. 이
+              작업은 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                onDelete(deleteTarget!);
+                if (deleteTarget !== null) onDelete(deleteTarget);
                 setDeleteTarget(null);
               }}
             >
@@ -155,14 +161,15 @@ export default function ShippingTemplateTable({
           <AlertDialogHeader>
             <AlertDialogTitle>기본 템플릿을 변경하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              [{shippings.find((s) => s.id === selectedId)?.name}] 템플릿이 기본값으로 설정됩니다.
+              [{shippings.find((s) => s.templateId === selectedId)?.name}] 템플릿이 기본값으로
+              설정됩니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setSelectedId(defaultId)}>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                onSetDefault(selectedId);
+                if (selectedId !== null) onSetDefault(selectedId);
                 setIsDefaultConfirmOpen(false);
               }}
             >
