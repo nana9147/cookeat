@@ -49,9 +49,11 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
       !form.basicInfo.parentCategoryId ||
       !form.basicInfo.categoryId ||
       !form.pricingInfo.price ||
-      !form.pricingInfo.stock
+      !form.pricingInfo.stock ||
+      !form.shippingTemplateId ||
+      !form.returnPolicyTemplateId
     ) {
-      alert('필수 항목을 모두 입력해주세요.');
+      toast.error('필수 항목을 모두 입력해주세요.');
       return;
     }
 

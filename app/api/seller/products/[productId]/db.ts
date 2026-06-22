@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
+import type { UpdateProductInput, SubImageInput } from '@/types/seller/product';
 
 // ===== 상품 단건 조회 =====
 
@@ -9,6 +10,7 @@ export async function getSellerProductById(sellerId: number, productId: number) 
     .select(
       `product_id, name, brand, origin, category_id, status, price, stock,
       description, shipping_template_id, return_policy_template_id, image, seller_id,
+      discount_type, discount_value,
       categories(category_id, name, parent_id)`
     )
     .eq('product_id', productId)
@@ -34,26 +36,6 @@ export async function getSellerProductById(sellerId: number, productId: number) 
 }
 
 // ===== 상품 수정 =====
-
-interface UpdateProductInput {
-  sellerId: number;
-  productId: number;
-  name: string;
-  brand: string;
-  origin: string;
-  categoryId: number;
-  status: string;
-  price: number;
-  stock: number;
-  description: string;
-  shippingTemplateId: number | null;
-  returnPolicyTemplateId: number | null;
-}
-
-interface SubImageInput {
-  imageId?: number;
-  file?: File;
-}
 
 export async function updateSellerProduct(
   input: UpdateProductInput,
@@ -99,6 +81,8 @@ export async function updateSellerProduct(
       description: input.description || null,
       shipping_template_id: input.shippingTemplateId,
       return_policy_template_id: input.returnPolicyTemplateId,
+      discount_type: input.discountType,
+      discount_value: input.discountValue,
       ...(newImageUrl ? { image: newImageUrl } : {}),
     })
     .eq('product_id', input.productId);

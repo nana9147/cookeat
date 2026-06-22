@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
 import { getSellerProductById, updateSellerProduct, deleteSellerProduct } from './db';
+import { resolveDiscountValue } from '@/lib/productPricing';
 
 interface RouteParams {
   params: Promise<{ productId: string }>;
@@ -55,6 +56,11 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const description = (formData.get('description') as string | null) ?? '';
   const shippingTemplateId = formData.get('shippingTemplateId') as string | null;
   const returnPolicyTemplateId = formData.get('returnPolicyTemplateId') as string | null;
+  const discountType = (formData.get('discountType') as string | null) ?? 'none';
+  const discountValue = resolveDiscountValue(
+    discountType,
+    formData.get('discountValue') as string | null
+  );
 
   const representativeImageRaw = formData.get('image');
   const representativeImage =
@@ -68,6 +74,12 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   if (!name || !origin || !categoryId || !status || !price || !stock) {
     return NextResponse.json(
       { success: false, error: '필수 항목이 누락되었습니다.' },
+      { status: 400 }
+    );
+  }
+  if (!shippingTemplateId || !returnPolicyTemplateId) {
+    return NextResponse.json(
+      { success: false, error: '배송 템플릿과 반품정책을 선택해주세요.' },
       { status: 400 }
     );
   }
@@ -108,6 +120,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         description,
         shippingTemplateId: shippingTemplateId ? Number(shippingTemplateId) : null,
         returnPolicyTemplateId: returnPolicyTemplateId ? Number(returnPolicyTemplateId) : null,
+        discountType,
+        discountValue,
       },
       representativeImage,
       subImages

@@ -154,3 +154,49 @@ export const initialProductForm: ProductFormData = {
   //반품정책
   returnPolicyTemplateId: null,
 };
+
+export interface CreateProductInput {
+  sellerId: number;
+  name: string;
+  brand: string;
+  origin: string;
+  categoryId: number;
+  status: string;
+  price: number;
+  stock: number;
+  description: string;
+  shippingTemplateId: number | null;
+  returnPolicyTemplateId: number | null;
+  discountType: string;
+  discountValue: number | null;
+}
+export interface UpdateProductInput {
+  sellerId: number;
+  productId: number;
+  name: string;
+  brand: string;
+  origin: string;
+  categoryId: number;
+  status: string;
+  price: number;
+  stock: number;
+  description: string;
+  shippingTemplateId: number | null;
+  returnPolicyTemplateId: number | null;
+  discountType: string;
+  discountValue: number | null;
+}
+
+export interface SubImageInput {
+  imageId?: number;
+  file?: File;
+}
+
+export interface ProductFilters {
+  keyword?: string;
+  status?: string;
+  categoryId?: number;
+  parentId?: number;
+  page: number;
+  limit: number;
+}
