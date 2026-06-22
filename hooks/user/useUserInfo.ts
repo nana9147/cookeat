@@ -25,18 +25,31 @@ interface UserInfo {
 export function useUserInfo() {
   const { user, accessToken } = useAuthStore();
   const [apiProfile, setApiProfile] = useState<ApiProfile | null>(null);
+  const profile = accessToken ? apiProfile : null;
 
   useEffect(() => {
     if (!accessToken) return;
-    api.get<ApiProfile>('/auth/profile').then(({ data }) => setApiProfile(data));
+    let ignore = false;
+
+    api.get<ApiProfile>('/auth/profile')
+      .then(({ data }) => {
+        if (!ignore) setApiProfile(data);
+      })
+      .catch(() => {
+        if (!ignore) setApiProfile(null);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [accessToken]);
 
   return {
-    email: apiProfile?.email ?? user?.email ?? '',
-    nickname: apiProfile?.nickname ?? user?.nickname ?? '',
-    phone: apiProfile?.phone ?? '',
-    profileImage: apiProfile?.profileImage ?? user?.profileImage ?? null,
-    isSocial: apiProfile?.isSocial ?? user?.isSocial ?? false,
-    point: apiProfile?.point ?? 0,
+    email: profile?.email ?? user?.email ?? '',
+    nickname: profile?.nickname ?? user?.nickname ?? '',
+    phone: profile?.phone ?? '',
+    profileImage: profile?.profileImage ?? user?.profileImage ?? null,
+    isSocial: profile?.isSocial ?? user?.isSocial ?? false,
+    point: profile?.point ?? 0,
   } satisfies UserInfo;
 }
