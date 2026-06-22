@@ -13,6 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import api from '@/lib/api';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface ProductTableProps {
   products: Product[];
@@ -20,9 +24,21 @@ interface ProductTableProps {
 }
 
 export default function ProductTable({ products, pageSize = 10 }: ProductTableProps) {
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [previewId, setPreviewId] = useState<number | null>(null);
+
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`[${name}] \n\n해당 상품을 정말 삭제하시겠습니까?`)) return;
-    console.log('삭제할 상품 id :', id);
+    setDeletingId(id);
+    try {
+      await api.delete(`/seller/products/${id}`);
+      toast.success('상품이 삭제되었습니다.');
+      window.location.reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '상품 삭제에 실패했습니다.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -93,11 +109,18 @@ export default function ProductTable({ products, pageSize = 10 }: ProductTablePr
                       <Link href={`/seller/products/${product.productId}/edit`}>
                         <SquarePen className="text-dark-text/70" />
                       </Link>
-                      <Link href={`/seller/products/${product.productId}`}>
+                      <button onClick={() => setPreviewId(product.productId)}>
                         <Eye />
-                      </Link>
-                      <button onClick={() => handleDelete(product.productId, product.name)}>
-                        <Trash2 className="text-red-400" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.productId, product.name)}
+                        disabled={deletingId === product.productId}
+                      >
+                        <Trash2
+                          className={
+                            deletingId === product.productId ? 'text-gray-300' : 'text-red-400'
+                          }
+                        />
                       </button>
                     </div>
                   </TableCell>
@@ -108,6 +131,17 @@ export default function ProductTable({ products, pageSize = 10 }: ProductTablePr
           )}
         </TableBody>
       </Table>
+      <Dialog open={previewId !== null} onOpenChange={(open) => !open && setPreviewId(null)}>
+        <DialogContent className="max-w-6xl sm:max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden">
+          {previewId !== null && (
+            <iframe
+              src={`/seller-preview/${previewId}`}
+              className="w-full h-full border-0"
+              title="상품 상세 미리보기"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

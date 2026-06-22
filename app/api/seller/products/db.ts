@@ -1,13 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-
-interface ProductFilters {
-  keyword?: string;
-  status?: string;
-  categoryId?: number;
-  parentId?: number;
-  page: number;
-  limit: number;
-}
+import { uploadProductImage } from '@/lib/productImage';
+import type { CreateProductInput, ProductFilters } from '@/types/seller/product';
 
 export async function getSellerProducts(sellerId: number, filters: ProductFilters) {
   const { keyword, status, categoryId, parentId, page, limit } = filters;
@@ -62,41 +55,20 @@ export async function getSellerProducts(sellerId: number, filters: ProductFilter
   }
 
   const productsWithCount = products.map((p) => ({
-    ...p,
+    productId: p.product_id,
+    name: p.name,
+    price: p.price,
+    stock: p.stock,
+    status: p.status,
+    image: p.image,
+    brand: p.brand,
+    categoryId: p.category_id,
+    categories: p.categories,
+    createdAt: p.created_at,
     linkedRecipeCount: recipeCountMap.get(p.product_id)?.size ?? 0,
   }));
 
   return { products: productsWithCount, total: count ?? 0 };
-}
-
-const BUCKET = 'product-images';
-
-interface CreateProductInput {
-  sellerId: number;
-  name: string;
-  brand: string;
-  origin: string;
-  categoryId: number;
-  status: string;
-  price: number;
-  stock: number;
-  description: string;
-  shippingTemplateId: number | null;
-  returnPolicyTemplateId: number | null;
-}
-
-async function uploadProductImage(productId: number, file: File): Promise<string> {
-  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const path = `${productId}/${Date.now()}-${safeName}`;
-
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false });
-
-  if (uploadError) throw uploadError;
-
-  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
 }
 
 export async function createSellerProduct(
@@ -129,6 +101,8 @@ export async function createSellerProduct(
       description: input.description || null,
       shipping_template_id: input.shippingTemplateId,
       return_policy_template_id: input.returnPolicyTemplateId,
+      discount_type: input.discountType,
+      discount_value: input.discountValue,
       image: 'pending',
     })
     .select('product_id')
