@@ -8,6 +8,14 @@ interface OrderItem {
   quantity: number;
 }
 
+const PAYMENT_METHOD_MAP: Record<string, string> = {
+  card: '카드',
+  kakao: '카카오페이',
+  toss: '토스페이',
+  bankbook: '무통장입금',
+  mobile: '휴대폰결제',
+};
+
 type DecrementedItem = {
   productId: number;
   quantity: number;
@@ -138,8 +146,7 @@ export async function POST(req: NextRequest) {
       shipping_fee: shippingFee,
       coupon_discount: 0,
       final_amount: finalAmount,
-      payment_method: paymentMethod ?? '미정',
-      status: '결제전',
+      payment_method: PAYMENT_METHOD_MAP[paymentMethod] ?? paymentMethod,
       recipient,
       phone,
       address,
