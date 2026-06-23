@@ -24,6 +24,7 @@ export default function RecipeClient() {
   const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -36,6 +37,7 @@ export default function RecipeClient() {
 
   const fetchRecipes = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const params: Record<string, string | number> = { sort, page, limit: PAGE_SIZE };
       if (categoryId !== null) params.recipeCategoryId = categoryId;
@@ -47,6 +49,7 @@ export default function RecipeClient() {
     } catch {
       setRecipes([]);
       setTotal(0);
+      setError('레시피를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -70,7 +73,11 @@ export default function RecipeClient() {
     <>
       <RecipeCategoryTabs categories={categories} selectedId={categoryId} onChange={handleCategory} />
       <RecipeSortBar total={total} sort={sort} onSort={handleSort} />
-      <RecipeGrid recipes={recipes} loading={loading} />
+      {error ? (
+        <p className="py-20 text-center text-sm text-red-500">{error}</p>
+      ) : (
+        <RecipeGrid recipes={recipes} loading={loading} />
+      )}
       <Pagination
         currentPage={page}
         totalPages={totalPages}

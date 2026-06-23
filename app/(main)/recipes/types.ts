@@ -56,6 +56,7 @@ export interface RecipeDetail {
   scrapCount: number;
   rating: number;
   reviewCount: number;
+  ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number>;
   isLiked: boolean;
   isBookmarked: boolean;
   author: { userId: number; nickname: string; profileImage: string | null };

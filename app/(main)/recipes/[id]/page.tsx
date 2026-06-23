@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { RecipeDetail } from '../types';
+import { fetchRecipeDetail } from '@/lib/serverRecipes';
 import RecipeHero from './_components/RecipeHero';
 import RecipeMetaRow from './_components/RecipeMetaRow';
 import RecipeAuthor from './_components/RecipeAuthor';
@@ -13,18 +13,10 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-async function getRecipe(id: string): Promise<RecipeDetail | null> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
-  const res = await fetch(`${base}/api/recipes/${id}`, { cache: 'no-store' });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error('레시피를 불러오지 못했습니다.');
-  const json = await res.json();
-  return json.data as RecipeDetail;
-}
-
 export default async function RecipeDetailPage({ params }: Props) {
   const { id } = await params;
-  const recipe = await getRecipe(id);
+  const idNum = Number(id);
+  const recipe = Number.isInteger(idNum) && idNum > 0 ? await fetchRecipeDetail(idNum) : null;
   if (!recipe) notFound();
 
   return (
@@ -56,7 +48,7 @@ export default async function RecipeDetailPage({ params }: Props) {
         <ReviewSection
           averageRating={recipe.rating}
           totalCount={recipe.reviewCount}
-          ratingBreakdown={{ 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }}
+          ratingBreakdown={recipe.ratingBreakdown}
           reviews={[]}
         />
       </div>
