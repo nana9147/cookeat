@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
 import api from '@/lib/api';
-import { fail } from 'assert';
 
 type Status = '대기' | '완료';
 
