@@ -1,39 +1,17 @@
 'use client';
 
-import { ShippingFeeType, ShippingTemplateFormProps } from '@/types/seller/shipping';
+import { AddressItem, ShippingFeeType, ShippingTemplateFormProps } from '@/types/seller/shipping';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
+import api from '@/lib/api';
+import { toast } from 'sonner';
+import AddressForm from '../Shipping/AddressForm';
+import StatusBadge from '../StatusBadge';
 
 const fee_types: ShippingFeeType[] = ['무료', '유료', '조건부 무료'];
-const MOCK_ADDRESSES = [
-  {
-    id: '1',
-    name: '본사 창고',
-    zipCode: '06234',
-    baseAddress: '서울시 강남구 테헤란로 123',
-    detailAddress: '4층',
-    type: '출고지',
-  },
-  {
-    id: '2',
-    name: '사무실',
-    zipCode: '06234',
-    baseAddress: '서울시 구로구 디지털로 123',
-    detailAddress: '2층',
-    type: '출고지',
-  },
-  {
-    id: '3',
-    name: '경기 물류센터',
-    zipCode: '17384',
-    baseAddress: '경기도 이천시 물류로 456',
-    detailAddress: '창고동',
-    type: '반품지',
-  },
-];
 
 export default function ShippingTemplateForm({
   mode,
@@ -43,6 +21,9 @@ export default function ShippingTemplateForm({
   onSubmit,
 }: ShippingTemplateFormProps) {
   const [openAddressModal, setOpenAddressModal] = useState<'origin' | 'return' | null>(null);
+  const [addresses, setAddresses] = useState<AddressItem[]>([]);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -67,6 +48,64 @@ export default function ShippingTemplateForm({
       isDefault: template?.isDefault ?? false,
     });
   }, [template, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+
+    const fetchAddresses = async () => {
+      setIsLoadingAddresses(true);
+      try {
+        const res = await api.get('/seller/addresses');
+        if (!cancelled) {
+          setAddresses(res.data.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setAddresses([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingAddresses(false);
+        }
+      }
+    };
+
+    fetchAddresses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
+  const handleAddressSubmit = async (addressForm: Omit<AddressItem, 'id'>) => {
+    try {
+      const res = await api.post('/seller/addresses', addressForm);
+      const newAddress: AddressItem = res.data.data;
+
+      setAddresses((prev) =>
+        prev
+          .map((a) =>
+            a.type === newAddress.type && newAddress.isDefault ? { ...a, isDefault: false } : a
+          )
+          .concat(newAddress)
+      );
+
+      const fullAddress = `(${newAddress.zipCode}) ${newAddress.baseAddress} ${newAddress.detailAddress}`;
+      if (newAddress.type === '출고지') {
+        setForm((prev) => ({ ...prev, originAddress: fullAddress }));
+      } else {
+        setForm((prev) => ({ ...prev, returnAddress: fullAddress }));
+      }
+
+      toast.success('주소가 등록되었습니다.');
+      setIsAddressFormOpen(false);
+      setOpenAddressModal(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '주소 등록에 실패했습니다.');
+    }
+  };
 
   const handleSubmit = () => {
     if (!form.name) {
@@ -279,31 +318,71 @@ export default function ShippingTemplateForm({
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2 mt-2">
-            {MOCK_ADDRESSES.filter((a) =>
-              openAddressModal === 'origin' ? a.type === '출고지' : a.type === '반품지'
-            ).map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => {
-                  const fullAddress = `(${a.zipCode}) ${a.baseAddress} ${a.detailAddress}`;
-                  if (openAddressModal === 'origin')
-                    setForm({ ...form, originAddress: fullAddress });
-                  else setForm({ ...form, returnAddress: fullAddress });
-                  setOpenAddressModal(null);
-                }}
-                className="flex flex-col items-start gap-1 px-4 py-3 rounded-md border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-colors text-left"
-              >
-                <span className="text-sm font-medium text-gray-800">{a.name}</span>
-                <span className="text-xs text-gray-400">
-                  ({a.zipCode}) {a.baseAddress}
-                </span>
-                <span className="text-xs text-gray-500">{a.detailAddress}</span>
-              </button>
-            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-end"
+              onClick={() => setIsAddressFormOpen(true)}
+            >
+              <Plus size={14} /> 새 {openAddressModal === 'origin' ? '출고지' : '반품지'} 등록
+            </Button>
+
+            {isLoadingAddresses ? (
+              <p className="text-sm text-muted-foreground text-center py-8">불러오는 중...</p>
+            ) : (
+              (() => {
+                const filtered = addresses.filter((a) =>
+                  openAddressModal === 'origin' ? a.type === '출고지' : a.type === '반품지'
+                );
+
+                if (filtered.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      등록된 {openAddressModal === 'origin' ? '출고지' : '반품지'}가 없습니다.
+                    </p>
+                  );
+                }
+
+                return filtered.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => {
+                      const fullAddress = `(${a.zipCode}) ${a.baseAddress} ${a.detailAddress}`;
+                      if (openAddressModal === 'origin')
+                        setForm({ ...form, originAddress: fullAddress });
+                      else setForm({ ...form, returnAddress: fullAddress });
+                      setOpenAddressModal(null);
+                    }}
+                    className="flex flex-col items-start gap-1 px-4 py-3 rounded-md border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-800">{a.name}</span>
+                      {a.isDefault && (
+                        <StatusBadge status={a.type === '출고지' ? '기본출고지' : '기본반품지'} />
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      ({a.zipCode}) {a.baseAddress}
+                    </span>
+                    <span className="text-xs text-gray-500">{a.detailAddress}</span>
+                  </button>
+                ));
+              })()
+            )}
           </div>
         </DialogContent>
       </Dialog>
+      <AddressForm
+        mode="등록"
+        defaultType={openAddressModal === 'origin' ? '출고지' : '반품지'}
+        isOpen={isAddressFormOpen}
+        onClose={() => {
+          setIsAddressFormOpen(false);
+          setOpenAddressModal(null);
+        }}
+        onSubmit={handleAddressSubmit}
+      />
     </>
   );
 }
