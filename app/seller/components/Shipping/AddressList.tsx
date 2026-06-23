@@ -152,12 +152,14 @@ export default function AddressList() {
         </div>
         {/* 출고지 */}
         <TabsContent value="origin">
-          {origins.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+              목록을 불러오는 중...
+            </div>
+          ) : origins.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
               <MapPinOff className="mb-4 size-10 text-muted-foreground" />
-
               <p className="mb-1 text-sm font-medium text-foreground">등록된 출고지가 없습니다.</p>
-
               <p className="text-sm text-muted-foreground">주소 등록 버튼을 눌러 추가해보세요</p>
             </div>
           ) : (
@@ -178,12 +180,14 @@ export default function AddressList() {
 
         {/* 반품지 */}
         <TabsContent value="return">
-          {returns.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+              목록을 불러오는 중...
+            </div>
+          ) : returns.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
               <MapPinOff className="mb-4 size-10 text-muted-foreground" />
-
               <p className="mb-1 text-sm font-medium text-foreground">등록된 반품지가 없습니다.</p>
-
               <p className="text-sm text-muted-foreground">주소 등록 버튼을 눌러 추가해보세요</p>
             </div>
           ) : (

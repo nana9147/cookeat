@@ -1,39 +1,14 @@
 'use client';
 
-import { ShippingFeeType, ShippingTemplateFormProps } from '@/types/seller/shipping';
+import { AddressItem, ShippingFeeType, ShippingTemplateFormProps } from '@/types/seller/shipping';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Check } from 'lucide-react';
+import api from '@/lib/api';
 
 const fee_types: ShippingFeeType[] = ['무료', '유료', '조건부 무료'];
-const MOCK_ADDRESSES = [
-  {
-    id: '1',
-    name: '본사 창고',
-    zipCode: '06234',
-    baseAddress: '서울시 강남구 테헤란로 123',
-    detailAddress: '4층',
-    type: '출고지',
-  },
-  {
-    id: '2',
-    name: '사무실',
-    zipCode: '06234',
-    baseAddress: '서울시 구로구 디지털로 123',
-    detailAddress: '2층',
-    type: '출고지',
-  },
-  {
-    id: '3',
-    name: '경기 물류센터',
-    zipCode: '17384',
-    baseAddress: '경기도 이천시 물류로 456',
-    detailAddress: '창고동',
-    type: '반품지',
-  },
-];
 
 export default function ShippingTemplateForm({
   mode,
@@ -43,6 +18,8 @@ export default function ShippingTemplateForm({
   onSubmit,
 }: ShippingTemplateFormProps) {
   const [openAddressModal, setOpenAddressModal] = useState<'origin' | 'return' | null>(null);
+  const [addresses, setAddresses] = useState<AddressItem[]>([]);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -67,6 +44,36 @@ export default function ShippingTemplateForm({
       isDefault: template?.isDefault ?? false,
     });
   }, [template, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+
+    const fetchAddresses = async () => {
+      setIsLoadingAddresses(true);
+      try {
+        const res = await api.get('/seller/addresses');
+        if (!cancelled) {
+          setAddresses(res.data.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setAddresses([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingAddresses(false);
+        }
+      }
+    };
+
+    fetchAddresses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   const handleSubmit = () => {
     if (!form.name) {
@@ -279,28 +286,46 @@ export default function ShippingTemplateForm({
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2 mt-2">
-            {MOCK_ADDRESSES.filter((a) =>
-              openAddressModal === 'origin' ? a.type === '출고지' : a.type === '반품지'
-            ).map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => {
-                  const fullAddress = `(${a.zipCode}) ${a.baseAddress} ${a.detailAddress}`;
-                  if (openAddressModal === 'origin')
-                    setForm({ ...form, originAddress: fullAddress });
-                  else setForm({ ...form, returnAddress: fullAddress });
-                  setOpenAddressModal(null);
-                }}
-                className="flex flex-col items-start gap-1 px-4 py-3 rounded-md border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-colors text-left"
-              >
-                <span className="text-sm font-medium text-gray-800">{a.name}</span>
-                <span className="text-xs text-gray-400">
-                  ({a.zipCode}) {a.baseAddress}
-                </span>
-                <span className="text-xs text-gray-500">{a.detailAddress}</span>
-              </button>
-            ))}
+            {isLoadingAddresses ? (
+              <p className="text-sm text-muted-foreground text-center py-8">불러오는 중...</p>
+            ) : (
+              (() => {
+                const filtered = addresses.filter((a) =>
+                  openAddressModal === 'origin' ? a.type === '출고지' : a.type === '반품지'
+                );
+
+                if (filtered.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      등록된 {openAddressModal === 'origin' ? '출고지' : '반품지'}가 없습니다.
+                      <br />
+                      배송 관리 &gt; 주소 관리에서 먼저 등록해주세요.
+                    </p>
+                  );
+                }
+
+                return filtered.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => {
+                      const fullAddress = `(${a.zipCode}) ${a.baseAddress} ${a.detailAddress}`;
+                      if (openAddressModal === 'origin')
+                        setForm({ ...form, originAddress: fullAddress });
+                      else setForm({ ...form, returnAddress: fullAddress });
+                      setOpenAddressModal(null);
+                    }}
+                    className="flex flex-col items-start gap-1 px-4 py-3 rounded-md border border-gray-200 hover:border-green-500 hover:bg-green-50 transition-colors text-left"
+                  >
+                    <span className="text-sm font-medium text-gray-800">{a.name}</span>
+                    <span className="text-xs text-gray-400">
+                      ({a.zipCode}) {a.baseAddress}
+                    </span>
+                    <span className="text-xs text-gray-500">{a.detailAddress}</span>
+                  </button>
+                ));
+              })()
+            )}
           </div>
         </DialogContent>
       </Dialog>
