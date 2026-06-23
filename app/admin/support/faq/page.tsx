@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Search, Pencil, Trash2, Plus } from 'lucide-react';
 import {
@@ -29,91 +29,69 @@ import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import api from '@/lib/api';
 
 type FaqCategory = '전체' | '배송' | '환불' | '상품' | '회원' | '결제';
-type FaqStatus = '공개' | '비공개';
 
 interface Faq {
-  id: number;
+  faq_id: number;
   category: Exclude<FaqCategory, '전체'>;
   title: string;
   content: string;
   views: number;
-  date: string;
-  status: FaqStatus;
+  is_public: boolean;
+  created_at: string;
 }
-
 
 const CATEGORIES: FaqCategory[] = ['전체', '배송', '환불', '상품', '회원', '결제'];
 const FAQ_CATEGORIES = CATEGORIES.filter((c): c is Exclude<FaqCategory, '전체'> => c !== '전체');
 
-const initialFaqs: Faq[] = [
-  {
-    id: 1,
-    category: '배송',
-    title: '배송은 얼마나 걸리나요?',
-    content: '일반적으로 2~3 영업일 내에 배송됩니다.',
-    views: 1245,
-    date: '2024.05.20',
-    status: '공개',
-  },
-  {
-    id: 2,
-    category: '환불',
-    title: '환불은 어떻게 하나요?',
-    content: '마이페이지 > 주문내역에서 환불 신청이 가능합니다.',
-    views: 892,
-    date: '2024.05.18',
-    status: '공개',
-  },
-  {
-    id: 3,
-    category: '상품',
-    title: '상품 재고는 어떻게 확인하나요?',
-    content: '상품 상세 페이지에서 재고를 확인할 수 있습니다.',
-    views: 567,
-    date: '2024.05.15',
-    status: '공개',
-  },
-  {
-    id: 4,
-    category: '회원',
-    title: '회원 탈퇴는 어떻게 하나요?',
-    content: '마이페이지 > 설정 > 회원 탈퇴 메뉴를 이용해 주세요.',
-    views: 234,
-    date: '2024.05.10',
-    status: '비공개',
-  },
-];
-
 export default function FaqPage() {
-  const [faqs, setFaqs] = useState<Faq[]>(initialFaqs);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
   const [activeCategory, setActiveCategory] = useState<FaqCategory>('전체');
   const [search, setSearch] = useState('');
 
   const [addOpen, setAddOpen] = useState(false);
-  const [addForm, setAddForm] = useState<Omit<Faq, 'id' | 'views' | 'date'>>({
+  const [addForm, setAddForm] = useState<Omit<Faq, 'faq_id' | 'views' | 'created_at'>>({
     category: '배송',
     title: '',
     content: '',
-    status: '공개',
+    is_public: true,
   });
   const [editTarget, setEditTarget] = useState<Faq | null>(null);
   const [editForm, setEditForm] = useState<Faq | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleAddSave = () => {
-    const newFaq: Faq = {
-      ...addForm,
-      id: Math.max(0, ...faqs.map((f) => f.id)) + 1,
-      views: 0,
-      date: new Date()
-        .toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-        .replace(/\. /g, '.')
-        .replace('.', ''),
-    };
-    setFaqs((prev) => [...prev, newFaq]);
-    setAddForm({ category: '배송', title: '', content: '', status: '공개' });
-    setAddOpen(false);
+  useEffect(() => {
+    async function fetchFaq() {
+      try {
+        setLoading(true);
+        const res = await api.get('/admin/faqs');
+        setFaqs(res.data.faqs);
+      } catch (err) {
+        console.error('FAQ 목록 조회 실패:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchFaq();
+  }, []);
+
+  const handleAddSave = async () => {
+    try {
+      const res = await api.post('/admin/faqs', {
+        category: addForm.category,
+        title: addForm.title,
+        content: addForm.content,
+        is_public: addForm.is_public,
+      });
+      setFaqs((prev) => [...prev, res.data.faq]);
+      setAddForm({ category: '배송', title: '', content: '', is_public: true });
+      setAddOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('FAQ 추가에 실패했습니다. 다시 시도해 주세요.');
+    }
   };
 
   const handleEditOpen = (faq: Faq) => {
@@ -121,10 +99,31 @@ export default function FaqPage() {
     setEditForm({ ...faq });
   };
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (!editForm) return;
-    setFaqs((prev) => prev.map((f) => (f.id === editForm.id ? editForm : f)));
-    setEditTarget(null);
+    try {
+      await api.patch(`/admin/faqs/${editForm.faq_id}`, {
+        category: editForm.category,
+        title: editForm.title,
+        content: editForm.content,
+        is_public: editForm.is_public,
+      });
+      setFaqs((prev) => prev.map((f) => (f.faq_id === editForm.faq_id ? editForm : f)));
+      setEditTarget(null);
+    } catch (err) {
+      console.error(err);
+      alert('FAQ 수정에 실패했습니다. 다시 시도해 주세요.');
+    }
+  };
+
+  const handleDelete = async (faqId: number) => {
+    try {
+      await api.delete(`/admin/faqs/${faqId}`);
+      setFaqs((prev) => prev.filter((f) => f.faq_id !== faqId));
+    } catch (err) {
+      console.error(err);
+      alert('FAQ 삭제에 실패했습니다. 다시 시도해 주세요.');
+    }
   };
 
   const filtered = faqs.filter((f) => {
@@ -197,7 +196,7 @@ export default function FaqPage() {
           </TableHeader>
           <TableBody>
             {filtered.map((faq) => (
-              <TableRow key={faq.id}>
+              <TableRow key={faq.faq_id}>
                 <TableCell className="hidden md:table-cell">
                   <StatusBadge status={faq.category} />
                 </TableCell>
@@ -205,9 +204,11 @@ export default function FaqPage() {
                 <TableCell className="hidden md:table-cell text-muted-foreground">
                   {faq.views.toLocaleString()}
                 </TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{faq.date}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">
+                  {faq.created_at}
+                </TableCell>
                 <TableCell>
-                  <StatusBadge status={faq.status} />
+                  <StatusBadge status={faq.is_public ? '공개' : '비공개'} />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -221,7 +222,7 @@ export default function FaqPage() {
                     <button
                       className="text-red"
                       aria-label="삭제"
-                      onClick={() => setFaqs((prev) => prev.filter((f) => f.id !== faq.id))}
+                      onClick={() => handleDelete(faq.faq_id)}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -233,7 +234,6 @@ export default function FaqPage() {
         </Table>
       </div>
 
-      {/* FAQ 추가 Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -280,8 +280,8 @@ export default function FaqPage() {
             <div className="space-y-1.5">
               <label className="text-sm font-medium">공개 여부</label>
               <Select
-                value={addForm.status}
-                onValueChange={(v) => setAddForm((prev) => ({ ...prev, status: v as FaqStatus }))}
+                value={addForm.is_public ? '공개' : '비공개'}
+                onValueChange={(v) => setAddForm((prev) => ({ ...prev, is_public: v === '공개' }))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="공개 여부 선택" />
@@ -302,7 +302,6 @@ export default function FaqPage() {
         </DialogContent>
       </Dialog>
 
-      {/* FAQ 수정 Dialog */}
       <Dialog
         open={!!editTarget}
         onOpenChange={(open) => {
@@ -357,9 +356,9 @@ export default function FaqPage() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">공개 여부</label>
                 <Select
-                  value={editForm?.status}
+                  value={editForm?.is_public ? '공개' : '비공개'}
                   onValueChange={(v) =>
-                    setEditForm((prev) => prev && { ...prev, status: v as FaqStatus })
+                    setEditForm((prev) => prev && { ...prev, is_public: v === '공개' })
                   }
                 >
                   <SelectTrigger className="w-full">

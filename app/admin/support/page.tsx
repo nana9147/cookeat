@@ -1,65 +1,68 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
+import api from '@/lib/api';
 
-type InquiryState = '답변대기' | '처리중' | '답변완료';
-type InquiryCategory = '배송' | '환불' | '상품' | '기타';
-
-interface Inquiry {
-  id: number;
+interface InquiryItem {
+  inquiryId: number;
   title: string;
   author: string;
-  category: InquiryCategory;
-  date: string;
-  state: InquiryState;
+  category: string;
+  isAnswered: boolean;
+  createdAt: string;
 }
 
-
-const inquiries: Inquiry[] = [
-  {
-    id: 1,
-    title: '배송 관련 문의',
-    author: '김쿡잇',
-    category: '배송',
-    date: '05.29',
-    state: '답변대기',
-  },
-  {
-    id: 2,
-    title: '환불 요청',
-    author: '이레시피',
-    category: '환불',
-    date: '05.28',
-    state: '처리중',
-  },
-  {
-    id: 3,
-    title: '상품 문의',
-    author: '박요리',
-    category: '상품',
-    date: '05.27',
-    state: '답변완료',
-  },
-];
+interface Stats {
+  waiting: number;
+  answered: number;
+}
 
 export default function SupportPage() {
+  const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
+  const [stats, setStats] = useState<Stats>({ waiting: 0, answered: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await api.get('/admin/inquiries', { params: { limit: 10 } });
+        setInquiries(data.inquiries ?? []);
+
+        const [waitingRes, answeredRes] = await Promise.all([
+          api.get('/admin/inquiries', { params: { answered: 'false', limit: 1 } }),
+          api.get('/admin/inquiries', { params: { answered: 'true', limit: 1 } }),
+        ]);
+        setStats({
+          waiting: waitingRes.data.pagination?.total ?? 0,
+          answered: answeredRes.data.pagination?.total ?? 0,
+        });
+      } catch (err) {
+        console.error(err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">고객센터 관리</h1>
-          <p className="text-sm text-muted-foreground">미처리: 47건</p>
+          <p className="text-sm text-muted-foreground">미처리: {stats.waiting}건</p>
         </div>
         <div className="flex gap-2">
           <Link
@@ -77,23 +80,17 @@ export default function SupportPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 tablet:grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-2">
             <p className="text-sm text-muted-foreground">답변 대기</p>
-            <p className="text-3xl font-bold text-yellow mt-1">23건</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-2">
-            <p className="text-sm text-muted-foreground">처리 중</p>
-            <p className="text-3xl font-bold text-primary mt-1">24건</p>
+            <p className="text-3xl font-bold text-yellow mt-1">{stats.waiting}건</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-2">
             <p className="text-sm text-muted-foreground">답변 완료</p>
-            <p className="text-3xl font-bold mt-1">1,234건</p>
+            <p className="text-3xl font-bold mt-1">{stats.answered.toLocaleString()}건</p>
           </CardContent>
         </Card>
       </div>
@@ -111,24 +108,48 @@ export default function SupportPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {inquiries.map((inq) => (
-              <TableRow key={inq.id}>
-                <TableCell className="font-medium">{inq.title}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{inq.author}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <StatusBadge status={inq.category} />
-                </TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{inq.date}</TableCell>
-                <TableCell>
-                  <StatusBadge status={inq.state} />
-                </TableCell>
-                <TableCell>
-                  <Button size="sm" className="h-7 px-3 text-xs">
-                    답변
-                  </Button>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  불러오는 중...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-destructive py-8">
+                  데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+                </TableCell>
+              </TableRow>
+            ) : inquiries.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  문의가 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              inquiries.map((inq) => (
+                <TableRow key={inq.inquiryId}>
+                  <TableCell className="font-medium">{inq.title}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{inq.author}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {inq.category}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {formatDate(inq.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={inq.isAnswered ? '답변완료' : '답변대기'} />
+                  </TableCell>
+                  <TableCell>
+                    <Link href="/admin/support/inquiry">
+                      <Button size="sm" className="h-7 px-3 text-xs">
+                        답변
+                      </Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
