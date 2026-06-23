@@ -18,13 +18,15 @@ export default function TodayRecipeCard() {
         <span className="text-xs text-gray-text hover:text-dark-text transition-colors cursor-pointer">더보기</span>
       </div>
 
-      <div className="relative h-36 rounded-xl overflow-hidden mb-3">
-        {isLoading ? (
-          <div className="h-full w-full bg-card-bg animate-pulse" />
-        ) : (
-          <Image src={image} alt={title} fill className="object-cover" />
-        )}
-        <button className="absolute top-2 right-2 text-white text-base leading-none">♡</button>
+      <div className="relative h-36 rounded-xl overflow-hidden mb-3 bg-card-bg">
+        <Image
+          src={image}
+          alt={title}
+          fill
+          className={`object-cover transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+          priority
+        />
+        <button className="absolute top-2 right-2 text-white text-base leading-none z-10">♡</button>
       </div>
 
       <h4 className="text-sm font-medium text-dark-text truncate">{title}</h4>
