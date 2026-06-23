@@ -19,7 +19,7 @@ const latestOrders: Order[] = [
     customer: '김가을',
     product: '유기농 토마토 500g',
     price: 15900,
-    status: '배송준비중',
+    status: '배송준비',
     orderDate: '2024-06-09 14:16:22',
   },
   {

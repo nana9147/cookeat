@@ -1,4 +1,11 @@
-export type OrderStatus = '결제완료' | '배송준비중' | '배송중' | '배송완료' | '취소' | '환불';
+export type OrderStatus =
+  | '결제완료'
+  | '주문확인'
+  | '배송준비'
+  | '배송중'
+  | '배송완료'
+  | '취소'
+  | '환불';
 export type PaymentMethod = '신용카드' | '실시간 계좌이체' | '간편결제' | '휴대폰 소액결제';
 
 export type OrderStatusFilter = OrderStatus | '전체' | '취소환불';

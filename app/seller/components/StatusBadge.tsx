@@ -8,7 +8,8 @@ export default function StatusBadge({ status }: { status: BadgeStatus }) {
     숨김: 'bg-gray-50 text-light-gray border border-border',
 
     결제완료: 'bg-emerald-50 text-primary border border-emerald-200',
-    배송준비중: 'bg-amber-50 text-yellow border border-amber-200',
+    주문확인: 'bg-indigo-50 text-indigo-600 border border-indigo-200',
+    배송준비: 'bg-amber-50 text-yellow border border-amber-200',
     배송중: 'bg-blue-50 text-blue-600 border border-blue-200',
     배송완료: 'bg-beige-50 text-muted border border-border',
     취소: 'bg-slate-50 text-slate-500 border border-slate-200',

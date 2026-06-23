@@ -9,7 +9,7 @@ const MOCK_ORDER: OrderDetail = {
   info: {
     id: 'ORD-2026-001234',
     orderDate: '2026-06-02 14:23:45',
-    status: '배송준비중',
+    status: '배송준비',
   },
   products: [
     {

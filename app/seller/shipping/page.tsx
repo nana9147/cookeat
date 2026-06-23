@@ -1,117 +1,79 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CourierCode, ShippingOrder, ShippingStatus } from '@/types/seller/shipping';
 import ShippingTable from '../components/Shipping/ShippingTable';
-import { useFilter } from '@/hooks/useFilter';
 import StatusCards from '@/components/ui/StatusCards';
-
-const MOCK_SHIPPING_ORDERS: ShippingOrder[] = [
-  {
-    id: 'ORD-2026-001',
-    customer: '김철수',
-    products: ['유기농 토마토 500g', '애호박 1개', '청양고추 500g'],
-    orderDate: '2026-06-10 09:12:33',
-    status: '배송준비중',
-    courier: '',
-    trackingNumber: '',
-  },
-  {
-    id: 'ORD-2026-002',
-    customer: '이영희',
-    products: ['청양고추 1kg'],
-    orderDate: '2026-06-10 10:05:17',
-    status: '배송준비중',
-    courier: '',
-    trackingNumber: '',
-  },
-  {
-    id: 'ORD-2026-003',
-    customer: '박민수',
-    products: ['국내산 달걀 30구'],
-    orderDate: '2026-06-09 14:23:45',
-    status: '배송중',
-    courier: 'CJ대한통운',
-    trackingNumber: '123456789012',
-  },
-  {
-    id: 'ORD-2026-004',
-    customer: '최지원',
-    products: ['유기농 감자 1kg'],
-    orderDate: '2026-06-09 11:30:22',
-    status: '배송중',
-    courier: '한진택배',
-    trackingNumber: '987654321098',
-  },
-  {
-    id: 'ORD-2026-005',
-    customer: '정하늘',
-    products: ['프리미엄 올리브유', '국내산 달걀 30구'],
-    orderDate: '2026-06-08 16:44:05',
-    status: '배송준비중',
-    courier: 'CJ대한통운',
-    trackingNumber: '111222333444',
-  },
-  {
-    id: 'ORD-2026-006',
-    customer: '한바다',
-    products: ['생크림 200ml'],
-    orderDate: '2026-06-08 13:55:47',
-    status: '배송완료',
-    courier: '로젠택배',
-    trackingNumber: '555666777888',
-  },
-];
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 const SHIPPING_COLOR_MAP = {
-  배송준비중: 'text-yellow-500',
+  주문확인: 'text-purple-500',
+  배송준비: 'text-amber-500',
   배송중: 'text-blue-500',
-  배송완료: 'text-green-500',
+  배송완료: 'text-emerald-500',
 };
+
+const LIMIT = 10;
 
 export default function ShippingPage() {
   const [status, setStatus] = useState<ShippingStatus | '전체'>('전체');
-  const [shippingOrders, setShippingOrders] = useState(MOCK_SHIPPING_ORDERS);
+  const [search, setSearch] = useState('');
+  const [orders, setOrders] = useState<ShippingOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const {
-    search,
-    setSearch,
-    filtered: filteredBySearch,
-  } = useFilter(
-    shippingOrders,
-    (o, search) => o.customer.includes(search) || o.id.includes(search)
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  const filtered = filteredBySearch.filter((o) => status === '전체' || o.status === status);
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        const res = await api.get('/seller/shipping/orders', {
+          params: {
+            page,
+            limit: LIMIT,
+            keyword: search || undefined,
+            status: status === '전체' ? undefined : status,
+          },
+        });
+        if (!cancelled) {
+          setOrders(res.data.data.orders);
+          setTotal(res.data.data.pagination.total);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchOrders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, status, search]);
 
   const statusCardData = [
-    {
-      label: '배송준비중',
-      count: shippingOrders.filter((o) => o.status === '배송준비중').length,
-      filterValue: '배송준비중',
-    },
-    {
-      label: '배송중',
-      count: shippingOrders.filter((o) => o.status === '배송중').length,
-      filterValue: '배송중',
-    },
-    {
-      label: '배송완료',
-      count: shippingOrders.filter((o) => o.status === '배송완료').length,
-      filterValue: '배송완료',
-    },
+    { label: '주문확인', count: 0, filterValue: '주문확인' },
+    { label: '배송준비', count: 0, filterValue: '배송준비' },
+    { label: '배송중', count: 0, filterValue: '배송중' },
+    { label: '배송완료', count: 0, filterValue: '배송완료' },
   ];
 
-  const handleUpdate = (orderId: string, courier: string, trackingNumber: string) => {
-    setShippingOrders((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? { ...o, courier: courier as CourierCode, trackingNumber, status: '배송중' }
-          : o
-      )
+  const handleUpdate = (orderId: string, courier: CourierCode | '', trackingNumber: string) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, courier, trackingNumber } : o))
     );
   };
 
+  const totalPages = Math.ceil(total / LIMIT);
   return (
     <div className="bg-background p-8">
       <div className="mb-8">
@@ -124,15 +86,25 @@ export default function ShippingPage() {
       <StatusCards
         cards={statusCardData}
         status={status}
-        onStatusChange={setStatus}
+        onStatusChange={(v) => {
+          setStatus(v);
+          setPage(1);
+        }}
         colorMap={SHIPPING_COLOR_MAP}
-        cols={3}
+        cols={4}
       />
       <ShippingTable
-        orders={filtered}
+        orders={orders}
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         onUpdate={handleUpdate}
+        isLoading={isLoading}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
       />
     </div>
   );

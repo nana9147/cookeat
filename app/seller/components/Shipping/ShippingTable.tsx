@@ -2,16 +2,9 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { usePagination } from '@/hooks/usePagination';
+import { getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -19,8 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CourierCode, ShippingOrder, ShippingTableProps } from '@/types/seller/shipping';
+import {
+  CourierCode,
+  ShippingOrder,
+  ShippingTableProps,
+  ShippingInputState,
+} from '@/types/seller/shipping';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import StatusBadge from '../StatusBadge';
 
 const COURIERS: CourierCode[] = [
   'CJ대한통운',
@@ -33,30 +33,22 @@ const COURIERS: CourierCode[] = [
   'ETC',
 ];
 
-type InputState = {
-  courier: string;
-  trackingNumber: string;
-  isEditing: boolean;
-};
-
 export default function ShippingTable({
   orders,
   search,
   onSearchChange,
   onUpdate,
+  isLoading,
+  page,
+  totalPages,
+  onPageChange,
 }: ShippingTableProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [inputs, setInputs] = useState<Record<string, InputState>>({});
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isErrorOpen, setIsErrorOpen] = useState(false);
-  const { currentPage, setCurrentPage, paginated, totalPages, getPageNumbers } = usePagination(
-    orders,
-    10
-  );
+  const [inputs, setInputs] = useState<Record<string, ShippingInputState>>({});
 
   // 전체 선택/해제
   const handleSelectAll = (checked: boolean) => {
-    checked ? setSelectedIds(paginated.map((o) => o.id)) : setSelectedIds([]);
+    checked ? setSelectedIds(orders.map((o) => o.id)) : setSelectedIds([]);
   };
 
   // 개별 선택/해제
@@ -81,23 +73,18 @@ export default function ShippingTable({
     const input = inputs[orderId];
 
     if (!input?.courier && !input?.trackingNumber) {
-      setErrorMessage('택배사와 운송장번호를 모두 입력해주세요.');
-      setIsErrorOpen(true);
+      toast.error('택배사와 운송장번호를 모두 입력해주세요.');
       return;
     }
     if (!input?.courier) {
-      setErrorMessage('택배사를 선택해주세요.');
-      setIsErrorOpen(true);
+      toast.error('택배사를 선택해주세요.');
       return;
     }
     if (!input?.trackingNumber) {
-      setErrorMessage('운송장번호를 입력해주세요.');
-      setIsErrorOpen(true);
+      toast.error('운송장번호를 입력해주세요.');
       return;
     }
 
-    // TODO: API 연동
-    console.log('배송 처리:', orderId, input);
     onUpdate(orderId, input.courier, input.trackingNumber);
     setInputs((prev) => ({
       ...prev,
@@ -116,7 +103,7 @@ export default function ShippingTable({
           onValueChange={(value) =>
             setInputs((prev) => ({
               ...prev,
-              [order.id]: { ...prev[order.id], courier: value },
+              [order.id]: { ...prev[order.id], courier: value as CourierCode },
             }))
           }
         >
@@ -144,6 +131,7 @@ export default function ShippingTable({
     if (isNew || isEditing) {
       return (
         <Input
+          type="number"
           value={inputs[order.id]?.trackingNumber ?? ''}
           onChange={(e) =>
             setInputs((prev) => ({
@@ -152,7 +140,7 @@ export default function ShippingTable({
             }))
           }
           placeholder="운송장번호 입력"
-          className="w-36 mx-auto"
+          className="w-36 mx-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       );
     }
@@ -198,7 +186,7 @@ export default function ShippingTable({
             <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 w-10">
               <input
                 type="checkbox"
-                checked={selectedIds.length === paginated.length && paginated.length > 0}
+                checked={selectedIds.length === orders.length && orders.length > 0}
                 onChange={(e) => handleSelectAll(e.target.checked)}
               />
             </th>
@@ -216,7 +204,13 @@ export default function ShippingTable({
           </tr>
         </thead>
         <tbody>
-          {orders.length === 0 ? (
+          {isLoading ? (
+            <tr>
+              <td colSpan={8} className="text-center py-16 text-gray-400 text-sm">
+                목록을 불러오는 중...
+              </td>
+            </tr>
+          ) : orders.length === 0 ? (
             <tr>
               <td colSpan={8} className="text-center py-16 text-gray-400 text-sm">
                 주문내역이 없습니다.
@@ -224,7 +218,7 @@ export default function ShippingTable({
             </tr>
           ) : (
             <>
-              {paginated.map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="border-b border-gray-50 last:border-b-0">
                   <td className="px-4 py-3.5 text-center">
                     <input
@@ -248,37 +242,23 @@ export default function ShippingTable({
                   <td className="px-4 py-3.5 text-center">{renderCourierCell(order)}</td>
                   <td className="px-4 py-3.5 text-center">{renderTrackingCell(order)}</td>
                   <td className="px-4 py-3.5 text-center">
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                      {order.status}
-                    </span>
+                    <StatusBadge status={order.status} />
                   </td>
                   <td className="px-4 py-3.5 text-center">{renderActionCell(order)}</td>
                 </tr>
               ))}
-              <EmptyRows count={10 - paginated.length} colSpan={8} />
+              <EmptyRows count={10 - orders.length} colSpan={8} />
             </>
           )}
         </tbody>
       </table>
 
       <Pagination
-        currentPage={currentPage}
+        currentPage={page}
         totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        getPageNumbers={getPageNumbers}
+        onPageChange={onPageChange}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
       />
-      {/* 에러 Dialog */}
-      <Dialog open={isErrorOpen} onOpenChange={setIsErrorOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>입력 오류</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-gray-600">{errorMessage}</p>
-          <DialogFooter>
-            <Button onClick={() => setIsErrorOpen(false)}>확인</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
