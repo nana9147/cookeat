@@ -23,6 +23,20 @@ export default function ShippingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [counts, setCounts] = useState({ 주문확인: 0, 배송준비: 0, 배송중: 0, 배송완료: 0 });
+
+  const fetchCounts = async () => {
+    try {
+      const res = await api.get('/seller/shipping/orders/counts');
+      setCounts(res.data.data);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.');
+    }
+  };
+
+  useEffect(() => {
+    fetchCounts();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,10 +75,10 @@ export default function ShippingPage() {
   }, [page, status, search]);
 
   const statusCardData = [
-    { label: '주문확인', count: 0, filterValue: '주문확인' },
-    { label: '배송준비', count: 0, filterValue: '배송준비' },
-    { label: '배송중', count: 0, filterValue: '배송중' },
-    { label: '배송완료', count: 0, filterValue: '배송완료' },
+    { label: '주문확인', count: counts.주문확인, filterValue: '주문확인' },
+    { label: '배송준비', count: counts.배송준비, filterValue: '배송준비' },
+    { label: '배송중', count: counts.배송중, filterValue: '배송중' },
+    { label: '배송완료', count: counts.배송완료, filterValue: '배송완료' },
   ];
 
   const handleUpdate = (orderId: string, courier: CourierCode | '', trackingNumber: string) => {

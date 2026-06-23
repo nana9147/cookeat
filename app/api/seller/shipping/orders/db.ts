@@ -84,3 +84,33 @@ export async function getSellerShippingOrders(
 
   return { orders: result, total: count ?? 0 };
 }
+
+export async function getSellerShippingOrderCounts(sellerId: number) {
+  const { data: orderItemRows, error: orderItemsError } = await supabaseAdmin
+    .from('order_items')
+    .select('order_id')
+    .eq('seller_id', sellerId);
+
+  if (orderItemsError) throw orderItemsError;
+
+  const orderIds = [...new Set((orderItemRows ?? []).map((r) => r.order_id))];
+
+  if (orderIds.length === 0) {
+    return { 주문확인: 0, 배송준비: 0, 배송중: 0, 배송완료: 0 };
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .select('status')
+    .in('order_id', orderIds)
+    .in('status', ['주문확인', '배송준비', '배송중', '배송완료']);
+
+  if (error) throw error;
+
+  const counts = { 주문확인: 0, 배송준비: 0, 배송중: 0, 배송완료: 0 };
+  for (const row of data ?? []) {
+    counts[row.status as keyof typeof counts] += 1;
+  }
+
+  return counts;
+}
