@@ -131,6 +131,7 @@ export default function ShippingTable({
     if (isNew || isEditing) {
       return (
         <Input
+          type="number"
           value={inputs[order.id]?.trackingNumber ?? ''}
           onChange={(e) =>
             setInputs((prev) => ({
@@ -139,7 +140,7 @@ export default function ShippingTable({
             }))
           }
           placeholder="운송장번호 입력"
-          className="w-36 mx-auto"
+          className="w-36 mx-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       );
     }
