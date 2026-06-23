@@ -78,18 +78,20 @@ export default function FaqPage() {
   }, []);
 
   const handleAddSave = async () => {
-    await api
-      .post('/admin/faqs', {
+    try {
+      const res = await api.post('/admin/faqs', {
         category: addForm.category,
         title: addForm.title,
         content: addForm.content,
         is_public: addForm.is_public,
-      })
-      .then((res) => {
-        setFaqs((prev) => [...prev, res.data.faq]);
-        setAddForm({ category: '배송', title: '', content: '', is_public: true });
-        setAddOpen(false);
       });
+      setFaqs((prev) => [...prev, res.data.faq]);
+      setAddForm({ category: '배송', title: '', content: '', is_public: true });
+      setAddOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('FAQ 추가에 실패했습니다. 다시 시도해 주세요.');
+    }
   };
 
   const handleEditOpen = (faq: Faq) => {
@@ -99,19 +101,29 @@ export default function FaqPage() {
 
   const handleEditSave = async () => {
     if (!editForm) return;
-    await api.patch(`/admin/faqs/${editForm.faq_id}`, {
-      category: editForm.category,
-      title: editForm.title,
-      content: editForm.content,
-      is_public: editForm.is_public,
-    });
-    setFaqs((prev) => prev.map((f) => (f.faq_id === editForm.faq_id ? editForm : f)));
-    setEditTarget(null);
+    try {
+      await api.patch(`/admin/faqs/${editForm.faq_id}`, {
+        category: editForm.category,
+        title: editForm.title,
+        content: editForm.content,
+        is_public: editForm.is_public,
+      });
+      setFaqs((prev) => prev.map((f) => (f.faq_id === editForm.faq_id ? editForm : f)));
+      setEditTarget(null);
+    } catch (err) {
+      console.error(err);
+      alert('FAQ 수정에 실패했습니다. 다시 시도해 주세요.');
+    }
   };
 
   const handleDelete = async (faqId: number) => {
-    await api.delete(`/admin/faqs/${faqId}`);
-    setFaqs((prev) => prev.filter((f) => f.faq_id !== faqId));
+    try {
+      await api.delete(`/admin/faqs/${faqId}`);
+      setFaqs((prev) => prev.filter((f) => f.faq_id !== faqId));
+    } catch (err) {
+      console.error(err);
+      alert('FAQ 삭제에 실패했습니다. 다시 시도해 주세요.');
+    }
   };
 
   const filtered = faqs.filter((f) => {

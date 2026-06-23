@@ -37,6 +37,7 @@ interface InquiryItem {
 export default function InquiryPage() {
   const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [inputText, setInputText] = useState('');
@@ -47,6 +48,9 @@ export default function InquiryPage() {
     try {
       const { data } = await api.get('/admin/inquiries', { params: { limit: 100 } });
       setInquiries(data.inquiries ?? []);
+    } catch (err) {
+      console.error(err);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -160,6 +164,12 @@ export default function InquiryPage() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   불러오는 중...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-destructive py-8">
+                  데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (

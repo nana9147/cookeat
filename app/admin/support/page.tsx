@@ -26,6 +26,7 @@ export default function SupportPage() {
   const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
   const [stats, setStats] = useState<Stats>({ waiting: 0, answered: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -41,6 +42,9 @@ export default function SupportPage() {
           waiting: waitingRes.data.pagination?.total ?? 0,
           answered: answeredRes.data.pagination?.total ?? 0,
         });
+      } catch (err) {
+        console.error(err);
+        setError(true);
       } finally {
         setLoading(false);
       }
@@ -108,6 +112,12 @@ export default function SupportPage() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   불러오는 중...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-destructive py-8">
+                  데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
                 </TableCell>
               </TableRow>
             ) : inquiries.length === 0 ? (
