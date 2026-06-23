@@ -9,6 +9,7 @@ export default function AddressForm({
   mode,
   address,
   defaultType,
+  isLastDefaultAddress,
   isOpen,
   onClose,
   onSubmit,
@@ -165,15 +166,25 @@ export default function AddressForm({
           </div>
 
           {/* 기본 주소 설정 */}
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label
+            className={`flex items-center gap-2 ${
+              isLastDefaultAddress ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+            }`}
+          >
             <input
               type="checkbox"
               checked={form.isDefault}
+              disabled={isLastDefaultAddress}
               onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
               className="accent-green-600 w-4 h-4"
             />
             <span className="text-sm text-gray-700">기본 주소로 설정</span>
           </label>
+          {isLastDefaultAddress && (
+            <p className="text-xs text-muted-foreground">
+              출고지/반품지에는 최소 1개의 기본 주소가 필요해 해제할 수 없습니다.
+            </p>
+          )}
         </div>
 
         {/* 버튼 */}

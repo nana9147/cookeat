@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { FormType, AddressItem } from '@/types/seller/shipping';
+import { FormType, AddressItem, UpdateAddressResult } from '@/types/seller/shipping';
 import { Plus, MapPinOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AddressCard from './AddressCard';
@@ -20,6 +20,9 @@ export default function AddressList() {
   const returns = addresses.filter((a) => a.type === '반품지');
   const [activeTab, setActiveTab] = useState<'origin' | 'return'>('origin');
   const [isLoading, setIsLoading] = useState(true);
+  const sameTypeCount = selectedAddress
+    ? addresses.filter((a) => a.type === selectedAddress.type).length
+    : 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -68,14 +71,26 @@ export default function AddressList() {
         toast.error(e instanceof Error ? e.message : '주소 등록에 실패했습니다.');
       }
     } else {
-      setAddresses((prev) =>
-        prev.map((a) => {
-          if (a.id === selectedAddress?.id) return { ...a, ...form };
-          if (a.type === form.type && form.isDefault) return { ...a, isDefault: false };
-          return a;
-        })
-      );
-      setIsOpen(false);
+      try {
+        const res = await api.patch(`/seller/addresses/${selectedAddress?.id}`, form);
+        const updatedAddress: UpdateAddressResult = res.data.data;
+
+        setAddresses((prev) =>
+          prev.map((a) => {
+            if (a.id === updatedAddress.id) return updatedAddress;
+            if (a.id === updatedAddress.promotedAddressId) return { ...a, isDefault: true };
+            if (a.type === updatedAddress.type && updatedAddress.isDefault) {
+              return { ...a, isDefault: false };
+            }
+            return a;
+          })
+        );
+
+        toast.success('주소가 수정되었습니다.');
+        setIsOpen(false);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '주소 수정에 실패했습니다.');
+      }
     }
   };
 
@@ -191,6 +206,9 @@ export default function AddressList() {
         mode={formMode}
         address={selectedAddress}
         defaultType={activeTab === 'origin' ? '출고지' : '반품지'}
+        isLastDefaultAddress={
+          formMode === '수정' && selectedAddress?.isDefault === true && sameTypeCount === 1
+        }
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onSubmit={handleSubmit}
