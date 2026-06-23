@@ -37,6 +37,8 @@ export default function TemplateList() {
   const [activeTab, setActiveTab] = useState<'shipping' | 'return'>('shipping');
   const [isShippingFormOpen, setIsShippingFormOpen] = useState(false);
   const [isReturnFormOpen, setIsReturnFormOpen] = useState(false);
+  const [isShippingLoading, setIsShippingLoading] = useState(true);
+  const [isReturnLoading, setIsReturnLoading] = useState(true);
 
   const [shippingTemplate, setShippingTemplate] = useState<ShippingTemplate[]>([]);
   const [returnTemplate, setReturnTemplate] = useState<ReturnPolicy[]>([]);
@@ -58,6 +60,7 @@ export default function TemplateList() {
   useEffect(() => {
     let cancelled = false;
 
+    setIsShippingLoading(true);
     api
       .get('/seller/shipping/templates')
       .then(({ data }) => {
@@ -67,6 +70,9 @@ export default function TemplateList() {
         if (!cancelled) {
           toast.error(e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.');
         }
+      })
+      .finally(() => {
+        if (!cancelled) setIsShippingLoading(false);
       });
 
     return () => {
@@ -127,6 +133,7 @@ export default function TemplateList() {
   useEffect(() => {
     let cancelled = false;
 
+    setIsReturnLoading(true);
     api
       .get('/seller/return-policy/templates')
       .then(({ data }) => {
@@ -136,6 +143,9 @@ export default function TemplateList() {
         if (!cancelled) {
           toast.error(e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.');
         }
+      })
+      .finally(() => {
+        if (!cancelled) setIsReturnLoading(false);
       });
 
     return () => {
@@ -236,7 +246,11 @@ export default function TemplateList() {
         </div>
 
         <TabsContent value="shipping">
-          {shippingTemplate.length === 0 ? (
+          {isShippingLoading ? (
+            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+              배송 템플릿을 불러오는 중...
+            </div>
+          ) : shippingTemplate.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
               <TextSearch className="mb-4 size-10 text-muted-foreground" />
               <p className="mb-1 text-sm font-medium text-foreground">
@@ -259,7 +273,11 @@ export default function TemplateList() {
         </TabsContent>
 
         <TabsContent value="return">
-          {returnTemplate.length === 0 ? (
+          {isReturnLoading ? (
+            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+              반품정책 템플릿을 불러오는 중...
+            </div>
+          ) : returnTemplate.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
               <TextSearch className="mb-4 size-10 text-muted-foreground" />
               <p className="mb-1 text-sm font-medium text-foreground">
