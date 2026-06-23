@@ -57,6 +57,7 @@ export async function getSellerShippingOrders(
   const { data: shippings, error: shippingsError } = await supabaseAdmin
     .from('shippings')
     .select('order_id, carrier, tracking_number')
+    .eq('seller_id', sellerId)
     .in('order_id', pagedOrderIds);
 
   if (shippingsError) throw shippingsError;
