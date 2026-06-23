@@ -9,7 +9,7 @@ const styles = {
 
   // 주문 상태
   결제완료: 'bg-emerald-50 text-primary border border-emerald-200',
-  주문확인: 'bg-emerald-50 text-primary border border-emerald-200',
+  주문확인: 'bg-purple-50 text-primary border border-purple-200',
   배송준비중: 'bg-amber-50 text-yellow border border-amber-200',
   배송준비: 'bg-amber-50 text-yellow border border-amber-200',
   배송중: 'bg-blue-50 text-blue-600 border border-blue-200',
@@ -68,8 +68,6 @@ export type StatusBadgeStatus = keyof typeof styles;
 
 export default function StatusBadge({ status }: { status: StatusBadgeStatus }) {
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
-      {status}
-    </span>
+    <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>{status}</span>
   );
 }

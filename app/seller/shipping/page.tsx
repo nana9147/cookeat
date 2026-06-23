@@ -12,7 +12,7 @@ const MOCK_SHIPPING_ORDERS: ShippingOrder[] = [
     customer: '김철수',
     products: ['유기농 토마토 500g', '애호박 1개', '청양고추 500g'],
     orderDate: '2026-06-10 09:12:33',
-    status: '배송준비중',
+    status: '배송준비',
     courier: '',
     trackingNumber: '',
   },
@@ -21,7 +21,7 @@ const MOCK_SHIPPING_ORDERS: ShippingOrder[] = [
     customer: '이영희',
     products: ['청양고추 1kg'],
     orderDate: '2026-06-10 10:05:17',
-    status: '배송준비중',
+    status: '배송준비',
     courier: '',
     trackingNumber: '',
   },
@@ -48,7 +48,7 @@ const MOCK_SHIPPING_ORDERS: ShippingOrder[] = [
     customer: '정하늘',
     products: ['프리미엄 올리브유', '국내산 달걀 30구'],
     orderDate: '2026-06-08 16:44:05',
-    status: '배송준비중',
+    status: '배송준비',
     courier: 'CJ대한통운',
     trackingNumber: '111222333444',
   },
@@ -64,9 +64,10 @@ const MOCK_SHIPPING_ORDERS: ShippingOrder[] = [
 ];
 
 const SHIPPING_COLOR_MAP = {
-  배송준비중: 'text-yellow-500',
+  주문확인: 'text-purple-500',
+  배송준비: 'text-amber-500',
   배송중: 'text-blue-500',
-  배송완료: 'text-green-500',
+  배송완료: 'text-emerald-500',
 };
 
 export default function ShippingPage() {
@@ -86,9 +87,14 @@ export default function ShippingPage() {
 
   const statusCardData = [
     {
-      label: '배송준비중',
-      count: shippingOrders.filter((o) => o.status === '배송준비중').length,
-      filterValue: '배송준비중',
+      label: '주문확인',
+      count: shippingOrders.filter((o) => o.status === '주문확인').length,
+      filterValue: '주문확인',
+    },
+    {
+      label: '배송준비',
+      count: shippingOrders.filter((o) => o.status === '배송준비').length,
+      filterValue: '배송준비',
     },
     {
       label: '배송중',
@@ -126,7 +132,7 @@ export default function ShippingPage() {
         status={status}
         onStatusChange={setStatus}
         colorMap={SHIPPING_COLOR_MAP}
-        cols={3}
+        cols={4}
       />
       <ShippingTable
         orders={filtered}

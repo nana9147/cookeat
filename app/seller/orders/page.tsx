@@ -13,8 +13,9 @@ import { useFilter } from '@/hooks/useFilter';
 const statuses: (OrderStatus | '전체')[] = [
   '전체',
   '결제완료',
+  '주문확인',
   '배송완료',
-  '배송준비중',
+  '배송준비',
   '배송중',
   '취소',
   '환불',
@@ -26,7 +27,7 @@ const orders: Order[] = [
     customer: '김가을',
     product: '유기농 토마토 500g',
     price: 15900,
-    status: '배송준비중',
+    status: '배송준비',
     orderDate: '2026-06-09 11:56:39',
   },
   {
@@ -118,9 +119,14 @@ const statusCardData: StatusCardItem[] = [
     filterValue: '결제완료',
   },
   {
-    label: '배송준비중',
-    count: orders.filter((o) => o.status === '배송준비중').length,
-    filterValue: '배송준비중',
+    label: '주문확인',
+    count: orders.filter((o) => o.status === '주문확인').length,
+    filterValue: '주문확인',
+  },
+  {
+    label: '배송준비',
+    count: orders.filter((o) => o.status === '배송준비').length,
+    filterValue: '배송준비',
   },
   {
     label: '배송중',
@@ -140,13 +146,13 @@ const statusCardData: StatusCardItem[] = [
 ];
 
 const ORDER_COLOR_MAP = {
-  결제완료: 'text-green-500',
-  배송준비중: 'text-yellow-500',
+  결제완료: 'text-emerald-500',
+  주문확인: 'text-indigo-500',
+  배송준비: 'text-amber-500',
   배송중: 'text-blue-500',
   배송완료: 'text-taupe-500',
   '취소/환불': 'text-red-500',
 };
-
 export default function OrdersPage() {
   const [status, setStatus] = useState<OrderStatusFilter>('전체');
 

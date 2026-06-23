@@ -1,4 +1,4 @@
-export type ShippingStatus = '배송준비중' | '배송중' | '배송완료';
+export type ShippingStatus = '주문확인' | '배송준비' | '배송중' | '배송완료';
 export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
 export type AddressType = '출고지' | '반품지';
 export type AddressBadgeType = '기본출고지' | '기본반품지';
