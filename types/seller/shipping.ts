@@ -96,14 +96,16 @@ export interface ShippingTemplateTableProps {
 }
 
 export interface AddressItem {
-  id: string;
+  id: number;
   name: string;
   zipCode: string;
   baseAddress: string;
   detailAddress: string;
-  type: AddressType;
+  type: '출고지' | '반품지';
   isDefault: boolean;
 }
+
+export type CreateAddressInput = Omit<AddressItem, 'id'>;
 
 export interface AddressCardProps {
   address: AddressItem;
@@ -114,6 +116,8 @@ export interface AddressCardProps {
 export interface AddressFormProps {
   mode: FormType;
   address?: AddressItem;
+  defaultType?: '출고지' | '반품지';
+  isLastDefaultAddress?: boolean;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (form: Omit<AddressItem, 'id'>) => void;
@@ -213,4 +217,8 @@ export interface UpdateReturnPolicyTemplateInput {
 export interface SetDefaultReturnPolicyTemplateInput {
   sellerId: number;
   templateId: number;
+}
+
+export interface UpdateAddressResult extends AddressItem {
+  promotedAddressId: number | null;
 }

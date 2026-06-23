@@ -8,12 +8,14 @@ import DaumPostcode from 'react-daum-postcode';
 export default function AddressForm({
   mode,
   address,
+  defaultType,
+  isLastDefaultAddress,
   isOpen,
   onClose,
   onSubmit,
 }: AddressFormProps) {
   const [form, setForm] = useState({
-    type: address?.type ?? '출고지',
+    type: address?.type ?? defaultType ?? '출고지',
     name: address?.name ?? '',
     zipCode: address?.zipCode ?? '',
     baseAddress: address?.baseAddress ?? '',
@@ -28,15 +30,17 @@ export default function AddressForm({
   }, [isOpen]);
 
   useEffect(() => {
-    setForm({
-      type: address?.type ?? '출고지',
-      name: address?.name ?? '',
-      zipCode: address?.zipCode ?? '',
-      baseAddress: address?.baseAddress ?? '',
-      detailAddress: address?.detailAddress ?? '',
-      isDefault: address?.isDefault ?? false,
-    });
-  }, [address]);
+    if (isOpen) {
+      setForm({
+        type: address?.type ?? defaultType ?? '출고지',
+        name: address?.name ?? '',
+        zipCode: address?.zipCode ?? '',
+        baseAddress: address?.baseAddress ?? '',
+        detailAddress: address?.detailAddress ?? '',
+        isDefault: address?.isDefault ?? false,
+      });
+    }
+  }, [isOpen, address, defaultType]);
 
   const handleSubmit = () => {
     if (!form.name || !form.zipCode || !form.baseAddress) {
@@ -162,15 +166,25 @@ export default function AddressForm({
           </div>
 
           {/* 기본 주소 설정 */}
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label
+            className={`flex items-center gap-2 ${
+              isLastDefaultAddress ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+            }`}
+          >
             <input
               type="checkbox"
               checked={form.isDefault}
+              disabled={isLastDefaultAddress}
               onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
               className="accent-green-600 w-4 h-4"
             />
             <span className="text-sm text-gray-700">기본 주소로 설정</span>
           </label>
+          {isLastDefaultAddress && (
+            <p className="text-xs text-muted-foreground">
+              출고지/반품지에는 최소 1개의 기본 주소가 필요해 해제할 수 없습니다.
+            </p>
+          )}
         </div>
 
         {/* 버튼 */}
