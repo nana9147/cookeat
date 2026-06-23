@@ -74,45 +74,47 @@ export async function fetchRecipeDetail(
   const author = first(recipe.users);
   const category = first(recipe.recipe_categories);
 
-  const { data: reviewRows, error: reviewError } = await supabaseAdmin
-    .from('reviews')
-    .select('rating')
-    .eq('recipe_id', id);
+  const noOp = Promise.resolve({ data: null, count: null, error: null });
+
+  const [
+    { data: reviewRows, error: reviewError },
+    { count: likeCount, error: likeError },
+    { count: bookmarkCount, error: bookmarkError },
+  ] = await Promise.all([
+    supabaseAdmin.from('reviews').select('rating').eq('recipe_id', id),
+    userId !== undefined
+      ? supabaseAdmin
+          .from('likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('recipe_id', id)
+          .eq('user_id', userId)
+      : noOp,
+    userId !== undefined
+      ? supabaseAdmin
+          .from('bookmarks')
+          .select('*', { count: 'exact', head: true })
+          .eq('recipe_id', id)
+          .eq('user_id', userId)
+      : noOp,
+  ]);
 
   if (reviewError) throw reviewError;
+  if (likeError) throw likeError;
+  if (bookmarkError) throw bookmarkError;
 
   let ratingSum = 0;
   const ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   for (const r of reviewRows ?? []) {
-    ratingSum += r.rating;
     const star = r.rating as 1 | 2 | 3 | 4 | 5;
-    if (star >= 1 && star <= 5) ratingBreakdown[star]++;
+    if (star >= 1 && star <= 5) {
+      ratingSum += r.rating;
+      ratingBreakdown[star]++;
+    }
   }
   const ratingCount = (reviewRows ?? []).length;
 
-  let isLiked = false;
-  let isBookmarked = false;
-  if (userId !== undefined) {
-    const [
-      { count: likeCount, error: likeError },
-      { count: bookmarkCount, error: bookmarkError },
-    ] = await Promise.all([
-      supabaseAdmin
-        .from('likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('recipe_id', id)
-        .eq('user_id', userId),
-      supabaseAdmin
-        .from('bookmarks')
-        .select('*', { count: 'exact', head: true })
-        .eq('recipe_id', id)
-        .eq('user_id', userId),
-    ]);
-    if (likeError) throw likeError;
-    if (bookmarkError) throw bookmarkError;
-    isLiked = (likeCount ?? 0) > 0;
-    isBookmarked = (bookmarkCount ?? 0) > 0;
-  }
+  const isLiked = (likeCount ?? 0) > 0;
+  const isBookmarked = (bookmarkCount ?? 0) > 0;
 
   const steps = [...(recipe.recipe_steps ?? [])]
     .sort((a, b) => a.step_order - b.step_order)
