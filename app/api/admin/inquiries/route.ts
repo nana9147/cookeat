@@ -72,7 +72,12 @@ function toInquiry(i: {
   inquiry_replies: unknown;
 }) {
   const user = i.users as RawUser | null;
-  const replies = (i.inquiry_replies as RawReply[]) ?? [];
+  const raw = i.inquiry_replies;
+  const replies: RawReply[] = raw === null || raw === undefined
+    ? []
+    : Array.isArray(raw)
+      ? (raw as RawReply[])
+      : [raw as RawReply];
   const isAnswered = replies.length > 0;
   return {
     inquiryId: i.inquiry_id,
