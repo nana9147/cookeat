@@ -93,7 +93,10 @@ export async function fetchRecipeDetail(
   let isLiked = false;
   let isBookmarked = false;
   if (userId !== undefined) {
-    const [{ count: likeCount }, { count: bookmarkCount }] = await Promise.all([
+    const [
+      { count: likeCount, error: likeError },
+      { count: bookmarkCount, error: bookmarkError },
+    ] = await Promise.all([
       supabaseAdmin
         .from('likes')
         .select('*', { count: 'exact', head: true })
@@ -105,6 +108,8 @@ export async function fetchRecipeDetail(
         .eq('recipe_id', id)
         .eq('user_id', userId),
     ]);
+    if (likeError) throw likeError;
+    if (bookmarkError) throw bookmarkError;
     isLiked = (likeCount ?? 0) > 0;
     isBookmarked = (bookmarkCount ?? 0) > 0;
   }
