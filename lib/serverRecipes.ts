@@ -45,7 +45,10 @@ function first<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-export async function fetchRecipeDetail(id: number): Promise<RecipeDetail | null> {
+export async function fetchRecipeDetail(
+  id: number,
+  userId?: number,
+): Promise<RecipeDetail | null> {
   const { data, error } = await supabaseAdmin
     .from('recipes')
     .select(
@@ -67,22 +70,43 @@ export async function fetchRecipeDetail(id: number): Promise<RecipeDetail | null
     throw error;
   }
 
-  const recipe = data as unknown as RawRecipe;
+  const recipe = data as RawRecipe;
   const author = first(recipe.users);
   const category = first(recipe.recipe_categories);
 
-  const { data: reviewRows } = await supabaseAdmin
+  const { data: reviewRows, error: reviewError } = await supabaseAdmin
     .from('reviews')
     .select('rating')
     .eq('recipe_id', id);
 
-  const ratingSum = (reviewRows ?? []).reduce((sum, r) => sum + r.rating, 0);
-  const ratingCount = (reviewRows ?? []).length;
+  if (reviewError) throw reviewError;
 
+  let ratingSum = 0;
   const ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   for (const r of reviewRows ?? []) {
+    ratingSum += r.rating;
     const star = r.rating as 1 | 2 | 3 | 4 | 5;
     if (star >= 1 && star <= 5) ratingBreakdown[star]++;
+  }
+  const ratingCount = (reviewRows ?? []).length;
+
+  let isLiked = false;
+  let isBookmarked = false;
+  if (userId !== undefined) {
+    const [{ count: likeCount }, { count: bookmarkCount }] = await Promise.all([
+      supabaseAdmin
+        .from('likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipe_id', id)
+        .eq('user_id', userId),
+      supabaseAdmin
+        .from('bookmarks')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipe_id', id)
+        .eq('user_id', userId),
+    ]);
+    isLiked = (likeCount ?? 0) > 0;
+    isBookmarked = (bookmarkCount ?? 0) > 0;
   }
 
   const steps = [...(recipe.recipe_steps ?? [])]
@@ -116,8 +140,8 @@ export async function fetchRecipeDetail(id: number): Promise<RecipeDetail | null
     rating: calcRating(ratingSum, ratingCount),
     reviewCount: ratingCount,
     ratingBreakdown,
-    isLiked: false,
-    isBookmarked: false,
+    isLiked,
+    isBookmarked,
     author: {
       userId: author?.user_id ?? 0,
       nickname: author?.nickname ?? '',
