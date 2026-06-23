@@ -53,7 +53,11 @@ export interface ShippingTableProps {
   orders: ShippingOrder[];
   search: string;
   onSearchChange: (value: string) => void;
-  onUpdate: (orderId: string, courier: string, trackingNumber: string) => void;
+  onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
+  isLoading?: boolean;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
 /** 배송 템플릿  */
@@ -221,4 +225,10 @@ export interface SetDefaultReturnPolicyTemplateInput {
 
 export interface UpdateAddressResult extends AddressItem {
   promotedAddressId: number | null;
+}
+
+export interface ShippingInputState {
+  courier: CourierCode | '';
+  trackingNumber: string;
+  isEditing: boolean;
 }
