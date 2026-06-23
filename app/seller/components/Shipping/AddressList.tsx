@@ -79,8 +79,21 @@ export default function AddressList() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
+  const handleDelete = async (id: number) => {
+    try {
+      const res = await api.delete(`/seller/addresses/${id}`);
+      const { newDefaultAddressId } = res.data.data;
+
+      setAddresses((prev) =>
+        prev
+          .filter((a) => a.id !== id)
+          .map((a) => (a.id === newDefaultAddressId ? { ...a, isDefault: true } : a))
+      );
+
+      toast.success('주소가 삭제되었습니다.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '주소 삭제에 실패했습니다.');
+    }
   };
 
   return (

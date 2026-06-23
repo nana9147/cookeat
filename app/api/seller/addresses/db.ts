@@ -95,3 +95,50 @@ export async function createAddress(sellerId: number, input: CreateAddressInput)
     isDefault: data.is_default,
   };
 }
+
+export async function deleteAddress(sellerId: number, addressId: number) {
+  const { data: target, error: targetError } = await supabaseAdmin
+    .from('addresses')
+    .select('address_id, seller_id, type, is_default')
+    .eq('address_id', addressId)
+    .maybeSingle();
+
+  if (targetError) throw targetError;
+  if (!target) throw new Error('주소를 찾을 수 없습니다.');
+  if (target.seller_id !== sellerId) throw new Error('해당 주소를 삭제할 권한이 없습니다.');
+
+  const { error: deleteError } = await supabaseAdmin
+    .from('addresses')
+    .delete()
+    .eq('address_id', addressId);
+
+  if (deleteError) throw deleteError;
+
+  let newDefaultAddressId: number | null = null;
+
+  if (target.is_default) {
+    const { data: remaining, error: remainingError } = await supabaseAdmin
+      .from('addresses')
+      .select('address_id')
+      .eq('seller_id', sellerId)
+      .eq('type', target.type)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (remainingError) throw remainingError;
+
+    if (remaining) {
+      const { error: promoteError } = await supabaseAdmin
+        .from('addresses')
+        .update({ is_default: true })
+        .eq('address_id', remaining.address_id);
+
+      if (promoteError) throw promoteError;
+
+      newDefaultAddressId = remaining.address_id;
+    }
+  }
+
+  return { addressId, newDefaultAddressId };
+}
