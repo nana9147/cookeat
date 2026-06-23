@@ -11,7 +11,7 @@ import type { CategoryNode, ProductFormData, ProductFormProps } from '@/types/se
 import { initialProductForm } from '@/types/seller/product';
 import ReturnPolicyField from './ReturnPolicyField';
 import api from '@/lib/api';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { ReturnPolicyTemplateOption, ShippingTemplateOption } from '@/types/seller/shipping';
 
@@ -26,9 +26,9 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
 
   useEffect(() => {
     api.get('/categories').then(({ data }) => setCategories(data.data));
-    api.get('/seller/shipping-templates').then(({ data }) => setShippingTemplates(data.data));
+    api.get('/seller/shipping/templates').then(({ data }) => setShippingTemplates(data.data));
     api
-      .get('/seller/return-policy-templates')
+      .get('/seller/return-policy/templates')
       .then(({ data }) => setReturnPolicyTemplates(data.data));
   }, []);
 

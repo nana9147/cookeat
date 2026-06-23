@@ -13,10 +13,11 @@ export type CourierCode =
   | 'GS25 편의점택배'
   | 'ETC';
 export type NonReturnReason =
-  | '개봉/사용/설치 완료'
-  | '신선식품 단순 변심'
-  | '주문제작 상품'
-  | '디지털 콘텐츠';
+  | '신선식품 단순변심 반품불가'
+  | '포장 개봉/사용 후'
+  | '소비기한 경과'
+  | '보관방법 미준수로 인한 손상/변질'
+  | '주문제작(정육손질/소분 등)';
 
 export interface ShippingData {
   shippingFeeType: ShippingFeeType;
@@ -69,7 +70,7 @@ export interface ShippingTemplateOption {
 }
 
 export interface ShippingTemplate {
-  id: string;
+  templateId: number;
   name: string;
   feeType: ShippingFeeType;
   fee: number;
@@ -85,24 +86,26 @@ export interface ShippingTemplateFormProps {
   template?: ShippingTemplate;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (form: Omit<ShippingTemplate, 'id'>) => void;
+  onSubmit: (form: Omit<ShippingTemplate, 'templateId'>) => void;
 }
 export interface ShippingTemplateTableProps {
   shippings: ShippingTemplate[];
   onEdit: (shipping: ShippingTemplate) => void;
-  onDelete: (id: string) => void;
-  onSetDefault: (id: string) => void;
+  onDelete: (templateId: number) => void;
+  onSetDefault: (templateId: number) => void;
 }
 
 export interface AddressItem {
-  id: string;
+  id: number;
   name: string;
   zipCode: string;
   baseAddress: string;
   detailAddress: string;
-  type: AddressType;
+  type: '출고지' | '반품지';
   isDefault: boolean;
 }
+
+export type CreateAddressInput = Omit<AddressItem, 'id'>;
 
 export interface AddressCardProps {
   address: AddressItem;
@@ -113,6 +116,8 @@ export interface AddressCardProps {
 export interface AddressFormProps {
   mode: FormType;
   address?: AddressItem;
+  defaultType?: '출고지' | '반품지';
+  isLastDefaultAddress?: boolean;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (form: Omit<AddressItem, 'id'>) => void;
@@ -136,7 +141,7 @@ export interface ReturnPolicyContent {
 }
 
 export interface ReturnPolicy {
-  id: string;
+  returnId: number;
   name: string;
   content: ReturnPolicyContent;
   isDefault: boolean;
@@ -147,7 +152,7 @@ export interface ReturnPolicyFormProps {
   policy?: ReturnPolicy;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (form: Omit<ReturnPolicy, 'id'>) => void;
+  onSubmit: (form: Omit<ReturnPolicy, 'returnId'>) => void;
 }
 
 export interface ReturnPolicyFieldProps {
@@ -159,6 +164,61 @@ export interface ReturnPolicyFieldProps {
 export interface ReturnPolicyTableProps {
   policies: ReturnPolicy[];
   onEdit: (policy: ReturnPolicy) => void;
-  onDelete: (id: string) => void;
-  onSetDefault: (id: string) => void;
+  onDelete: (returnId: number) => void;
+  onSetDefault: (returnId: number) => void;
+}
+
+export interface CreateShippingTemplateInput {
+  sellerId: number;
+  name: string;
+  feeType: ShippingFeeType;
+  fee: number;
+  freeThreshold: number | null;
+  returnFee: number;
+  originAddress: string;
+  returnAddress: string;
+  isDefault: boolean;
+}
+
+export interface UpdateShippingTemplateInput {
+  sellerId: number;
+  templateId: number;
+  name: string;
+  feeType: ShippingFeeType;
+  fee: number;
+  freeThreshold: number | null;
+  returnFee: number;
+  originAddress: string;
+  returnAddress: string;
+}
+export interface SetDefaultShippingTemplateInput {
+  sellerId: number;
+  templateId: number;
+}
+
+export interface CreateReturnPolicyTemplateInput {
+  sellerId: number;
+  name: string;
+  returnPeriod: number;
+  refundPeriod: number;
+  nonReturnReasons: NonReturnReason[];
+  isDefault: boolean;
+}
+
+export interface UpdateReturnPolicyTemplateInput {
+  sellerId: number;
+  templateId: number;
+  name: string;
+  returnPeriod: number;
+  refundPeriod: number;
+  nonReturnReasons: NonReturnReason[];
+}
+
+export interface SetDefaultReturnPolicyTemplateInput {
+  sellerId: number;
+  templateId: number;
+}
+
+export interface UpdateAddressResult extends AddressItem {
+  promotedAddressId: number | null;
 }

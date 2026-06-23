@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
-const EMPTY_RETURN_POLICY: Omit<ReturnPolicy, 'id'> = {
+const EMPTY_RETURN_POLICY: Omit<ReturnPolicy, 'returnId'> = {
   name: '',
   content: {
     returnPeriod: 7,
@@ -20,10 +20,11 @@ const EMPTY_RETURN_POLICY: Omit<ReturnPolicy, 'id'> = {
 };
 
 const NON_RETURN_REASONS: NonReturnReason[] = [
-  '개봉/사용/설치 완료',
-  '신선식품 단순 변심',
-  '주문제작 상품',
-  '디지털 콘텐츠',
+  '신선식품 단순변심 반품불가',
+  '포장 개봉/사용 후',
+  '소비기한 경과',
+  '보관방법 미준수로 인한 손상/변질',
+  '주문제작(정육손질/소분 등)',
 ];
 
 export default function ReturnPolicyForm({
@@ -33,7 +34,7 @@ export default function ReturnPolicyForm({
   onClose,
   onSubmit,
 }: ReturnPolicyFormProps) {
-  const [form, setForm] = useState<Omit<ReturnPolicy, 'id'>>(EMPTY_RETURN_POLICY);
+  const [form, setForm] = useState<Omit<ReturnPolicy, 'returnId'>>(EMPTY_RETURN_POLICY);
 
   useEffect(() => {
     setForm(policy ?? EMPTY_RETURN_POLICY);
