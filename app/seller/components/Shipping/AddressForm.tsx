@@ -8,12 +8,13 @@ import DaumPostcode from 'react-daum-postcode';
 export default function AddressForm({
   mode,
   address,
+  defaultType,
   isOpen,
   onClose,
   onSubmit,
 }: AddressFormProps) {
   const [form, setForm] = useState({
-    type: address?.type ?? '출고지',
+    type: address?.type ?? defaultType ?? '출고지',
     name: address?.name ?? '',
     zipCode: address?.zipCode ?? '',
     baseAddress: address?.baseAddress ?? '',
@@ -28,15 +29,17 @@ export default function AddressForm({
   }, [isOpen]);
 
   useEffect(() => {
-    setForm({
-      type: address?.type ?? '출고지',
-      name: address?.name ?? '',
-      zipCode: address?.zipCode ?? '',
-      baseAddress: address?.baseAddress ?? '',
-      detailAddress: address?.detailAddress ?? '',
-      isDefault: address?.isDefault ?? false,
-    });
-  }, [address]);
+    if (isOpen) {
+      setForm({
+        type: address?.type ?? defaultType ?? '출고지',
+        name: address?.name ?? '',
+        zipCode: address?.zipCode ?? '',
+        baseAddress: address?.baseAddress ?? '',
+        detailAddress: address?.detailAddress ?? '',
+        isDefault: address?.isDefault ?? false,
+      });
+    }
+  }, [isOpen, address, defaultType]);
 
   const handleSubmit = () => {
     if (!form.name || !form.zipCode || !form.baseAddress) {

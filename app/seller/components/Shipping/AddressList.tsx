@@ -4,48 +4,69 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FormType, AddressItem } from '@/types/seller/shipping';
 import { Plus, MapPinOff } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AddressCard from './AddressCard';
 import AddressForm from './AddressForm';
-
-const MOCK_ADDRESSES: AddressItem[] = [
-  {
-    id: 1,
-    name: '본사 창고',
-    zipCode: '06234',
-    baseAddress: '서울시 강남구 테헤란로 123',
-    detailAddress: '4층',
-    type: '출고지',
-    isDefault: true,
-  },
-  {
-    id: 2,
-    name: '사무실',
-    zipCode: '06234',
-    baseAddress: '서울시 강남구 테헤란로 123',
-    detailAddress: '2층',
-    type: '출고지',
-    isDefault: false,
-  },
-];
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function AddressList() {
-  const [addresses, setAddresses] = useState<AddressItem[]>(MOCK_ADDRESSES);
+  const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [formMode, setFormMode] = useState<FormType>('등록');
   const [selectedAddress, setSelectedAddress] = useState<AddressItem | undefined>(undefined);
 
   const origins = addresses.filter((a) => a.type === '출고지');
   const returns = addresses.filter((a) => a.type === '반품지');
+  const [activeTab, setActiveTab] = useState<'origin' | 'return'>('origin');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSubmit = (form: Omit<AddressItem, 'id'>) => {
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchAddresses = async () => {
+      try {
+        const res = await api.get('/seller/addresses');
+        if (!cancelled) {
+          setAddresses(res.data.data);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchAddresses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSubmit = async (form: Omit<AddressItem, 'id'>) => {
     if (formMode === '등록') {
-      const newAddress = { ...form, id: Date.now() };
-      setAddresses((prev) =>
-        prev
-          .map((a) => (a.type === form.type && form.isDefault ? { ...a, isDefault: false } : a))
-          .concat(newAddress)
-      );
+      try {
+        const res = await api.post('/seller/addresses', form);
+        const newAddress: AddressItem = res.data.data;
+
+        setAddresses((prev) =>
+          prev
+            .map((a) =>
+              a.type === newAddress.type && newAddress.isDefault ? { ...a, isDefault: false } : a
+            )
+            .concat(newAddress)
+        );
+
+        toast.success('주소가 등록되었습니다.');
+        setIsOpen(false);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '주소 등록에 실패했습니다.');
+      }
     } else {
       setAddresses((prev) =>
         prev.map((a) => {
@@ -54,8 +75,8 @@ export default function AddressList() {
           return a;
         })
       );
+      setIsOpen(false);
     }
-    setIsOpen(false);
   };
 
   const handleDelete = (id: number) => {
@@ -84,7 +105,7 @@ export default function AddressList() {
           주소 등록
         </Button>
       </div>
-      <Tabs defaultValue="origin">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'origin' | 'return')}>
         <div className="flex items-center justify-between mb-4 border-b border-border">
           <TabsList variant="line">
             <TabsTrigger
@@ -156,6 +177,7 @@ export default function AddressList() {
       <AddressForm
         mode={formMode}
         address={selectedAddress}
+        defaultType={activeTab === 'origin' ? '출고지' : '반품지'}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onSubmit={handleSubmit}

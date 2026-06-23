@@ -105,6 +105,8 @@ export interface AddressItem {
   isDefault: boolean;
 }
 
+export type CreateAddressInput = Omit<AddressItem, 'id'>;
+
 export interface AddressCardProps {
   address: AddressItem;
   onEdit: () => void;
@@ -114,6 +116,7 @@ export interface AddressCardProps {
 export interface AddressFormProps {
   mode: FormType;
   address?: AddressItem;
+  defaultType?: '출고지' | '반품지';
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (form: Omit<AddressItem, 'id'>) => void;
