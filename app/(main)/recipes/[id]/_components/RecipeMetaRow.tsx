@@ -18,19 +18,23 @@ function MetaCard({ icon, label, value }: MetaCardProps) {
 }
 
 interface RecipeMetaRowProps {
-  cookTime: number;
+  cookingTime: number;
   servings: number;
-  calories: number;
+  difficulty: '쉬움' | '보통' | '어려움';
   rating: number;
 }
 
-export default function RecipeMetaRow({ cookTime, servings, calories, rating }: RecipeMetaRowProps) {
+export default function RecipeMetaRow({ cookingTime, servings, difficulty, rating }: RecipeMetaRowProps) {
   return (
     <div className="flex gap-2 mb-6">
-      <MetaCard icon={<Clock className="w-5 h-5" />} label="조리시간" value={`${cookTime}분`} />
+      <MetaCard icon={<Clock className="w-5 h-5" />} label="조리시간" value={`${cookingTime}분`} />
       <MetaCard icon={<Users className="w-5 h-5" />} label="인분" value={`${servings}인분`} />
-      <MetaCard icon={<span className="text-yellow text-lg leading-none">★</span>} label="별점" value={rating.toFixed(1)} />
-      <MetaCard icon={<Flame className="w-5 h-5" />} label="칼로리" value={`${calories}Kcal`} />
+      <MetaCard
+        icon={<span className="text-yellow text-lg leading-none">★</span>}
+        label="별점"
+        value={rating.toFixed(1)}
+      />
+      <MetaCard icon={<Flame className="w-5 h-5" />} label="난이도" value={difficulty} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { RecipeStep } from '../../data/mockRecipes';
+import { RecipeStep } from '../../types';
 import RecipeStepItem from './RecipeStepItem';
 
 interface RecipeStepsProps {

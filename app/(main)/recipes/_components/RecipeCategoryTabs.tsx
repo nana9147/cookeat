@@ -1,24 +1,33 @@
-import { RecipeCategory, RECIPE_CATEGORIES } from '../data/mockRecipes';
+import { RecipeCategory } from '../types';
 
 interface RecipeCategoryTabsProps {
-  selected: RecipeCategory;
-  onChange: (cat: RecipeCategory) => void;
+  categories: RecipeCategory[];
+  selectedId: number | null;
+  onChange: (id: number | null) => void;
 }
 
-export default function RecipeCategoryTabs({ selected, onChange }: RecipeCategoryTabsProps) {
+export default function RecipeCategoryTabs({ categories, selectedId, onChange }: RecipeCategoryTabsProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 mb-4 [scrollbar-width:none]">
-      {RECIPE_CATEGORIES.map((cat) => (
+    <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+      <button
+        onClick={() => onChange(null)}
+        className={`shrink-0 h-8 px-4 rounded-full text-sm font-medium transition-colors ${
+          selectedId === null ? 'bg-primary text-white' : 'bg-card-bg text-gray-text hover:bg-border'
+        }`}
+      >
+        전체
+      </button>
+      {categories.map((cat) => (
         <button
-          key={cat}
-          onClick={() => onChange(cat)}
+          key={cat.recipeCategoryId}
+          onClick={() => onChange(cat.recipeCategoryId)}
           className={`shrink-0 h-8 px-4 rounded-full text-sm font-medium transition-colors ${
-            selected === cat
+            selectedId === cat.recipeCategoryId
               ? 'bg-primary text-white'
               : 'bg-card-bg text-gray-text hover:bg-border'
           }`}
         >
-          {cat}
+          {cat.name}
         </button>
       ))}
     </div>
