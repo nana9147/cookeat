@@ -35,6 +35,10 @@
 | PATCH  | `/admin/settlements/:settlementId`  | 정산 처리                  | ✓    |
 | GET    | `/admin/inquiries`                  | 전체 문의 목록             | ✓    |
 | POST   | `/admin/inquiries/:inquiryId/reply` | 문의 답변                  | ✓    |
+| GET    | `/admin/faqs`                       | FAQ 목록 조회              | ✓    |
+| POST   | `/admin/faqs`                       | FAQ 등록                   | ✓    |
+| PATCH  | `/admin/faqs/:faqId`                | FAQ 수정                   | ✓    |
+| DELETE | `/admin/faqs/:faqId`                | FAQ 삭제                   | ✓    |
 
 ---
 
@@ -295,4 +299,100 @@
 
 ```json
 { "content": "안녕하세요. 문의해주신 내용에 대해 답변 드립니다..." }
+```
+
+---
+
+### GET `/admin/faqs`
+
+`Query Parameters`
+
+| 파라미터   | 타입     | 필수 | 설명                                        |
+| ---------- | -------- | ---- | ------------------------------------------- |
+| `category` | `string` | ✗    | 카테고리 (`배송`, `환불`, `상품`, `회원`, `결제`) |
+| `keyword`  | `string` | ✗    | 제목 키워드 검색                            |
+
+`Response 200`
+
+| 필드        | 타입      | 설명                        |
+| ----------- | --------- | --------------------------- |
+| `faq_id`    | `int`     | FAQ ID                      |
+| `category`  | `string`  | 카테고리                    |
+| `title`     | `string`  | 질문                        |
+| `content`   | `string`  | 답변                        |
+| `views`     | `int`     | 조회수                      |
+| `is_public` | `boolean` | 공개 여부                   |
+| `created_at`| `string`  | 등록일 (ISO 8601)           |
+
+```json
+{
+  "faqs": [
+    {
+      "faq_id": 1,
+      "category": "배송",
+      "title": "배송은 얼마나 걸리나요?",
+      "content": "평균 2~3 영업일 소요됩니다.",
+      "views": 120,
+      "is_public": true,
+      "created_at": "2026-06-01T00:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+### POST `/admin/faqs`
+
+`Request Body`
+
+| 필드        | 타입      | 필수 | 설명                                        |
+| ----------- | --------- | ---- | ------------------------------------------- |
+| `category`  | `string`  | ✓    | 카테고리 (`배송`, `환불`, `상품`, `회원`, `결제`) |
+| `title`     | `string`  | ✓    | 질문                                        |
+| `content`   | `string`  | ✓    | 답변                                        |
+| `is_public` | `boolean` | ✗    | 공개 여부 (기본값 `true`)                   |
+
+```json
+{ "category": "배송", "title": "배송은 얼마나 걸리나요?", "content": "평균 2~3 영업일 소요됩니다.", "is_public": true }
+```
+
+`Response 201`
+
+```json
+{ "faq": { "faq_id": 1, "category": "배송", "title": "...", "content": "...", "views": 0, "is_public": true, "created_at": "..." } }
+```
+
+---
+
+### PATCH `/admin/faqs/:faqId`
+
+`Request Body`
+
+| 필드        | 타입      | 필수 | 설명                                        |
+| ----------- | --------- | ---- | ------------------------------------------- |
+| `category`  | `string`  | ✗    | 카테고리 (`배송`, `환불`, `상품`, `회원`, `결제`) |
+| `title`     | `string`  | ✗    | 질문                                        |
+| `content`   | `string`  | ✗    | 답변                                        |
+| `is_public` | `boolean` | ✗    | 공개 여부                                   |
+
+```json
+{ "is_public": false }
+```
+
+`Response 200`
+
+```json
+{ "faq": { "faq_id": 1, "category": "배송", "title": "...", "content": "...", "views": 120, "is_public": false, "created_at": "..." } }
+```
+
+---
+
+### DELETE `/admin/faqs/:faqId`
+
+`Response 200`
+
+```json
+{ "success": true }
 ```
