@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { FormType , AddressItem } from '@/types/seller/shipping';
+import { FormType, AddressItem } from '@/types/seller/shipping';
 import { Plus, MapPinOff } from 'lucide-react';
 import { useState } from 'react';
 import AddressCard from './AddressCard';
@@ -10,7 +10,7 @@ import AddressForm from './AddressForm';
 
 const MOCK_ADDRESSES: AddressItem[] = [
   {
-    id: '1',
+    id: 1,
     name: '본사 창고',
     zipCode: '06234',
     baseAddress: '서울시 강남구 테헤란로 123',
@@ -19,7 +19,7 @@ const MOCK_ADDRESSES: AddressItem[] = [
     isDefault: true,
   },
   {
-    id: '2',
+    id: 2,
     name: '사무실',
     zipCode: '06234',
     baseAddress: '서울시 강남구 테헤란로 123',
@@ -32,7 +32,7 @@ const MOCK_ADDRESSES: AddressItem[] = [
 export default function AddressList() {
   const [addresses, setAddresses] = useState<AddressItem[]>(MOCK_ADDRESSES);
   const [isOpen, setIsOpen] = useState(false);
-  const [formMode, setFormMode] = useState<FormType >('등록');
+  const [formMode, setFormMode] = useState<FormType>('등록');
   const [selectedAddress, setSelectedAddress] = useState<AddressItem | undefined>(undefined);
 
   const origins = addresses.filter((a) => a.type === '출고지');
@@ -40,7 +40,7 @@ export default function AddressList() {
 
   const handleSubmit = (form: Omit<AddressItem, 'id'>) => {
     if (formMode === '등록') {
-      const newAddress = { ...form, id: String(Date.now()) };
+      const newAddress = { ...form, id: Date.now() };
       setAddresses((prev) =>
         prev
           .map((a) => (a.type === form.type && form.isDefault ? { ...a, isDefault: false } : a))
@@ -58,7 +58,7 @@ export default function AddressList() {
     setIsOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     setAddresses((prev) => prev.filter((a) => a.id !== id));
   };
 

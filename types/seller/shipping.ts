@@ -96,12 +96,12 @@ export interface ShippingTemplateTableProps {
 }
 
 export interface AddressItem {
-  id: string;
+  id: number;
   name: string;
   zipCode: string;
   baseAddress: string;
   detailAddress: string;
-  type: AddressType;
+  type: '출고지' | '반품지';
   isDefault: boolean;
 }
 
