@@ -18,9 +18,10 @@ import {
   ShippingInputState,
   TrackingTableProps,
 } from '@/types/seller/shipping';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
+import DateRangeFilter from './DateRangeFilter';
 
 const COURIERS: CourierCode[] = [
   'CJ대한통운',
@@ -33,22 +34,55 @@ const COURIERS: CourierCode[] = [
   'ETC',
 ];
 
+const EMPTY_MESSAGE: Record<'배송준비' | '배송중' | '배송완료', string> = {
+  배송준비: '배송준비 중인 주문건이 없습니다.',
+  배송중: '배송중인 주문건이 없습니다.',
+  배송완료: '배송완료된 주문건이 없습니다.',
+};
+
 export default function TrackingTable({
   orders,
   status,
   search,
   onSearchChange,
-  onUpdate,
   onStatusChange,
   isLoading,
   page,
   totalPages,
   onPageChange,
+  onUpdate,
+  datePreset,
+  onDatePresetChange,
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
 }: TrackingTableProps) {
   const [inputs, setInputs] = useState<Record<string, ShippingInputState>>({});
+  const [defaultCourier, setDefaultCourier] = useState<CourierCode | ''>('');
   const isEditable = status === '배송준비';
   const isShipping = status === '배송중';
   const hasActionColumn = isEditable || isShipping;
+
+  useEffect(() => {
+    if (!defaultCourier || !isEditable) return;
+
+    setInputs((prev) => {
+      const next = { ...prev };
+      orders.forEach((order) => {
+        const current = next[order.id];
+        if (!current?.courier || current.isAutoFilledCourier) {
+          next[order.id] = {
+            courier: defaultCourier,
+            trackingNumber: current?.trackingNumber ?? '',
+            isEditing: current?.isEditing ?? false,
+            isAutoFilledCourier: true,
+          };
+        }
+      });
+      return next;
+    });
+  }, [defaultCourier, orders, isEditable]);
 
   const handleConfirm = (orderId: string) => {
     const input = inputs[orderId];
@@ -73,7 +107,11 @@ export default function TrackingTable({
           onValueChange={(value) =>
             setInputs((prev) => ({
               ...prev,
-              [order.id]: { ...prev[order.id], courier: value as CourierCode },
+              [order.id]: {
+                ...prev[order.id],
+                courier: value as CourierCode,
+                isAutoFilledCourier: false,
+              },
             }))
           }
         >
@@ -91,7 +129,7 @@ export default function TrackingTable({
       );
     }
 
-    return <span className="text-sm text-gray-600">{order.courier}</span>;
+    return <span className="text-sm text-gray-600 whitespace-nowrap">{order.courier}</span>;
   };
 
   const renderTrackingCell = (order: ShippingOrder) => {
@@ -107,124 +145,178 @@ export default function TrackingTable({
             }))
           }
           placeholder="운송장번호 입력"
-          className="w-36 mx-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-36 mx-auto whitespace-nowrap [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       );
     }
 
-    return <span className="text-sm text-gray-600">{order.trackingNumber}</span>;
+    return <span className="text-sm text-gray-600 whitespace-nowrap">{order.trackingNumber}</span>;
   };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <Input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="주문번호, 주문자로 검색"
-          className="w-64 bg-card"
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="주문번호, 주문자로 검색"
+            className="w-64 bg-card"
+          />
+          <DateRangeFilter
+            datePreset={datePreset}
+            onDatePresetChange={onDatePresetChange}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={onStartDateChange}
+            onEndDateChange={onEndDateChange}
+          />
+        </div>
+
+        {isEditable && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 whitespace-nowrap">기본 택배사</span>
+            <Select
+              value={defaultCourier}
+              onValueChange={(value) => setDefaultCourier(value as CourierCode)}
+            >
+              <SelectTrigger size="sm" className="w-32">
+                <SelectValue placeholder="택배사 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                {COURIERS.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-gray-100">
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
-              주문번호
-            </th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
-              주문일시
-            </th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">주문자</th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">상품명</th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">택배사</th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
-              운송장번호
-            </th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">발송일</th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
-              배송완료일
-            </th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">상태</th>
-            {hasActionColumn && (
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">관리</th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading ? (
-            <tr>
-              <td
-                colSpan={hasActionColumn ? 10 : 9}
-                className="text-center py-16 text-gray-400 text-sm"
-              >
-                목록을 불러오는 중...
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                주문번호
+              </th>
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                주문일시
+              </th>
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                주문자
+              </th>
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
+                상품명
+              </th>
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                택배사
+              </th>
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                운송장번호
+              </th>
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                발송일
+              </th>
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                배송완료일
+              </th>
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                상태
+              </th>
+              {hasActionColumn && (
+                <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
+                  관리
+                </th>
+              )}
             </tr>
-          ) : orders.length === 0 ? (
-            <tr>
-              <td
-                colSpan={hasActionColumn ? 10 : 9}
-                className="text-center py-16 text-gray-400 text-sm"
-              >
-                주문내역이 없습니다.
-              </td>
-            </tr>
-          ) : (
-            <>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-b border-gray-50 last:border-b-0">
-                  <td className="px-4 py-3.5 text-sm text-gray-500 text-center font-mono">
-                    {order.id}
-                  </td>
-                  <td className="px-4 py-3.5 text-sm text-gray-500 text-center">
-                    {new Date(order.orderDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3.5 text-sm text-gray-800 text-center">
-                    {order.customer}
-                  </td>
-                  <td className="px-4 py-3.5 text-sm text-gray-800 text-center">
-                    {order.products[0]?.name}
-                    {order.products.length > 1 && (
-                      <span className="text-gray-500"> 외 {order.products.length - 1}건</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3.5 text-center">{renderCourierCell(order)}</td>
-                  <td className="px-4 py-3.5 text-center">{renderTrackingCell(order)}</td>
-                  <td className="px-4 py-3.5 text-sm text-gray-500 text-center">
-                    {order.shippedAt ? new Date(order.shippedAt).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="px-4 py-3.5 text-sm text-gray-500 text-center">
-                    {order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <StatusBadge status={order.status} />
-                  </td>
-                  {hasActionColumn && (
-                    <td className="px-4 py-3.5 text-center">
-                      {isEditable && (
-                        <Button size="sm" onClick={() => handleConfirm(order.id)}>
-                          저장
-                        </Button>
-                      )}
-                      {isShipping && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onStatusChange(order.id, '배송완료')}
-                        >
-                          배송완료 처리
-                        </Button>
-                      )}
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td
+                  colSpan={hasActionColumn ? 10 : 9}
+                  className="text-center py-16 text-gray-400 text-sm"
+                >
+                  목록을 불러오는 중...
+                </td>
+              </tr>
+            ) : orders.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={hasActionColumn ? 10 : 9}
+                  className="text-center py-16 text-gray-400 text-sm"
+                >
+                  {EMPTY_MESSAGE[status]}
+                </td>
+              </tr>
+            ) : (
+              <>
+                {orders.map((order) => (
+                  <tr key={order.id} className="border-b border-gray-50 last:border-b-0">
+                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center font-mono whitespace-nowrap">
+                      {order.id}
                     </td>
-                  )}
-                </tr>
-              ))}
-              <EmptyRows count={10 - orders.length} colSpan={hasActionColumn ? 10 : 9} />
-            </>
-          )}
-        </tbody>
-      </table>
+                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center whitespace-nowrap">
+                      {new Date(order.orderDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-gray-800 text-center whitespace-nowrap">
+                      {order.customer}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-gray-800 text-center">
+                      <span
+                        className="block max-w-[160px] truncate mx-auto"
+                        title={order.products[0]?.name}
+                      >
+                        {order.products[0]?.name}
+                        {order.products.length > 1 && (
+                          <span className="text-gray-500"> 외 {order.products.length - 1}건</span>
+                        )}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      {renderCourierCell(order)}
+                    </td>
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      {renderTrackingCell(order)}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center whitespace-nowrap">
+                      {order.shippedAt ? new Date(order.shippedAt).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center whitespace-nowrap">
+                      {order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      <StatusBadge status={order.status} />
+                    </td>
+                    {hasActionColumn && (
+                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                        {isEditable && (
+                          <Button size="sm" onClick={() => handleConfirm(order.id)}>
+                            저장
+                          </Button>
+                        )}
+                        {isShipping && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onStatusChange(order.id, '배송완료')}
+                          >
+                            배송완료 처리
+                          </Button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                <EmptyRows count={10 - orders.length} colSpan={hasActionColumn ? 10 : 9} />
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <Pagination
         currentPage={page}
