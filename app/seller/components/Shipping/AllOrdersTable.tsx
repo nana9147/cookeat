@@ -22,6 +22,14 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
 import DateRangeFilter from './DateRangeFilter';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const COURIERS: CourierCode[] = [
   'CJ대한통운',
@@ -164,59 +172,45 @@ export default function AllOrdersTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                주문번호
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                주문일시
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                주문자
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
-                상품명
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                상태
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                택배사 / 운송장번호
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                관리
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center whitespace-nowrap">주문번호</TableHead>
+              <TableHead className="text-center whitespace-nowrap">주문일시</TableHead>
+              <TableHead className="text-center whitespace-nowrap">주문자</TableHead>
+              <TableHead className="text-center">상품명</TableHead>
+              <TableHead className="text-center whitespace-nowrap">상태</TableHead>
+              <TableHead className="text-center whitespace-nowrap">택배사 / 운송장번호</TableHead>
+              <TableHead className="text-center whitespace-nowrap">관리</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
-              <tr>
-                <td colSpan={7} className="text-center py-16 text-gray-400 text-sm">
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
                   목록을 불러오는 중...
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : orders.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-16 text-gray-400 text-sm">
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
                   조회된 주문건이 없습니다.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               <>
                 {orders.map((order) => (
-                  <tr key={order.id} className="border-b border-gray-50 last:border-b-0">
-                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center font-mono whitespace-nowrap">
+                  <TableRow key={order.id}>
+                    <TableCell className="text-center text-sm font-mono text-gray-500 whitespace-nowrap">
                       {order.id}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
                       {new Date(order.orderDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-800 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
                       {order.customer}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-800 text-center">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-800">
                       <span
                         className="block max-w-[160px] truncate mx-auto"
                         title={order.products[0]?.name}
@@ -226,23 +220,23 @@ export default function AllOrdersTable({
                           <span className="text-gray-500"> 외 {order.products.length - 1}건</span>
                         )}
                       </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
                       <StatusBadge status={order.status} />
-                    </td>
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
                       {renderTrackingCell(order)}
-                    </td>
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
                       {renderActionCell(order)}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 <EmptyRows count={10 - orders.length} colSpan={7} />
               </>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <Pagination

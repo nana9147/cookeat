@@ -1,4 +1,6 @@
 import type { OrderProductItem } from './order';
+import type { DateRangeFilterProps } from './common';
+
 export type ShippingStatus = '결제완료' | '배송준비' | '배송중' | '배송완료' | '취소' | '환불';
 export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
 export type AddressType = '출고지' | '반품지';
@@ -20,17 +22,6 @@ export type NonReturnReason =
   | '소비기한 경과'
   | '보관방법 미준수로 인한 손상/변질'
   | '주문제작(정육손질/소분 등)';
-
-export type DateRangePreset = '전체' | '오늘' | '1주일' | '1개월' | '3개월' | '직접입력';
-
-export interface DateRangeFilterProps {
-  datePreset: DateRangePreset;
-  onDatePresetChange: (preset: DateRangePreset) => void;
-  startDate: string;
-  endDate: string;
-  onStartDateChange: (value: string) => void;
-  onEndDateChange: (value: string) => void;
-}
 
 export interface ShippingData {
   shippingFeeType: ShippingFeeType;

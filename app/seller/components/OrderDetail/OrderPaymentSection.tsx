@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PaymentInfo } from '@/types/seller/order';
+import { COUPON_DISCOUNT_TYPE_LABEL, PAYMENT_LABEL, PaymentInfo } from '@/types/seller/order';
 
 export default function OrderPaymentSection({ payment }: { payment: PaymentInfo }) {
   return (
@@ -19,15 +19,26 @@ export default function OrderPaymentSection({ payment }: { payment: PaymentInfo 
             <dt className="text-sm text-gray-500">배송비</dt>
             <dd className="text-sm text-gray-800">+ {payment.shippingFee.toLocaleString()}원</dd>
           </div>
-          {payment.couponAmount > 0 && (
+          {payment.couponDiscount > 0 && (
             <div className="flex justify-between items-center">
               <dt className="text-sm text-gray-500 flex items-center gap-2">
                 쿠폰 할인
-                <span className="text-xs text-primary bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                  {payment.couponType}
-                </span>
+                {payment.couponCode && (
+                  <span className="text-xs text-primary bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                    {payment.couponCode}
+                    {payment.couponDiscountType && payment.couponDiscountValue !== null && (
+                      <>
+                        {' '}
+                        ({payment.couponDiscountValue}
+                        {COUPON_DISCOUNT_TYPE_LABEL[payment.couponDiscountType]} 할인)
+                      </>
+                    )}
+                  </span>
+                )}
               </dt>
-              <dd className="text-sm text-red-500">- {payment.couponAmount.toLocaleString()}원</dd>
+              <dd className="text-sm text-red-500">
+                - {payment.couponDiscount.toLocaleString()}원
+              </dd>
             </div>
           )}
           {payment.pointAmount > 0 && (
@@ -49,7 +60,9 @@ export default function OrderPaymentSection({ payment }: { payment: PaymentInfo 
 
         <div className="flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3">
           <span className="text-sm text-gray-500">결제 수단</span>
-          <span className="text-sm font-medium text-gray-800">{payment.paymentMethod}</span>
+          <span className="text-sm font-medium text-gray-800">
+            {PAYMENT_LABEL[payment.paymentMethod]}
+          </span>
         </div>
       </CardContent>
     </Card>
