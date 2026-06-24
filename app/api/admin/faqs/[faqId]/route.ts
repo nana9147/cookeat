@@ -18,6 +18,16 @@ export async function PATCH(
   const body = await req.json();
   const { category, title, content, is_public } = body;
 
+  if (category === '' || title === '' || content === '') {
+    return NextResponse.json({ error: '항목에 빈 값을 입력할 수 없습니다.' }, { status: 400 });
+  }
+  if (is_public !== undefined && typeof is_public !== 'boolean') {
+    return NextResponse.json({ error: 'is_public은 boolean이어야 합니다.' }, { status: 400 });
+  }
+  if (category === undefined && title === undefined && content === undefined && is_public === undefined) {
+    return NextResponse.json({ error: '수정할 항목이 없습니다.' }, { status: 400 });
+  }
+
   const { data, error } = await supabaseAdmin
     .from('faqs')
     .update({ category, title, content, is_public, updated_at: new Date().toISOString() })
