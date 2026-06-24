@@ -44,6 +44,7 @@ export default function AdminPage() {
   const [sellerTopRevenue, setSellerTopRevenue] = useState<SellerRevenue[]>([]);
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -73,6 +74,8 @@ export default function AdminPage() {
         ]);
         setSellerTopRevenue(data.sellerTopRevenue);
         setCategoryStats(data.categoryStats);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : '데이터를 불러오지 못했습니다.');
       } finally {
         setLoading(false);
       }
@@ -81,6 +84,7 @@ export default function AdminPage() {
   }, []);
 
   if (loading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
+  if (error) return <div className="p-6 text-destructive">{error}</div>;
 
   return (
     <div className="p-6 space-y-6">
