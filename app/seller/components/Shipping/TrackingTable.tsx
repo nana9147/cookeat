@@ -15,8 +15,8 @@ import {
 import {
   CourierCode,
   ShippingOrder,
-  ShippingTableProps,
   ShippingInputState,
+  TrackingTableProps,
 } from '@/types/seller/shipping';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -33,49 +33,26 @@ const COURIERS: CourierCode[] = [
   'ETC',
 ];
 
-export default function ShippingTable({
+export default function TrackingTable({
   orders,
+  status,
   search,
   onSearchChange,
   onUpdate,
+  onStatusChange,
   isLoading,
   page,
   totalPages,
   onPageChange,
-}: ShippingTableProps) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+}: TrackingTableProps) {
   const [inputs, setInputs] = useState<Record<string, ShippingInputState>>({});
-
-  // 전체 선택/해제
-  const handleSelectAll = (checked: boolean) => {
-    checked ? setSelectedIds(orders.map((o) => o.id)) : setSelectedIds([]);
-  };
-
-  // 개별 선택/해제
-  const handleSelect = (id: string, checked: boolean) => {
-    checked
-      ? setSelectedIds((prev) => [...prev, id])
-      : setSelectedIds((prev) => prev.filter((i) => i !== id));
-  };
-
-  const handleEdit = (order: ShippingOrder) => {
-    setInputs((prev) => ({
-      ...prev,
-      [order.id]: {
-        courier: order.courier,
-        trackingNumber: order.trackingNumber,
-        isEditing: true,
-      },
-    }));
-  };
+  const isEditable = status === '배송준비';
+  const isShipping = status === '배송중';
+  const hasActionColumn = isEditable || isShipping;
 
   const handleConfirm = (orderId: string) => {
     const input = inputs[orderId];
 
-    if (!input?.courier && !input?.trackingNumber) {
-      toast.error('택배사와 운송장번호를 모두 입력해주세요.');
-      return;
-    }
     if (!input?.courier) {
       toast.error('택배사를 선택해주세요.');
       return;
@@ -86,17 +63,10 @@ export default function ShippingTable({
     }
 
     onUpdate(orderId, input.courier, input.trackingNumber);
-    setInputs((prev) => ({
-      ...prev,
-      [orderId]: { ...prev[orderId], isEditing: false },
-    }));
   };
 
   const renderCourierCell = (order: ShippingOrder) => {
-    const isNew = !order.courier;
-    const isEditing = inputs[order.id]?.isEditing ?? false;
-
-    if (isNew || isEditing) {
+    if (isEditable) {
       return (
         <Select
           value={inputs[order.id]?.courier ?? ''}
@@ -125,10 +95,7 @@ export default function ShippingTable({
   };
 
   const renderTrackingCell = (order: ShippingOrder) => {
-    const isNew = !order.courier;
-    const isEditing = inputs[order.id]?.isEditing ?? false;
-
-    if (isNew || isEditing) {
+    if (isEditable) {
       return (
         <Input
           type="number"
@@ -148,28 +115,8 @@ export default function ShippingTable({
     return <span className="text-sm text-gray-600">{order.trackingNumber}</span>;
   };
 
-  const renderActionCell = (order: ShippingOrder) => {
-    const isNew = !order.courier;
-    const isEditing = inputs[order.id]?.isEditing ?? false;
-
-    if (isNew || isEditing) {
-      return (
-        <Button size="sm" onClick={() => handleConfirm(order.id)}>
-          저장
-        </Button>
-      );
-    }
-
-    return (
-      <Button size="sm" variant="outline" onClick={() => handleEdit(order)}>
-        수정
-      </Button>
-    );
-  };
-
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* 검색 + 일괄처리 */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <Input
           value={search}
@@ -177,21 +124,16 @@ export default function ShippingTable({
           placeholder="주문번호, 주문자로 검색"
           className="w-64 bg-card"
         />
-        <Button size="sm">일괄 배송처리</Button>
       </div>
 
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-100">
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 w-10">
-              <input
-                type="checkbox"
-                checked={selectedIds.length === orders.length && orders.length > 0}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-              />
-            </th>
             <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
               주문번호
+            </th>
+            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
+              주문일시
             </th>
             <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">주문자</th>
             <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">상품명</th>
@@ -199,20 +141,32 @@ export default function ShippingTable({
             <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
               운송장번호
             </th>
+            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">발송일</th>
+            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
+              배송완료일
+            </th>
             <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">상태</th>
-            <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">관리</th>
+            {hasActionColumn && (
+              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">관리</th>
+            )}
           </tr>
         </thead>
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan={8} className="text-center py-16 text-gray-400 text-sm">
+              <td
+                colSpan={hasActionColumn ? 10 : 9}
+                className="text-center py-16 text-gray-400 text-sm"
+              >
                 목록을 불러오는 중...
               </td>
             </tr>
           ) : orders.length === 0 ? (
             <tr>
-              <td colSpan={8} className="text-center py-16 text-gray-400 text-sm">
+              <td
+                colSpan={hasActionColumn ? 10 : 9}
+                className="text-center py-16 text-gray-400 text-sm"
+              >
                 주문내역이 없습니다.
               </td>
             </tr>
@@ -220,34 +174,53 @@ export default function ShippingTable({
             <>
               {orders.map((order) => (
                 <tr key={order.id} className="border-b border-gray-50 last:border-b-0">
-                  <td className="px-4 py-3.5 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(order.id)}
-                      onChange={(e) => handleSelect(order.id, e.target.checked)}
-                    />
-                  </td>
                   <td className="px-4 py-3.5 text-sm text-gray-500 text-center font-mono">
                     {order.id}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-gray-500 text-center">
+                    {new Date(order.orderDate).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3.5 text-sm text-gray-800 text-center">
                     {order.customer}
                   </td>
                   <td className="px-4 py-3.5 text-sm text-gray-800 text-center">
-                    {order.products[0]}
+                    {order.products[0]?.name}
                     {order.products.length > 1 && (
                       <span className="text-gray-500"> 외 {order.products.length - 1}건</span>
                     )}
                   </td>
                   <td className="px-4 py-3.5 text-center">{renderCourierCell(order)}</td>
                   <td className="px-4 py-3.5 text-center">{renderTrackingCell(order)}</td>
+                  <td className="px-4 py-3.5 text-sm text-gray-500 text-center">
+                    {order.shippedAt ? new Date(order.shippedAt).toLocaleDateString() : '-'}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-gray-500 text-center">
+                    {order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString() : '-'}
+                  </td>
                   <td className="px-4 py-3.5 text-center">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="px-4 py-3.5 text-center">{renderActionCell(order)}</td>
+                  {hasActionColumn && (
+                    <td className="px-4 py-3.5 text-center">
+                      {isEditable && (
+                        <Button size="sm" onClick={() => handleConfirm(order.id)}>
+                          저장
+                        </Button>
+                      )}
+                      {isShipping && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onStatusChange(order.id, '배송완료')}
+                        >
+                          배송완료 처리
+                        </Button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
-              <EmptyRows count={10 - orders.length} colSpan={8} />
+              <EmptyRows count={10 - orders.length} colSpan={hasActionColumn ? 10 : 9} />
             </>
           )}
         </tbody>
