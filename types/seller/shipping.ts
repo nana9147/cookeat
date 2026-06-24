@@ -1,4 +1,5 @@
-export type ShippingStatus = '주문확인' | '배송준비' | '배송중' | '배송완료';
+import type { OrderProductItem } from './order';
+export type ShippingStatus = '결제완료' | '배송준비' | '배송중' | '배송완료' | '취소' | '환불';
 export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
 export type AddressType = '출고지' | '반품지';
 export type AddressBadgeType = '기본출고지' | '기본반품지';
@@ -12,12 +13,24 @@ export type CourierCode =
   | 'CU 편의점택배'
   | 'GS25 편의점택배'
   | 'ETC';
+
 export type NonReturnReason =
   | '신선식품 단순변심 반품불가'
   | '포장 개봉/사용 후'
   | '소비기한 경과'
   | '보관방법 미준수로 인한 손상/변질'
   | '주문제작(정육손질/소분 등)';
+
+export type DateRangePreset = '전체' | '오늘' | '1주일' | '1개월' | '3개월' | '직접입력';
+
+export interface DateRangeFilterProps {
+  datePreset: DateRangePreset;
+  onDatePresetChange: (preset: DateRangePreset) => void;
+  startDate: string;
+  endDate: string;
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+}
 
 export interface ShippingData {
   shippingFeeType: ShippingFeeType;
@@ -34,30 +47,21 @@ export interface ShippingSectionProps {
 }
 
 export interface ShippingOrder {
-  id: string; // 주문번호
+  id: string;
   customer: string; // 주문자
-  products: string[]; // 상품명
-  orderDate: string; // 주문일시
+  recipient: string; // 수령인
+  phone: string;
+  address: string;
+  addressDetail: string;
+  products: OrderProductItem[];
+  orderDate: string;
   status: ShippingStatus;
-  courier: CourierCode | ''; // 택배사
-  trackingNumber: string; // 운송장 번호
-}
-
-export interface ShippingStatusCardsProps {
-  cards: { label: string; count: number; filterValue: string }[];
-  status: ShippingStatus | '전체';
-  onStatusChange: (value: ShippingStatus | '전체') => void;
-}
-
-export interface ShippingTableProps {
-  orders: ShippingOrder[];
-  search: string;
-  onSearchChange: (value: string) => void;
-  onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
-  isLoading?: boolean;
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+  courier: CourierCode | '';
+  trackingNumber: string;
+  shippingRequest: string; // 배송메모
+  finalAmount: number; // 결제금액
+  shippedAt: string | null; // 발송일
+  deliveredAt: string | null; // 배송완료일
 }
 
 /** 배송 템플릿  */
@@ -231,4 +235,50 @@ export interface ShippingInputState {
   courier: CourierCode | '';
   trackingNumber: string;
   isEditing: boolean;
+  isAutoFilledCourier?: boolean;
+}
+
+export const SHIPPING_STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[]> = {
+  결제완료: ['배송준비', '취소'],
+  배송준비: ['배송중'],
+  배송중: ['배송완료', '환불'],
+  배송완료: ['환불'],
+  취소: [],
+  환불: [],
+};
+
+export interface PaymentInfoTableProps extends DateRangeFilterProps {
+  orders: ShippingOrder[];
+  search: string;
+  onSearchChange: (value: string) => void;
+  onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
+  onBulkSuccess: (processedIds: string[]) => void;
+  isLoading?: boolean;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+export interface TrackingTableProps extends DateRangeFilterProps {
+  orders: ShippingOrder[];
+  status: '배송준비' | '배송중' | '배송완료';
+  search: string;
+  onSearchChange: (value: string) => void;
+  onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
+  onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
+  isLoading?: boolean;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+export interface AllOrdersTableProps extends DateRangeFilterProps {
+  orders: ShippingOrder[];
+  search: string;
+  onSearchChange: (value: string) => void;
+  onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
+  onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
+  isLoading?: boolean;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }

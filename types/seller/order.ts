@@ -92,3 +92,9 @@ export interface OrderSearchProps {
   onStatusChange: (value: OrderStatusFilter) => void;
   statuses: (OrderStatus | '전체')[];
 }
+
+export interface OrderProductItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+}
