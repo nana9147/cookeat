@@ -38,9 +38,12 @@ export async function GET(req: NextRequest) {
         .gte('created_at', prev.start)
         .lt('created_at', prev.end),
 
-      supabaseAdmin.from('orders').select('user_id, status'),
+      supabaseAdmin
+        .from('orders')
+        .select('user_id')
+        .not('status', 'in', '("취소","환불")'),
 
-      supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+      supabaseAdmin.from('users').select('user_id', { count: 'exact', head: true }).eq('status', 'active'),
     ]);
 
   const firstError = [
@@ -55,7 +58,7 @@ export async function GET(req: NextRequest) {
 
   const currentOrders = currentOrdersResult.data ?? [];
   const prevOrders = prevOrdersResult.data ?? [];
-  const allOrders = allOrdersResult.data ?? [];
+  const allValidOrderUsers = allOrdersResult.data ?? [];
 
   const currentValid = currentOrders.filter((o) => !CANCELLED.includes(o.status ?? ''));
   const prevValid = prevOrders.filter((o) => !CANCELLED.includes(o.status ?? ''));
@@ -71,14 +74,13 @@ export async function GET(req: NextRequest) {
   const prevMau = prevMauSet.size;
 
   // 전환율 — 이번달 주문 유저 / 전체 활성 유저
-  const totalUsers = totalUsersResult.count ?? 1;
-  const conversionRate = Math.round((mau / totalUsers) * 1000) / 10;
-  const prevConversionRate = Math.round((prevMau / totalUsers) * 1000) / 10;
+  const totalUsers = totalUsersResult.count ?? 0;
+  const conversionRate = totalUsers > 0 ? Math.round((mau / totalUsers) * 1000) / 10 : 0;
+  const prevConversionRate = totalUsers > 0 ? Math.round((prevMau / totalUsers) * 1000) / 10 : 0;
 
   // 재구매율 — 전체 기준 2회+ 주문 유저 / 1회+ 주문 유저
-  const allValidOrders = allOrders.filter((o) => !CANCELLED.includes(o.status ?? ''));
   const userOrderCount = new Map<number, number>();
-  for (const o of allValidOrders) {
+  for (const o of allValidOrderUsers) {
     userOrderCount.set(o.user_id, (userOrderCount.get(o.user_id) ?? 0) + 1);
   }
   const usersWithAnyOrder = userOrderCount.size;
