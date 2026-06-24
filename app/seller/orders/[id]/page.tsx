@@ -32,19 +32,19 @@ const MOCK_ORDER: OrderDetail = {
   payment: {
     totalPrice: 79000,
     shippingFee: 3000,
-    couponType: '신규가입 5천원 쿠폰',
-    couponAmount: 5000,
+    couponCode: 'WELCOME5000',
+    couponDiscountType: 'fixed',
+    couponDiscountValue: 5000,
+    couponDiscount: 5000,
     pointAmount: 2000,
     finalAmount: 75000,
-    paymentMethod: '신용카드',
+    paymentMethod: 'card',
   },
   delivery: {
     name: '김철수',
     phone: '010-1234-5678',
-    address: {
-      originAddress: '서울시 강남구 테헤란로 123',
-      detailAddress: '456호',
-    },
+    address: '서울시 강남구 테헤란로 123',
+    addressDetail: '456호',
     memo: '문 앞에 놓아주세요',
   },
 };

@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DateRangeFilterProps, DateRangePreset } from '@/types/seller/shipping';
+import { DateRangeFilterProps, DateRangePreset } from '@/types/seller/common';
 
 const PRESETS: DateRangePreset[] = ['전체', '오늘', '1주일', '1개월', '3개월', '직접입력'];
 

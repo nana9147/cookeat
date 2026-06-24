@@ -22,7 +22,7 @@ export default function OrderDeliverySection({ delivery }: { delivery: DeliveryI
           <div className="grid grid-cols-[120px_1fr]">
             <dt className="text-sm text-gray-400">배송주소</dt>
             <dd className="text-sm text-gray-800">
-              {delivery.address.originAddress}, {delivery.address.detailAddress}
+              {delivery.address}, {delivery.addressDetail}
             </dd>
           </div>
           <div className="grid grid-cols-[120px_1fr]">

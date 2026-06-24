@@ -1,12 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  CourierCode,
-  DateRangePreset,
-  ShippingOrder,
-  ShippingStatus,
-} from '@/types/seller/shipping';
+import { CourierCode, ShippingOrder, ShippingStatus } from '@/types/seller/shipping';
+import { DateRangePreset } from '@/types/seller/common';
 import PaymentInfoTable from '../components/Shipping/PaymentInfoTable';
 import TrackingTable from '../components/Shipping/TrackingTable';
 import StatusCards from '@/components/ui/StatusCards';

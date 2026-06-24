@@ -17,6 +17,8 @@ const latestOrders: Order[] = [
   {
     id: 'ORD-2024-001',
     customer: '김가을',
+    recipient: '김가을',
+    phone: '010-1111-2222',
     product: '유기농 토마토 500g',
     price: 15900,
     status: '배송준비',
@@ -25,6 +27,8 @@ const latestOrders: Order[] = [
   {
     id: 'ORD-2024-002',
     customer: '이여름',
+    recipient: '이여름',
+    phone: '010-2222-3333',
     product: '무농약 상추 300g',
     price: 8500,
     status: '결제완료',
@@ -33,6 +37,8 @@ const latestOrders: Order[] = [
   {
     id: 'ORD-2024-003',
     customer: '박겨울',
+    recipient: '박겨울',
+    phone: '010-3333-4444',
     product: '국내산 달걀 30구',
     price: 12000,
     status: '배송중',
@@ -41,6 +47,8 @@ const latestOrders: Order[] = [
   {
     id: 'ORD-2024-004',
     customer: '최봄',
+    recipient: '최봄',
+    phone: '010-4444-5555',
     product: '유기농 감자 1kg',
     price: 9800,
     status: '배송완료',
