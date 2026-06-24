@@ -11,9 +11,16 @@ const SHIPPING_STATUS_TRANSITIONS: Record<string, string[]> = {
 
 export async function getSellerShippingOrders(
   sellerId: number,
-  options: { page: number; limit: number; keyword?: string; status?: string }
+  options: {
+    page: number;
+    limit: number;
+    keyword?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  }
 ) {
-  const { page, limit, keyword, status } = options;
+  const { page, limit, keyword, status, startDate, endDate } = options;
 
   const { data: orderItemRows, error: orderItemsError } = await supabaseAdmin
     .from('order_items')
@@ -43,6 +50,14 @@ export async function getSellerShippingOrders(
 
   if (keyword) {
     query = query.ilike('order_id', `%${keyword}%`);
+  }
+
+  if (startDate) {
+    query = query.gte('created_at', `${startDate}T00:00:00`);
+  }
+
+  if (endDate) {
+    query = query.lte('created_at', `${endDate}T23:59:59`);
   }
 
   const from = (page - 1) * limit;
@@ -110,7 +125,12 @@ export async function getSellerShippingOrders(
   return { orders: result, total: count ?? 0 };
 }
 
-export async function getSellerShippingOrderCounts(sellerId: number) {
+export async function getSellerShippingOrderCounts(
+  sellerId: number,
+  options?: { startDate?: string; endDate?: string }
+) {
+  const { startDate, endDate } = options ?? {};
+
   const { data: orderItemRows, error: orderItemsError } = await supabaseAdmin
     .from('order_items')
     .select('order_id')
@@ -124,11 +144,21 @@ export async function getSellerShippingOrderCounts(sellerId: number) {
     return { 결제완료: 0, 배송준비: 0, 배송중: 0, 배송완료: 0 };
   }
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('orders')
     .select('status')
     .in('order_id', orderIds)
     .in('status', ['결제완료', '배송준비', '배송중', '배송완료']);
+
+  if (startDate) {
+    query = query.gte('created_at', `${startDate}T00:00:00`);
+  }
+
+  if (endDate) {
+    query = query.lte('created_at', `${endDate}T23:59:59`);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 
@@ -140,7 +170,6 @@ export async function getSellerShippingOrderCounts(sellerId: number) {
   return counts;
 }
 
-// 셀러 소유 주문인지 확인 + 현재 상태 조회 (공통 헬퍼)
 async function getOwnedOrderStatus(sellerId: number, orderId: string) {
   const { data: orderItem, error: orderItemError } = await supabaseAdmin
     .from('order_items')
@@ -248,4 +277,24 @@ export async function updateShippingTracking(
   if (statusUpdateError) throw statusUpdateError;
 
   return { newStatus: '배송중' };
+}
+
+export async function bulkUpdateShippingStatus(
+  sellerId: number,
+  orderIds: string[],
+  newStatus: string
+) {
+  const results: { orderId: string; success: boolean; error?: string }[] = [];
+
+  for (const orderId of orderIds) {
+    try {
+      await updateShippingStatus(sellerId, orderId, newStatus);
+      results.push({ orderId, success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '상태 변경에 실패했습니다.';
+      results.push({ orderId, success: false, error: message });
+    }
+  }
+
+  return results;
 }

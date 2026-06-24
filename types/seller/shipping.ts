@@ -21,6 +21,17 @@ export type NonReturnReason =
   | '보관방법 미준수로 인한 손상/변질'
   | '주문제작(정육손질/소분 등)';
 
+export type DateRangePreset = '전체' | '오늘' | '1주일' | '1개월' | '3개월' | '직접입력';
+
+export interface DateRangeFilterProps {
+  datePreset: DateRangePreset;
+  onDatePresetChange: (preset: DateRangePreset) => void;
+  startDate: string;
+  endDate: string;
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+}
+
 export interface ShippingData {
   shippingFeeType: ShippingFeeType;
   shippingFee: string;
@@ -224,6 +235,7 @@ export interface ShippingInputState {
   courier: CourierCode | '';
   trackingNumber: string;
   isEditing: boolean;
+  isAutoFilledCourier?: boolean;
 }
 
 export const SHIPPING_STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[]> = {
@@ -235,20 +247,32 @@ export const SHIPPING_STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[
   환불: [],
 };
 
-export interface PaymentInfoTableProps {
+export interface PaymentInfoTableProps extends DateRangeFilterProps {
   orders: ShippingOrder[];
   search: string;
   onSearchChange: (value: string) => void;
   onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
+  onBulkSuccess: (processedIds: string[]) => void;
   isLoading?: boolean;
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
-export interface TrackingTableProps {
+export interface TrackingTableProps extends DateRangeFilterProps {
   orders: ShippingOrder[];
   status: '배송준비' | '배송중' | '배송완료';
+  search: string;
+  onSearchChange: (value: string) => void;
+  onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
+  onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
+  isLoading?: boolean;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+export interface AllOrdersTableProps extends DateRangeFilterProps {
+  orders: ShippingOrder[];
   search: string;
   onSearchChange: (value: string) => void;
   onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
