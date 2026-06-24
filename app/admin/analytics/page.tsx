@@ -1,36 +1,96 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import api from '@/lib/api';
 
-const statCards = [
-  { label: 'GMV (총 거래액)', value: '3.2억원', trend: '+18.5%', up: true },
-  { label: '전환율', value: '3.8%', trend: '+0.5%', up: true },
-  { label: '재구매율', value: '42.3%', trend: '+2.1%', up: true },
-  { label: 'MAU', value: '4.5만명', trend: '+12.3%', up: true },
-];
+interface StatCard {
+  label: string;
+  value: string;
+  trend: string;
+  up: boolean;
+}
+interface SellerRevenue {
+  rank: number;
+  name: string;
+  sub: string;
+  price: string;
+}
+interface CategoryStat {
+  name: string;
+  percent: number;
+  revenue: string;
+}
 
-const popularProducts = [
-  { rank: 1, name: '신선마켓', sub: '', price: '5420만원' },
-  { rank: 2, name: '자연농원', sub: '', price: '4830만원' },
-  { rank: 3, name: '정육점', sub: '', price: '4210만원' },
-  { rank: 4, name: '채소나라', sub: '', price: '3580만원' },
-  { rank: 5, name: '해산물마트', sub: '', price: '2890만원' },
-];
+function formatKoreanAmount(won: number): string {
+  if (won >= 100_000_000) return `${(won / 100_000_000).toFixed(1)}억원`;
+  if (won >= 10_000) return `${Math.round(won / 10_000)}만원`;
+  return `${won.toLocaleString()}원`;
+}
 
-const categoryStats = [
-  { name: '채소', percent: 30, revenue: '9500만원' },
-  { name: '육류', percent: 25, revenue: '8000만원' },
-  { name: '과일', percent: 22, revenue: '7000만원' },
-  { name: '수산', percent: 16, revenue: '5000만원' },
-  { name: '기타', percent: 8, revenue: '2500만원' },
-];
+function formatCount(n: number): string {
+  if (n >= 10_000) return `${(n / 10_000).toFixed(1)}만명`;
+  return `${n.toLocaleString()}명`;
+}
+
+function formatTrend(trend: number): string {
+  return trend >= 0 ? `+${trend}%` : `${trend}%`;
+}
 
 export default function AdminPage() {
+  const [statCards, setStatCards] = useState<StatCard[]>([]);
+  const [sellerTopRevenue, setSellerTopRevenue] = useState<SellerRevenue[]>([]);
+  const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await api.get('/admin/analytics');
+        const s = data.statCards;
+        setStatCards([
+          {
+            label: 'GMV (총 거래액)',
+            value: formatKoreanAmount(s.gmv),
+            trend: formatTrend(s.gmvTrend),
+            up: s.gmvTrend >= 0,
+          },
+          {
+            label: '전환율',
+            value: `${s.conversionRate}%`,
+            trend: formatTrend(s.conversionRateTrend),
+            up: s.conversionRateTrend >= 0,
+          },
+          { label: '재구매율', value: `${s.repurchaseRate}%`, trend: '', up: true },
+          {
+            label: 'MAU',
+            value: formatCount(s.mau),
+            trend: formatTrend(s.mauTrend),
+            up: s.mauTrend >= 0,
+          },
+        ]);
+        setSellerTopRevenue(data.sellerTopRevenue);
+        setCategoryStats(data.categoryStats);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : '데이터를 불러오지 못했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) return <div className="p-6 text-muted-foreground">불러오는 중...</div>;
+  if (error) return <div className="p-6 text-destructive">{error}</div>;
+
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">대시보드</h1>
-        <p className="text-sm text-muted-foreground">실시간 운영 현황을 확인하세요</p>
+        <h1 className="text-2xl font-bold">통계/분석</h1>
+        <p className="text-sm text-muted-foreground">운영 성과를 한눈에 확인하세요</p>
       </div>
 
       <div className="grid grid-cols-2  md:grid-cols-4 gap-4">
@@ -40,7 +100,7 @@ export default function AdminPage() {
               <p className="text-sm text-muted-foreground">{stat.label}</p>
               <p className="text-2xl font-bold mt-1">{stat.value}</p>
               <p
-                className={`flex items-center gap-1 text-sm mt-1 ${stat.up ? 'text-green-600' : 'text-red-500'}`}
+                className={`flex items-center gap-1 text-sm mt-1 ${stat.up ? 'text-primary' : 'text-red'}`}
               >
                 {stat.up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                 {stat.trend}
@@ -73,7 +133,7 @@ export default function AdminPage() {
             <CardTitle className="text-base mb-4">판매자별 매출 TOP 5</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {popularProducts.map((item) => (
+            {sellerTopRevenue.map((item) => (
               <div key={item.rank} className="flex items-center justify-between">
                 <div className="flex items-center gap-3 mb-5">
                   <span className="text-base font-bold text-muted-foreground w-7 ">
