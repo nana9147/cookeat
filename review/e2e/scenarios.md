@@ -82,3 +82,50 @@
 - **[칭찬] 신규 주문/결제 흐름 견고.** `/api/order`가 서버에서 가격 재계산(클라 amount 불신뢰)+CAS 재고 차감/원복+order_items 실패 시 롤백. 어드민 주문/정산 라우트 requireAdmin+상태 화이트리스트+정산 완료 멱등성.
 - **[제안·이월] admin keyword .or() 필터 인젝션** — products/route.ts:61 + orders/route.ts:38(이번에 1곳 추가). anon으로 `or=(name.ilike.*,status.eq.숨김)` 직접 호출 시 필터 탈출 실증. admin 게이트라 실해는 낮음.
 - tsc 0 · build 통과(둘 다 green). 임시 seller(seller_id=18)·role 승격은 리뷰 후 원복/삭제 완료.
+
+## 10차 (2026-06-24) — 사용자·관리자·판매자 종합, 신규 배송/FAQ/레시피 기능 확인
+
+스펙 `tests/cookeat-daily.spec.ts` 전면 갱신. 24개 테스트 전부 pass.
+
+| ID | 시나리오 | 대상 | 기대 | 결과 (2026-06-24) |
+|----|----------|------|------|--------------------|
+| S01-T1 | 홈 페이지 | `/` | 200 렌더 | pass |
+| S01-T2 | 쇼핑 목록 | `/shopping` | 200 | pass |
+| S01-T3 | 상품 상세 회귀 | `/shopping/4` | 200(9차 [필수] 해결 확인) | **pass — HTTP 200 정상** |
+| S01-T4 | 레시피 목록 | `/recipes` | 200 실DB 연동 | pass |
+| S01-T5 | 레시피 상세 | `/recipes/new`(링크클릭) | pass — 단, 목록 첫 링크가 /recipes/new로 잡힘(신규작성 경로) |
+| S02-T1 | 로그인 | `/login` → 이메일+비번 → `/` | pass |
+| S03-T1 | 관리자 대시보드 | `/admin` | 200 + has-data true | pass(admin 승격 상태) |
+| S03-T2 | 관리자 회원 | `/admin/members` | 200 | pass |
+| S03-T3 | 관리자 주문 | `/admin/orders` | 200 | pass |
+| S03-T4 | 관리자 정산 | `/admin/settlements` | 200 | pass |
+| S03-T5 | 고객센터 문의 | `/admin/support/inquiry` | 200 실DB 연동 | pass |
+| S03-T6 | FAQ 관리 | `/admin/support/faq` | 200 실DB 연동 | pass |
+| S03-T7 | 관리자 상품 | `/admin/products` | 200 | pass |
+| S03-T8 | 관리자 레시피 | `/admin/recipes` | 200 | pass |
+| S03-T9 | 관리자 판매자 | `/admin/sellers` | 200 | pass |
+| S03-T10 | 관리자 리뷰 | `/admin/reviews` | 200 | pass |
+| S03-T11 | analytics | `/admin/analytics` | 200 | pass |
+| S04-T1 | 판매자 대시보드 | `/seller` | 200(admin→seller겸용) | pass |
+| S04-T2 | 배송 관리(신규) | `/seller/shipping` | 200 API 연동 | pass |
+| S04-T3 | 배송 템플릿(신규) | `/seller/shipping/templates` | 200 | pass |
+| S04-T4 | 주소 관리(신규) | `/seller/shipping/address` | 200 | pass |
+| S05-T1 | 마이페이지 | `/mypage` | 200 | pass |
+| S05-T2 | 주문 내역 | `/mypage/orders` | 200 | pass |
+| S06 | 어드민 API 보안 | 10개 엔드포인트 미인증 | 401 all | **pass — 10/10 모두 401** |
+
+발견(10차):
+- **[필수·이월] 정산 통계가 여전히 JS 합산**: `admin/settlements/route.ts:48-65`에서 pendingData·completedData·allFeeData를 전체 행 받아 reduce. `aa444ad`(jjong0, 2026-06-19)에서 병렬화만 했고 DB SUM 집계는 미적용. 9차 [필수] 미해결.
+- **[필수·이월] 주문 생성 비트랜잭션**: `app/api/order/route.ts`에 restoreStock 보상 코드 여전히 존재(`:26,117,174,192`). RPC 트랜잭션 미적용. 9차 [필수] 미해결.
+- **[신규·제안] `admin/inquiries` answered 필터가 DB 페이지네이션 무효화**: `?answered=true/false` 파라미터 시 전체 행 가져와 JS `.filter().slice()`로 페이지 잘라냄(`:34-51`). 문의가 많아지면 페이지 1 이후 데이터 신뢰 불가.
+- **[이월·제안] admin keyword `.or()` 미이스케이프**: `admin/products/route.ts:61`, `admin/orders/route.ts:38` 그대로.
+- **[해결] 상품 상세 전체 404**: 9차 [필수] — `/shopping/4` HTTP 200 확인.
+- **[해결] sellers anon RLS 노출**: 9차 [필수] — `sellers/users/orders/settlements/order_items` 모두 0행(차단).
+- **[신규·칭찬] likes/bookmarks 에러 묵살 수정(djsy01 4c96fd8)**: serverRecipes.ts에 likeError·bookmarkError throw 추가.
+- **[신규·칭찬] ratingSum 범위 검증(djsy01 90fba12)**: 1-5 범위 외 rating 무시 가드 추가.
+- **[신규·칭찬] 멀티셀러 운송장 충돌 수정(nana9147 2d84111)**: shippings UNIQUE(order_id)→UNIQUE(order_id,seller_id) + seller_id 필터.
+- **[신규·칭찬] FAQ 실데이터 연동(jjong0 fd8bc28, 1a44af1)**: 에러 핸들링(f0c92a3)도 추가.
+- **[신규·칭찬] 레시피 실DB 연동(djsy01 80138ec)**: 목록·상세 Supabase 연동.
+- **[신규·칭찬] 배송 처리 API 연동(nana9147 a6c2d35, d2a9b85)**: 상태별 카드 카운트 포함.
+- tsc 1건 오류(`.next/types` 자동생성 파일, validator.ts:359 — 학생 코드 아님). build 성공(정적 생성 79개 경로).
+- 테스트계정 admin 승격 후 원복(user) 완료.
