@@ -10,6 +10,14 @@ import DateRangeFilter from './DateRangeFilter';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export default function PaymentInfoTable({
   orders,
@@ -112,96 +120,76 @@ export default function PaymentInfoTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="px-4 py-3.5 text-center w-10">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center w-10">
                 <input
                   type="checkbox"
                   checked={selectedIds.length === orders.length && orders.length > 0}
                   onChange={(e) => handleSelectAll(e.target.checked)}
                 />
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                주문번호
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                주문일시
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                주문자
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                수령인
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                연락처
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
-                배송지
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
-                상품명
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600">
-                배송메모
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                결제금액
-              </th>
-              <th className="px-4 py-3.5 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">
-                관리
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TableHead>
+              <TableHead className="text-center whitespace-nowrap">주문번호</TableHead>
+              <TableHead className="text-center whitespace-nowrap">주문일시</TableHead>
+              <TableHead className="text-center whitespace-nowrap">주문자</TableHead>
+              <TableHead className="text-center whitespace-nowrap">수령인</TableHead>
+              <TableHead className="text-center whitespace-nowrap">연락처</TableHead>
+              <TableHead className="text-center">배송지</TableHead>
+              <TableHead className="text-center">상품명</TableHead>
+              <TableHead className="text-center">배송메모</TableHead>
+              <TableHead className="text-center whitespace-nowrap">결제금액</TableHead>
+              <TableHead className="text-center whitespace-nowrap">관리</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
-              <tr>
-                <td colSpan={11} className="text-center py-16 text-gray-400 text-sm">
+              <TableRow>
+                <TableCell colSpan={11} className="text-center py-16 text-gray-400 text-sm">
                   목록을 불러오는 중...
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : orders.length === 0 ? (
-              <tr>
-                <td colSpan={11} className="text-center py-16 text-gray-400 text-sm">
+              <TableRow>
+                <TableCell colSpan={11} className="text-center py-16 text-gray-400 text-sm">
                   결제완료된 주문건이 없습니다.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               <>
                 {orders.map((order) => (
-                  <tr key={order.id} className="border-b border-gray-50 last:border-b-0">
-                    <td className="px-4 py-3.5 text-center">
+                  <TableRow key={order.id}>
+                    <TableCell className="text-center">
                       <input
                         type="checkbox"
                         checked={selectedIds.includes(order.id)}
                         onChange={(e) => handleSelect(order.id, e.target.checked)}
                       />
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center font-mono whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center text-sm font-mono text-gray-500 whitespace-nowrap">
                       {order.id}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
                       {new Date(order.orderDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-800 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
                       {order.customer}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-800 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
                       {order.recipient}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-600 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-600 whitespace-nowrap">
                       {order.phone}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-600 text-center">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-600">
                       <span
                         className="block max-w-[200px] truncate mx-auto"
                         title={`${order.address} ${order.addressDetail}`}
                       >
                         {order.address}, {order.addressDetail}
                       </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-800 text-center">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-800">
                       <span
                         className="block max-w-[160px] truncate mx-auto"
                         title={order.products[0]?.name}
@@ -211,30 +199,30 @@ export default function PaymentInfoTable({
                           <span className="text-gray-500"> 외 {order.products.length - 1}건</span>
                         )}
                       </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-500 text-center">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-500">
                       <span
                         className="block max-w-[160px] truncate mx-auto"
                         title={order.shippingRequest || '-'}
                       >
                         {order.shippingRequest || '-'}
                       </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-800 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
                       {order.finalAmount.toLocaleString()}원
-                    </td>
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
                       <Button size="sm" onClick={() => onStatusChange(order.id, nextStatus)}>
                         {actionLabel}
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 <EmptyRows count={10 - orders.length} colSpan={11} />
               </>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <Pagination
