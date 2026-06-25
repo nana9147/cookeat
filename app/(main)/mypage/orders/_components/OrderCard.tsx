@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import type { Order } from './types';
 import OrderCardActions from './OrderCardActions';
+import { formatDate, formatWon } from '@/lib/format';
 
 const STATUS_STYLE: Record<string, string> = {
   결제전: 'bg-muted/30 text-gray-text',
@@ -11,11 +12,6 @@ const STATUS_STYLE: Record<string, string> = {
   배송완료: 'bg-gray-100 text-gray-500',
   취소: 'bg-red/10 text-red',
 };
-
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-}
 
 export default function OrderCard({ order }: { order: Order }) {
   const statusStyle = STATUS_STYLE[order.status] ?? 'bg-muted/30 text-gray-text';
@@ -50,7 +46,7 @@ export default function OrderCard({ order }: { order: Order }) {
               <p className="text-xs text-gray-text mt-0.5">{item.quantity}개</p>
             </div>
             <span className="text-sm font-semibold text-dark-text shrink-0">
-              {(item.unitPrice * item.quantity).toLocaleString()}원
+              {formatWon(item.unitPrice * item.quantity)}
             </span>
           </div>
         ))}
@@ -61,11 +57,11 @@ export default function OrderCard({ order }: { order: Order }) {
           <div className="flex items-center gap-3 text-xs text-gray-text">
             <span>{order.paymentMethod}</span>
             <span className="text-border">|</span>
-            <span>배송비 {order.shippingFee === 0 ? '무료' : `${order.shippingFee.toLocaleString()}원`}</span>
+            <span>배송비 {order.shippingFee === 0 ? '무료' : formatWon(order.shippingFee)}</span>
           </div>
           <div className="flex items-baseline gap-1">
             <span className="text-xs text-gray-text">총</span>
-            <span className="text-base font-bold text-primary">{order.finalAmount.toLocaleString()}원</span>
+            <span className="text-base font-bold text-primary">{formatWon(order.finalAmount)}</span>
           </div>
         </div>
         <OrderCardActions order={order} />
