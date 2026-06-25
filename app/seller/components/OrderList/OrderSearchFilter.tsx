@@ -5,15 +5,25 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Filter } from 'lucide-react';
 import FilterTabs from '@/app/seller/components/FilterTabs';
+import DateRangeFilter from '@/app/seller/components/DateRangeFilter';
 import type { OrderSearchProps } from '@/types/seller/order';
+import type { DateRangeFilterProps } from '@/types/seller/common';
 
-export default function OrderSearch({
+type Props = OrderSearchProps & DateRangeFilterProps;
+
+export default function OrderSearchFilter({
   search,
   onSearchChange,
   status,
   onStatusChange,
   statuses,
-}: OrderSearchProps) {
+  datePreset,
+  onDatePresetChange,
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
+}: Props) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   return (
@@ -22,8 +32,16 @@ export default function OrderSearch({
         <Input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="주문번호, 고객명으로 검색"
+          placeholder="주문번호, 고객명, 연락처로 검색"
           className="py-5 bg-card"
+        />
+        <DateRangeFilter
+          datePreset={datePreset}
+          onDatePresetChange={onDatePresetChange}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={onStartDateChange}
+          onEndDateChange={onEndDateChange}
         />
         <Button
           onClick={() => setIsFilterOpen((prev) => !prev)}
