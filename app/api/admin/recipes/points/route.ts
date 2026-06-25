@@ -7,14 +7,14 @@ export async function GET(req: NextRequest) {
   if (authed instanceof NextResponse) return authed;
 
   const [earnedData, usedData, recipeCountData] = await Promise.all([
-    supabaseAdmin.from('point_history').select('amount', { count: 'exact' }).eq('type', '적립'),
-    supabaseAdmin.from('point_history').select('amount', { count: 'exact' }).eq('type', '사용'),
+    supabaseAdmin.from('point_history').select('amount').eq('type', '적립'),
+    supabaseAdmin.from('point_history').select('amount').eq('type', '사용'),
     supabaseAdmin.from('recipes').select('recipe_id', { count: 'exact', head: true }),
   ]);
 
   if (earnedData.error || usedData.error || recipeCountData.error) {
     const err = earnedData.error ?? usedData.error ?? recipeCountData.error;
-    console.error('[GET /api/admin/recipes/points]', err);
+    console.error('[GET /api/admin/recipes/points]', JSON.stringify(err));
     return NextResponse.json({ error: err!.message }, { status: 500 });
   }
 
