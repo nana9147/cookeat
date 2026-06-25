@@ -16,32 +16,6 @@ const PAYMENT_METHOD_MAP: Record<string, string> = {
   mobile: '휴대폰결제',
 };
 
-type DecrementedItem = {
-  productId: number;
-  quantity: number;
-  prevStock: number;
-};
-
-// 낙관적 잠금 원복 — 동시 변경이 감지되면 그 항목을 건너뛰고 productId 목록을 반환
-async function restoreStock(items: DecrementedItem[]): Promise<number[]> {
-  const unrestored: number[] = [];
-  for (const item of items) {
-    const { count, error } = await supabaseAdmin
-      .from('products')
-      .update({ stock: item.prevStock }, { count: 'exact' })
-      .eq('product_id', item.productId)
-      .eq('stock', item.prevStock - item.quantity);
-    if (error) {
-      console.error(`[order] stock restore error product=${item.productId}:`, error.message);
-      unrestored.push(item.productId);
-    } else if ((count ?? 0) === 0) {
-      console.warn(`[order] stock restore skipped (concurrent change) product=${item.productId}`);
-      unrestored.push(item.productId);
-    }
-  }
-  return unrestored;
-}
-
 export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
@@ -73,11 +47,10 @@ export async function POST(req: NextRequest) {
   // 상품별 검증 및 서버 사이드 금액 계산
   let totalAmount = 0;
   const validatedItems: {
-    productId: number;
+    product_id: number;
     quantity: number;
-    unitPrice: number;
-    sellerId: number;
-    prevStock: number;
+    unit_price: number;
+    seller_id: number;
   }[] = [];
 
   for (const item of items as OrderItem[]) {
@@ -102,103 +75,46 @@ export async function POST(req: NextRequest) {
     }
     totalAmount += product.price * item.quantity;
     validatedItems.push({
-      productId: item.productId,
+      product_id: item.productId,
       quantity: item.quantity,
-      unitPrice: product.price,
-      sellerId: product.seller_id,
-      prevStock: product.stock,
+      unit_price: product.price,
+      seller_id: product.seller_id,
     });
   }
 
   const shippingFee = calcShipping(totalAmount);
   const finalAmount = totalAmount + shippingFee;
 
-  // 재고 선차감 — .eq('stock', prevStock) CAS로 동시 주문 충돌 감지
-  // 완전한 원자성은 DB 트랜잭션(RPC)이 필요하며, 이 구현은 낙관적 잠금에 근사함
-  const decremented: DecrementedItem[] = [];
-  for (const item of validatedItems) {
-    const { count } = await supabaseAdmin
-      .from('products')
-      .update({ stock: item.prevStock - item.quantity }, { count: 'exact' })
-      .eq('product_id', item.productId)
-      .eq('stock', item.prevStock);
-
-    if ((count ?? 0) === 0) {
-      // 동시 주문으로 재고 소진 — 이미 차감한 항목 원복
-      const unrestored = await restoreStock(decremented);
-      if (unrestored.length > 0) {
-        console.error(`[order] concurrent stock restore failed for products:`, unrestored);
-      }
-      return NextResponse.json({ error: '재고가 부족합니다. 다시 시도해주세요.' }, { status: 409 });
-    }
-    decremented.push({ productId: item.productId, quantity: item.quantity, prevStock: item.prevStock });
-  }
-
-  // 재고가 0이 된 상품을 품절로 전환 (숨김 상태는 유지)
-  const zeroStockIds = decremented
-    .filter((item) => item.prevStock - item.quantity === 0)
-    .map((item) => item.productId);
-  if (zeroStockIds.length > 0) {
-    await supabaseAdmin
-      .from('products')
-      .update({ status: '품절' })
-      .in('product_id', zeroStockIds)
-      .eq('status', '판매중');
-  }
-
   const now = new Date();
   const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
   const randomPart = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
   const orderId = `ORD-${datePart}-${randomPart}`;
 
-  // orders 생성
-  const { data: order, error: orderError } = await supabaseAdmin
-    .from('orders')
-    .insert({
-      order_id: orderId,
-      user_id: authed.userId,
-      total_amount: totalAmount,
-      shipping_fee: shippingFee,
-      coupon_discount: 0,
-      final_amount: finalAmount,
-      payment_method: PAYMENT_METHOD_MAP[paymentMethod] ?? paymentMethod,
-      recipient,
-      phone,
-      address,
-      address_detail: '',
-    })
-    .select('order_id, final_amount')
-    .single();
+  // 재고 차감 · orders INSERT · order_items INSERT 를 DB 트랜잭션 하나로 처리
+  // 중간 실패 시 DB가 전체를 자동 롤백하므로 보상 코드가 필요 없습니다
+  const { error: rpcError } = await supabaseAdmin.rpc('create_order', {
+    p_order_id: orderId,
+    p_user_id: authed.userId,
+    p_items: validatedItems,
+    p_total_amount: totalAmount,
+    p_shipping_fee: shippingFee,
+    p_coupon_discount: 0,
+    p_final_amount: finalAmount,
+    p_payment_method: PAYMENT_METHOD_MAP[paymentMethod] ?? paymentMethod,
+    p_recipient: recipient,
+    p_phone: phone,
+    p_address: address,
+  });
 
-  if (orderError || !order) {
-    await restoreStock(decremented);
-    return NextResponse.json({ error: orderError?.message ?? '주문 생성 실패' }, { status: 500 });
+  if (rpcError) {
+    // errcode P0001 = 재고 부족으로 함수 내부에서 raise exception
+    const isStockError =
+      rpcError.code === 'P0001' || (rpcError.message ?? '').includes('재고 부족');
+    return NextResponse.json(
+      { error: isStockError ? '재고가 부족합니다. 다시 시도해주세요.' : '주문 생성 실패' },
+      { status: isStockError ? 409 : 500 }
+    );
   }
 
-  // order_items 저장
-  const { error: itemsError } = await supabaseAdmin.from('order_items').insert(
-    validatedItems.map((i) => ({
-      order_id: orderId,
-      product_id: i.productId,
-      seller_id: i.sellerId,
-      quantity: i.quantity,
-      unit_price: i.unitPrice,
-    }))
-  );
-
-  if (itemsError) {
-    const [deleteResult, unrestored] = await Promise.all([
-      supabaseAdmin.from('orders').delete().eq('order_id', orderId),
-      restoreStock(decremented),
-    ]);
-    if (deleteResult.error) {
-      console.error(`[order] orphan order detected — rollback failed for ${orderId}:`, deleteResult.error.message);
-    }
-    if (unrestored.length > 0) {
-      console.error(`[order] stock restore failed for products:`, unrestored);
-    }
-    return NextResponse.json({ error: '주문 상품 저장 실패' }, { status: 500 });
-  }
-
-  return NextResponse.json({ orderId: order.order_id, finalAmount: order.final_amount });
+  return NextResponse.json({ orderId, finalAmount });
 }
