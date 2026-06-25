@@ -2,27 +2,31 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OrderProduct } from '@/types/seller/order';
+import { ShoppingBag } from 'lucide-react';
 
 export default function OrderProductSection({ products }: { products: OrderProduct[] }) {
   return (
     <Card>
       <CardHeader className="border-b">
-        <CardTitle>상품 정보</CardTitle>
+        <CardTitle className="flex items-center gap-1.5">
+          <ShoppingBag className="w-4 h-4 text-gray-400" />
+          상품 정보
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-0 py-0">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50">
-              <th className="px-5 py-3 text-center text-sm font-semibold text-gray-500 w-64">
+            <tr className="bg-gray-100 border-b-2 border-gray-200">
+              <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-64">
                 상품명
               </th>
-              <th className="px-5 py-3 text-center text-sm font-semibold text-gray-500 w-24">
+              <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-24">
                 수량
               </th>
-              <th className="px-5 py-3 text-center text-sm font-semibold text-gray-500 w-32">
+              <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-32">
                 단가
               </th>
-              <th className="px-5 py-3 text-center text-sm font-semibold text-gray-500 w-32">
+              <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-32">
                 합계
               </th>
             </tr>

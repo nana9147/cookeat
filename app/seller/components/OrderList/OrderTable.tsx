@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import { getPageNumbers } from '@/lib/utils';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -47,7 +47,9 @@ export default function OrderTable({
   onPageChange,
 }: OrderTableProps) {
   const renderSortIcon = (column: OrderSortBy) => {
-    if (sortBy !== column) return null;
+    if (sortBy !== column) {
+      return <ChevronsUpDown className="inline w-3.5 h-3.5 ml-0.5 text-gray-500" />;
+    }
     return sortOrder === 'asc' ? (
       <ChevronUp className="inline w-3.5 h-3.5 ml-0.5" />
     ) : (
@@ -59,7 +61,7 @@ export default function OrderTable({
     isAllSelectedMode || (selectedIds.length === orders.length && orders.length > 0);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden py-3">
+    <div className=" bg-white rounded-xl border border-gray-200 overflow-hidden py-3">
       <Table>
         <TableHeader>
           <TableRow>
@@ -72,7 +74,7 @@ export default function OrderTable({
             </TableHead>
             <TableHead className="text-center">주문번호</TableHead>
             <TableHead
-              className="text-center cursor-pointer select-none"
+              className="text-center cursor-pointer select-none hover:bg-gray-100 transition-colors"
               onClick={() => onSortChange('orderDate')}
             >
               주문일시{renderSortIcon('orderDate')}
@@ -80,7 +82,7 @@ export default function OrderTable({
             <TableHead className="text-center">주문자</TableHead>
             <TableHead className="text-center">상품</TableHead>
             <TableHead
-              className="text-center cursor-pointer select-none"
+              className="text-center cursor-pointer select-none hover:bg-gray-100 transition-colors"
               onClick={() => onSortChange('price')}
             >
               금액{renderSortIcon('price')}
