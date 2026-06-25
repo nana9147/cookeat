@@ -6,7 +6,7 @@ import { getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import { PaymentInfoTableProps, ShippingStatus } from '@/types/seller/shipping';
-import DateRangeFilter from './DateRangeFilter';
+import DateRangeFilter from '@/app/seller/components/DateRangeFilter';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';

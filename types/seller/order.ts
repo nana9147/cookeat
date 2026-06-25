@@ -3,7 +3,7 @@ import type { DateRangeFilterProps } from './common';
 export type OrderStatus = '결제완료' | '배송준비' | '배송중' | '배송완료' | '취소' | '환불';
 export type PaymentMethod = 'card' | 'kakao' | 'toss' | 'bankbook' | 'mobile';
 export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
-  card: '신용카드 (신한카드)',
+  card: '신용카드',
   kakao: '카카오페이',
   toss: '토스페이',
   bankbook: '무통장입금',
@@ -51,7 +51,10 @@ export interface OrderExportRow {
   phone: string;
   address: string;
   addressDetail: string;
-  productSummary: string;
+  productName: string;
+  shippingRequest: string;
+  quantity: number;
+  unitPrice: number;
   totalPrice: number;
   shippingFee: number;
   couponDiscount: number;

@@ -1,20 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import type {
-  Order,
   OrderSortBy,
   SortOrder,
   OrderStatus,
   OrderStatusFilter,
+  Order,
+  OrderExportRow,
   StatusCardItem,
+  PaymentMethod,
 } from '@/types/seller/order';
+import { PAYMENT_LABEL } from '@/types/seller/order';
+import type { DateRangePreset } from '@/types/seller/common';
 import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
 import OrderTable from '../components/OrderList/OrderTable';
 import StatusCards from '@/components/ui/StatusCards';
-import { useFilter } from '@/hooks/useFilter';
+import api from '@/lib/api';
+import { toast } from 'sonner';
+import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
 
 const statuses: (OrderStatus | '전체')[] = [
   '전체',
@@ -26,109 +32,6 @@ const statuses: (OrderStatus | '전체')[] = [
   '환불',
 ];
 
-const MOCK_ORDERS: Order[] = [
-  {
-    id: 'ORD-2024-001',
-    customer: '김가을',
-    recipient: '김가을',
-    phone: '010-1111-2222',
-    product: '유기농 토마토 500g',
-    price: 15900,
-    status: '배송준비',
-    orderDate: '2026-06-09 11:56:39',
-  },
-  {
-    id: 'ORD-2024-002',
-    customer: '이여름',
-    recipient: '이여름',
-    phone: '010-2222-3333',
-    product: '무농약 상추 300g',
-    price: 8500,
-    status: '결제완료',
-    orderDate: '2026-06-09 14:16:22',
-  },
-  {
-    id: 'ORD-2024-003',
-    customer: '박겨울',
-    recipient: '박겨울',
-    phone: '010-3333-4444',
-    product: '국내산 달걀 30구',
-    price: 12000,
-    status: '배송중',
-    orderDate: '2026-06-08 09:23:11',
-  },
-  {
-    id: 'ORD-2024-004',
-    customer: '최봄',
-    recipient: '최봄',
-    phone: '010-4444-5555',
-    product: '유기농 감자 1kg',
-    price: 9800,
-    status: '배송완료',
-    orderDate: '2026-06-07 16:44:05',
-  },
-  {
-    id: 'ORD-2024-005',
-    customer: '정하늘',
-    recipient: '정하늘',
-    phone: '010-5555-6666',
-    product: '프리미엄 올리브유',
-    price: 32000,
-    status: '결제완료',
-    orderDate: '2026-06-09 10:12:33',
-  },
-  {
-    id: 'ORD-2024-006',
-    customer: '한바다',
-    recipient: '한바다',
-    phone: '010-6666-7777',
-    product: '생크림 200ml',
-    price: 4800,
-    status: '배송중',
-    orderDate: '2026-06-08 13:55:47',
-  },
-  {
-    id: 'ORD-2024-007',
-    customer: '윤서준',
-    recipient: '윤서준',
-    phone: '010-7777-8888',
-    product: '유기농 양파 1kg',
-    price: 5500,
-    status: '취소',
-    orderDate: '2026-06-07 08:30:22',
-  },
-  {
-    id: 'ORD-2024-008',
-    customer: '임지아',
-    recipient: '임지아',
-    phone: '010-8888-9999',
-    product: '신선 토마토 500g',
-    price: 8500,
-    status: '환불',
-    orderDate: '2026-06-06 15:20:18',
-  },
-  {
-    id: 'ORD-2024-009',
-    customer: '강민준',
-    recipient: '강민준',
-    phone: '010-9999-0000',
-    product: '쌀 10kg',
-    price: 45000,
-    status: '배송완료',
-    orderDate: '2026-06-05 11:10:09',
-  },
-  {
-    id: 'ORD-2024-010',
-    customer: '오수빈',
-    recipient: '오수빈',
-    phone: '010-0000-1111',
-    product: '밀키트 2인분',
-    price: 18000,
-    status: '취소',
-    orderDate: '2026-06-09 09:05:55',
-  },
-];
-
 const ORDER_COLOR_MAP = {
   결제완료: 'text-emerald-500',
   배송준비: 'text-amber-500',
@@ -137,64 +40,151 @@ const ORDER_COLOR_MAP = {
   '취소/환불': 'text-red-500',
 };
 
+const LIMIT = 10;
+
+const toDateStr = (d: Date) => d.toISOString().split('T')[0];
+
+const getDateRange = (preset: DateRangePreset): { startDate: string; endDate: string } => {
+  const today = new Date();
+  const end = toDateStr(today);
+
+  if (preset === '전체') return { startDate: '', endDate: '' };
+  if (preset === '오늘') return { startDate: end, endDate: end };
+
+  const start = new Date(today);
+  if (preset === '1주일') start.setDate(today.getDate() - 7);
+  if (preset === '1개월') start.setMonth(today.getMonth() - 1);
+  if (preset === '3개월') start.setMonth(today.getMonth() - 3);
+
+  return { startDate: toDateStr(start), endDate: end };
+};
+const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
+  { key: 'id', label: '주문번호' },
+  { key: 'orderDate', label: '주문일시', format: (v) => new Date(v as string).toLocaleString() },
+  { key: 'customer', label: '주문자' },
+  { key: 'recipient', label: '수령인' },
+  { key: 'phone', label: '연락처' },
+  { key: 'address', label: '주소' },
+  { key: 'addressDetail', label: '상세주소' },
+  { key: 'shippingRequest', label: '배송메시지' },
+  { key: 'productName', label: '상품명' },
+  { key: 'quantity', label: '수량' },
+  { key: 'unitPrice', label: '단가' },
+  { key: 'totalPrice', label: '주문상품금액' },
+  { key: 'shippingFee', label: '배송비' },
+  { key: 'couponDiscount', label: '쿠폰할인' },
+  { key: 'pointAmount', label: '포인트사용' },
+  { key: 'finalAmount', label: '최종결제금액' },
+  { key: 'paymentMethod', label: '결제수단', format: (v) => PAYMENT_LABEL[v as PaymentMethod] },
+  { key: 'status', label: '주문상태' },
+];
+
 export default function OrdersPage() {
   const [status, setStatus] = useState<OrderStatusFilter>('전체');
+  const [search, setSearch] = useState('');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState<OrderSortBy>('orderDate');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isAllSelectedMode, setIsAllSelectedMode] = useState(false);
-  const [page, setPage] = useState(1);
 
-  const {
-    search,
-    setSearch,
-    filtered: filteredBySearch,
-  } = useFilter(
-    MOCK_ORDERS,
-    (o, search) => o.customer.includes(search) || o.id.includes(search) || o.phone.includes(search)
-  );
+  const [datePreset, setDatePreset] = useState<DateRangePreset>('전체');
+  const [startDate, setStartDate] = useState(() => getDateRange('전체').startDate);
+  const [endDate, setEndDate] = useState(() => getDateRange('전체').endDate);
 
-  const filtered = filteredBySearch.filter((o) => {
-    return status === '전체'
-      ? true
-      : status === '취소환불'
-        ? o.status === '취소' || o.status === '환불'
-        : o.status === status;
+  const [counts, setCounts] = useState({
+    결제완료: 0,
+    배송준비: 0,
+    배송중: 0,
+    배송완료: 0,
+    취소: 0,
+    환불: 0,
   });
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'price') {
-      return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+  const { exportToExcel, isExporting, progress } = useExcelExport<OrderExportRow>({
+    endpoint: '/seller/orders/export',
+    columns: EXPORT_COLUMNS,
+    sheetName: '주문내역',
+    fileNamePrefix: '주문내역',
+    countBy: 'id',
+  });
+
+  const handleDatePresetChange = (preset: DateRangePreset) => {
+    setDatePreset(preset);
+    setPage(1);
+    if (preset !== '직접입력') {
+      const range = getDateRange(preset);
+      setStartDate(range.startDate);
+      setEndDate(range.endDate);
     }
-    const aTime = new Date(a.orderDate).getTime();
-    const bTime = new Date(b.orderDate).getTime();
-    return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
-  });
+  };
+
+  const fetchCounts = async () => {
+    try {
+      const res = await api.get('/seller/orders/counts', {
+        params: { startDate, endDate },
+      });
+      setCounts(res.data.data);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.');
+    }
+  };
+
+  useEffect(() => {
+    fetchCounts();
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        const res = await api.get('/seller/orders', {
+          params: {
+            page,
+            limit: LIMIT,
+            keyword: search || undefined,
+            status,
+            startDate,
+            endDate,
+            sortBy,
+            sortOrder,
+          },
+        });
+        if (!cancelled) {
+          setOrders(res.data.data.orders);
+          setTotal(res.data.data.pagination.total);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchOrders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, status, search, startDate, endDate, sortBy, sortOrder]);
 
   const statusCardData: StatusCardItem[] = [
-    {
-      label: '결제완료',
-      count: MOCK_ORDERS.filter((o) => o.status === '결제완료').length,
-      filterValue: '결제완료',
-    },
-    {
-      label: '배송준비',
-      count: MOCK_ORDERS.filter((o) => o.status === '배송준비').length,
-      filterValue: '배송준비',
-    },
-    {
-      label: '배송중',
-      count: MOCK_ORDERS.filter((o) => o.status === '배송중').length,
-      filterValue: '배송중',
-    },
-    {
-      label: '배송완료',
-      count: MOCK_ORDERS.filter((o) => o.status === '배송완료').length,
-      filterValue: '배송완료',
-    },
+    { label: '결제완료', count: counts.결제완료, filterValue: '결제완료' },
+    { label: '배송준비', count: counts.배송준비, filterValue: '배송준비' },
+    { label: '배송중', count: counts.배송중, filterValue: '배송중' },
+    { label: '배송완료', count: counts.배송완료, filterValue: '배송완료' },
     {
       label: '취소/환불',
-      count: MOCK_ORDERS.filter((o) => o.status === '취소' || o.status === '환불').length,
+      count: counts.취소 + counts.환불,
       filterValue: '취소환불',
     },
   ];
@@ -206,6 +196,7 @@ export default function OrdersPage() {
       setSortBy(newSortBy);
       setSortOrder('desc');
     }
+    setPage(1);
   };
 
   const handleSelect = (orderId: string, checked: boolean) => {
@@ -216,44 +207,92 @@ export default function OrdersPage() {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setIsAllSelectedMode(true);
-      setSelectedIds(sorted.map((o) => o.id));
+      setSelectedIds(orders.map((o) => o.id));
     } else {
       setIsAllSelectedMode(false);
       setSelectedIds([]);
     }
   };
 
+  useEffect(() => {
+    setSelectedIds([]);
+    setIsAllSelectedMode(false);
+  }, [page, status, search, startDate, endDate]);
+
+  const handleExcelDownload = () => {
+    if (!isAllSelectedMode && selectedIds.length === 0) {
+      toast.error('다운로드할 주문을 선택해주세요.');
+      return;
+    }
+
+    const params = isAllSelectedMode
+      ? {
+          status: status === '전체' ? undefined : status,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          keyword: search || undefined,
+        }
+      : { orderIds: selectedIds.join(',') };
+
+    exportToExcel(params);
+  };
+
+  const totalPages = Math.ceil(total / LIMIT);
+
   return (
     <div className="bg-background p-8">
       <div className="flex flex-row justify-between items-center mb-8">
         <h1 className="text-h2 font-bold text-dark-text">주문 관리</h1>
-        <Button>
+        <Button onClick={handleExcelDownload} disabled={isExporting}>
           <Download />
-          엑셀 다운로드
+          {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
         </Button>
       </div>
       <StatusCards
         cards={statusCardData}
         status={status}
-        onStatusChange={(v) => setStatus(v as OrderStatusFilter)}
+        onStatusChange={(v) => {
+          setStatus(v as OrderStatusFilter);
+          setPage(1);
+        }}
         colorMap={ORDER_COLOR_MAP}
         cols={5}
       />
       <OrderSearchFilter
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         status={status}
-        onStatusChange={setStatus}
+        onStatusChange={(v) => {
+          setStatus(v);
+          setPage(1);
+        }}
         statuses={statuses}
+        datePreset={datePreset}
+        onDatePresetChange={handleDatePresetChange}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={(v) => {
+          setStartDate(v);
+          setDatePreset('직접입력');
+          setPage(1);
+        }}
+        onEndDateChange={(v) => {
+          setEndDate(v);
+          setDatePreset('직접입력');
+          setPage(1);
+        }}
       />
       <div className="flex items-center justify-start mb-2 px-5">
         <p className="text-sm text-gray-500">
-          총 <span className="font-semibold text-gray-800">{sorted.length}</span>건
+          총 <span className="font-semibold text-gray-800">{total}</span>건
         </p>
       </div>
 
       <OrderTable
-        orders={sorted}
+        orders={orders}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSortChange={handleSortChange}
@@ -261,8 +300,9 @@ export default function OrdersPage() {
         isAllSelectedMode={isAllSelectedMode}
         onSelect={handleSelect}
         onSelectAll={handleSelectAll}
+        isLoading={isLoading}
         page={page}
-        totalPages={1}
+        totalPages={totalPages}
         onPageChange={setPage}
       />
     </div>

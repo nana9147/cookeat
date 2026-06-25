@@ -21,7 +21,7 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
-import DateRangeFilter from './DateRangeFilter';
+import DateRangeFilter from '@/app/seller/components/DateRangeFilter';
 import {
   Table,
   TableBody,

@@ -1,13 +1,17 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { COUPON_DISCOUNT_TYPE_LABEL, PAYMENT_LABEL, PaymentInfo } from '@/types/seller/order';
+import { COUPON_DISCOUNT_TYPE_LABEL, PaymentInfo } from '@/types/seller/order';
+import { Receipt, Truck, Ticket, Coins } from 'lucide-react';
 
 export default function OrderPaymentSection({ payment }: { payment: PaymentInfo }) {
   return (
     <Card>
       <CardHeader className="border-b">
-        <CardTitle>결제 정보</CardTitle>
+        <CardTitle className="flex items-center gap-1.5">
+          <Receipt className="w-4 h-4 text-gray-400" />
+          결제 정보
+        </CardTitle>
       </CardHeader>
       <CardContent className="pt-5">
         <dl className="flex flex-col gap-3">
@@ -16,13 +20,19 @@ export default function OrderPaymentSection({ payment }: { payment: PaymentInfo 
             <dd className="text-sm text-gray-800">{payment.totalPrice.toLocaleString()}원</dd>
           </div>
           <div className="flex justify-between items-center">
-            <dt className="text-sm text-gray-500">배송비</dt>
+            <dt className="text-sm text-gray-500 flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5" />
+              배송비
+            </dt>
             <dd className="text-sm text-gray-800">+ {payment.shippingFee.toLocaleString()}원</dd>
           </div>
           {payment.couponDiscount > 0 && (
             <div className="flex justify-between items-center">
               <dt className="text-sm text-gray-500 flex items-center gap-2">
-                쿠폰 할인
+                <span className="flex items-center gap-1.5">
+                  <Ticket className="w-3.5 h-3.5" />
+                  쿠폰 할인
+                </span>
                 {payment.couponCode && (
                   <span className="text-xs text-primary bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
                     {payment.couponCode}
@@ -43,7 +53,10 @@ export default function OrderPaymentSection({ payment }: { payment: PaymentInfo 
           )}
           {payment.pointAmount > 0 && (
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-gray-500">포인트 사용</dt>
+              <dt className="text-sm text-gray-500 flex items-center gap-1.5">
+                <Coins className="w-3.5 h-3.5" />
+                포인트 사용
+              </dt>
               <dd className="text-sm text-red-500">- {payment.pointAmount.toLocaleString()}원</dd>
             </div>
           )}
@@ -51,17 +64,10 @@ export default function OrderPaymentSection({ payment }: { payment: PaymentInfo 
 
         <div className="border-t border-dashed border-gray-200 my-4" />
 
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center">
           <span className="text-base font-semibold text-gray-800">최종 결제 금액</span>
           <span className="text-xl font-bold text-primary">
             {payment.finalAmount.toLocaleString()}원
-          </span>
-        </div>
-
-        <div className="flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3">
-          <span className="text-sm text-gray-500">결제 수단</span>
-          <span className="text-sm font-medium text-gray-800">
-            {PAYMENT_LABEL[payment.paymentMethod]}
           </span>
         </div>
       </CardContent>
