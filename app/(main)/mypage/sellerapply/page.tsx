@@ -1,4 +1,4 @@
-import Sellerapply from '@/components/(auth)/mypage/seller/sellerapply';
+import Sellerapply from './_components/sellerapply';
 
 export default function SellerApplyPage() {
   return <Sellerapply />;
