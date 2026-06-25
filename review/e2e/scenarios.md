@@ -17,6 +17,61 @@
 | C6-admin | `/admin` 가드 | 비로그인→`/admin/login`, 일반회원→`/` | pass · 비로그인·일반회원 모두 진입 차단됨 |
 | C6-seller | `/seller/*` 가드 | 비로그인/일반회원 접근 차단 기대 | **fail** — 비로그인으로도 `/seller/products/new` 전체 폼이 열림(가드 없음) |
 
+## 역할 모델 (2026-06-25 확인)
+
+- 역할 3종: `user` / `seller` / `admin` — `users.role`(enum, 기본 `user`). API 가드 `lib/serverAuth.ts`의 `requireAuth`/`requireSeller`(seller·admin 통과)/`requireAdmin`.
+- 라우트 보호는 **클라이언트 가드**(`SellerAuthGuard`·`AdminAuthGuard`)뿐 — 화면 진입만 막고 데이터는 API의 `requireSeller/requireAdmin`이 지킨다. (`/seller`는 클라 가드도 빠져 무방비 — C6-seller)
+- **[필수·핵심] 승격 경로 끊김**: 판매자 신청(`POST /api/seller/apply` → `sellers.approve_status=pending`)·관리자 승인(`PATCH /api/admin/sellers/[id]/approve`)이 `sellers.approve_status`·`users.status`만 바꾸고 **`users.role`은 절대 바꾸지 않는다**(코드 전역에서 `users.role` write 0건). 즉 **승인돼도 role은 `user`로 남아 `requireSeller`가 403** → 판매자 API 전부 막힐 가능성. E2E S0에서 실측 필수.
+- 역할 계정 시드: service-role로 user/seller/admin 3계정 생성 후, **seller·admin은 DB에서 `users.role`을 직접 `'seller'`/`'admin'`으로 PATCH**해야 시나리오가 가드/403을 안 만난다.
+
+## 역할별 시나리오 (2026-06-25 재구성 — "쓰는 순서대로")
+
+### [일반회원]
+| ID | 시나리오 | 단계 → 기대 |
+| -- | -------- | ----------- |
+| CU1 | 비로그인 둘러보기 | `/` → `/recipes`·`/recipes/[id]` → `/shopping`·`/shopping/[id]` 열람 |
+| CU2 | 회원가입 | `/register`(닉네임 중복확인 `/api/auth/check-nickname`) → `/register/complete`, role=user |
+| CU3 | 로그인 | `/login` → 세션·헤더 로그인 상태 |
+| CU4 | 장바구니→주문→결제 | `/shopping/[id]` 담기 → `/cart` → `/cart/checkout` → Toss/Kakao → `/cart/complete` |
+| CU5 | 마이페이지 주문확인 | `/mypage/orders` → `/mypage/orders/[orderId]` 에 CU4 주문 노출 |
+| CU6 | 판매자 신청 | `/mypage/sellerapply` 제출(`POST /api/seller/apply`) → "심사 중", 재신청 시 409 |
+
+### [판매자]  (사전: CU6 신청 → CA5 승인 → **DB role='seller' 세팅**)
+| ID | 시나리오 | 단계 → 기대 |
+| -- | -------- | ----------- |
+| CS0 | 승격 검증(핵심) | role 세팅 후 `/seller` 진입(SellerAuthGuard 통과). **role 미세팅 시 막히는지** 함께 기록 — 승격 끊김 실증 |
+| CS1 | 대시보드 | `/seller`(`/api/seller/me`) 매출/주문 요약 |
+| CS2 | 상품 등록 | `/seller/products/new` 입력·이미지·배송템플릿 → `POST /api/seller/products` → `/seller/products` 노출 → `/shopping`에도 |
+| CS3 | 상품 수정 | `/seller/products/[id]/edit` 가격·재고 변경 |
+| CS4 | 주문·배송 (회원→판매자 연결) | `/seller/shipping` 운송장·상태 변경 → `/seller/orders/[id]` → 회원 마이페이지 반영 |
+| CS5 | 정산 | `/seller/settlement` → `/seller/settlement/[id]` 수수료 반영 정산액 |
+
+### [관리자]  (사전: **DB role='admin' 세팅**)
+| ID | 시나리오 | 단계 → 기대 |
+| -- | -------- | ----------- |
+| CA1 | 관리자 로그인 | `/admin/login` → `/admin`(AdminAuthGuard). 일반회원은 `/`로 튕김 |
+| CA2 | 대시보드 | `/admin`(`/api/admin/dashboard`) 지표 |
+| CA3 | 회원관리 | `/admin/members` 정지/해제(`PATCH /api/admin/users/[id]/status`) |
+| CA4 | 상품관리 | `/admin/products` 노출/삭제 → `/shopping` 반영 |
+| CA5 | 판매자 승인 (회원→관리자 연결) | `/admin/sellers` pending(CU6) 승인 → `approve_status=approved`. **role 안 바뀌므로 CS0과 연결 확인** |
+| CA6 | 주문·정산 | `/admin/orders` 상태변경 → `/admin/settlements` 정산 → 판매자 `/seller/settlement` 반영 |
+| CA7 | 레시피·리뷰·문의 | `/admin/recipes`·`/admin/reviews`·`/admin/support/inquiry` 관리 행동 |
+
+### 역할 연결(한 흐름)
+`CU6(신청) → CA5(승인) → [role 세팅] → CS2(상품등록) → CU4(다른 회원 주문) → CS4(배송) → CA6(주문·정산 확인)`.
+
+## 발견 (2026-06-25) — 역할별 라이브 E2E (user / seller / admin)
+
+리뷰계정(user_id=42)의 `users.role`을 service_role로 user→seller→admin 으로 바꿔가며 3회 실측 후 user 원복. dev 3200. `tests/cookeat-role.spec.ts`(신규). 캡처 `review/images/2026-06-25/cookeat-{role}-*`.
+
+- **[필수][확정] 판매자 접근은 `users.role='seller'`만으론 안 열린다 — `sellers` 행/승인 필요(정적 분석 예측 실측 확정).**
+  role=seller로 세팅하고 로그인해도 `/seller` → `/`로 차단. 반면 role=admin 계정은 `/seller`(판매자센터: 판매현황·정산 카드까지) **완전 진입**. 즉 SellerAuthGuard가 admin은 통과시키지만 seller는 추가 조건(`sellers` 테이블 행 = 승인된 판매자)을 요구. 그런데 **승인 라우트(`PATCH /api/admin/sellers/[id]/approve`)는 `users.role`을 안 바꾸므로**, 신청→승인만으로 판매자 권한이 열리는지 끝까지 한 번 실증해야 함(현재 코드 경로상 role 승격이 비어 있음).
+- **[필수][신규] role=admin 인데 `/admin` 진입 실패(홈으로 튕김).**
+  같은 로그인 세션으로 role=admin이 `/seller`(판매자센터)는 들어가는데, `/admin`·`/admin/members`는 `/`로 리다이렉트. 즉 authStore의 role=admin을 SellerAuthGuard는 인정하는데 AdminAuthGuard는 인정하지 않음(가드 간 불일치). **확인 필요**: 관리자 화면이 `/admin/login` 전용 로그인 경로를 따로 요구하는지, 아니면 AdminAuthGuard 조건 버그인지. 관리자 시연 직결이므로 우선 점검 권장.
+- **[칭찬] 일반회원 가드 정상.** role=user 로그인 상태에서 `/seller`·`/admin` 모두 `/`로 차단.
+- (참고) 클라이언트 가드(`SellerAuthGuard`/`AdminAuthGuard`)라 `/seller`·`/admin`은 HTTP 200 셸 후 JS 리다이렉트. 데이터는 API의 `requireSeller/requireAdmin`이 별도로 지킴(보안 자체는 API단). 단 06-16 기록한 "비로그인 `/seller/products/new` 폼 노출"은 별도 확인 대상(클라 가드 누락 라우트).
+- service_role REST 접근은 정상(kanto·tiki와 달리 grant 살아 있음) → 시드는 가능했음.
+
 ## 발견 (2026-06-16)
 
 - **[필수] `/seller/*` 인가 가드 부재 (3차 리뷰부터 미해결).**
