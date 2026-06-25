@@ -48,18 +48,17 @@ export async function getSellerOrdersForExport(
     userMatchedIds = (userRows ?? []).map((u) => u.user_id);
   }
 
-  let query = supabaseAdmin
+  let orderQuery = supabaseAdmin
     .from('orders')
-    .select(
-      'order_id, created_at, status, recipient, phone, address, address_detail, shipping_request, total_amount, shipping_fee, coupon_discount, used_point, final_amount, payment_method, users(nickname)',
-      { count: 'exact' }
-    )
+    .select('order_id')
     .in('order_id', targetOrderIds)
     .in('status', ['결제완료', '배송준비', '배송중', '배송완료', '취소', '환불']);
 
   if (status && status !== '전체') {
-    query =
-      status === '취소환불' ? query.in('status', ['취소', '환불']) : query.eq('status', status);
+    orderQuery =
+      status === '취소환불'
+        ? orderQuery.in('status', ['취소', '환불'])
+        : orderQuery.eq('status', status);
   }
 
   if (keyword) {
@@ -71,63 +70,75 @@ export async function getSellerOrdersForExport(
     if (userMatchedIds.length > 0) {
       orConditions.push(`user_id.in.(${userMatchedIds.join(',')})`);
     }
-    query = query.or(orConditions.join(','));
+    orderQuery = orderQuery.or(orConditions.join(','));
   }
 
-  if (startDate) query = query.gte('created_at', `${startDate}T00:00:00`);
-  if (endDate) query = query.lte('created_at', `${endDate}T23:59:59`);
+  if (startDate) orderQuery = orderQuery.gte('created_at', `${startDate}T00:00:00`);
+  if (endDate) orderQuery = orderQuery.lte('created_at', `${endDate}T23:59:59`);
 
-  const from = offset;
-  const to = offset + limit - 1;
+  const { data: matchedOrderRows, error: matchedOrderError } = await orderQuery;
+  if (matchedOrderError) throw matchedOrderError;
 
-  const {
-    data: orders,
-    count,
-    error: ordersError,
-  } = await query.order('created_at', { ascending: false }).range(from, to);
+  const matchedOrderIds = (matchedOrderRows ?? []).map((o) => o.order_id);
+  if (matchedOrderIds.length === 0) {
+    return { orders: [], total: 0 };
+  }
 
-  if (ordersError) throw ordersError;
-
-  const pagedOrderIds = (orders ?? []).map((o) => o.order_id);
-
-  const { data: items, error: itemsError } = await supabaseAdmin
+  const { count: totalItemCount, error: countError } = await supabaseAdmin
     .from('order_items')
-    .select('order_id, quantity, products(name)')
+    .select('item_id', { count: 'exact', head: true })
     .eq('seller_id', sellerId)
-    .in('order_id', pagedOrderIds);
+    .in('order_id', matchedOrderIds);
 
-  if (itemsError) throw itemsError;
+  if (countError) throw countError;
 
-  const result = (orders ?? []).map((o) => {
-    const productSummary = (items ?? [])
-      .filter((i) => i.order_id === o.order_id)
-      .map((i) => {
-        const product = i.products as unknown as { name: string } | null;
-        return product ? `${product.name} ${i.quantity}개` : null;
-      })
-      .filter((s): s is string => Boolean(s))
-      .join(', ');
+  const { data: pagedItems, error: pagedItemsError } = await supabaseAdmin
+    .from('order_items')
+    .select('order_id, quantity, unit_price, products(name)')
+    .eq('seller_id', sellerId)
+    .in('order_id', matchedOrderIds)
+    .order('order_id', { ascending: true })
+    .range(offset, offset + limit - 1);
 
-    const user = o.users as unknown as { nickname: string } | null;
+  if (pagedItemsError) throw pagedItemsError;
+
+  const batchOrderIds = [...new Set((pagedItems ?? []).map((i) => i.order_id))];
+
+  const { data: orderDetails, error: orderDetailsError } = await supabaseAdmin
+    .from('orders')
+    .select(
+      'order_id, created_at, status, recipient, phone, address, address_detail,shipping_request, total_amount, shipping_fee, coupon_discount, used_point, final_amount, payment_method, users(nickname)'
+    )
+    .in('order_id', batchOrderIds);
+
+  if (orderDetailsError) throw orderDetailsError;
+
+  const rows = (pagedItems ?? []).map((item) => {
+    const order = (orderDetails ?? []).find((o) => o.order_id === item.order_id);
+    const product = item.products as unknown as { name: string } | null;
+    const user = order?.users as unknown as { nickname: string } | null;
 
     return {
-      id: o.order_id,
-      orderDate: o.created_at,
+      id: item.order_id,
+      orderDate: order?.created_at ?? '',
       customer: user?.nickname ?? '알 수 없음',
-      recipient: o.recipient ?? '',
-      phone: o.phone ?? '',
-      address: o.address ?? '',
-      addressDetail: o.address_detail ?? '',
-      productSummary,
-      totalPrice: o.total_amount ?? 0,
-      shippingFee: o.shipping_fee ?? 0,
-      couponDiscount: o.coupon_discount ?? 0,
-      pointAmount: o.used_point ?? 0,
-      finalAmount: o.final_amount ?? 0,
-      paymentMethod: o.payment_method,
-      status: o.status,
+      recipient: order?.recipient ?? '',
+      phone: order?.phone ?? '',
+      address: order?.address ?? '',
+      addressDetail: order?.address_detail ?? '',
+      shippingRequest: order?.shipping_request ?? '',
+      productName: product?.name ?? '알 수 없음',
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+      totalPrice: order?.total_amount ?? 0,
+      shippingFee: order?.shipping_fee ?? 0,
+      couponDiscount: order?.coupon_discount ?? 0,
+      pointAmount: order?.used_point ?? 0,
+      finalAmount: order?.final_amount ?? 0,
+      paymentMethod: order?.payment_method,
+      status: order?.status,
     };
   });
 
-  return { orders: result, total: count ?? 0 };
+  return { orders: rows, total: totalItemCount ?? 0 };
 }

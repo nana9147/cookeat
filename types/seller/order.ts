@@ -51,7 +51,10 @@ export interface OrderExportRow {
   phone: string;
   address: string;
   addressDetail: string;
-  productSummary: string;
+  productName: string;
+  shippingRequest: string;
+  quantity: number;
+  unitPrice: number;
   totalPrice: number;
   shippingFee: number;
   couponDiscount: number;

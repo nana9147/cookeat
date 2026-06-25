@@ -9,14 +9,18 @@ import type {
   OrderStatus,
   OrderStatusFilter,
   Order,
+  OrderExportRow,
   StatusCardItem,
+  PaymentMethod,
 } from '@/types/seller/order';
+import { PAYMENT_LABEL } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
 import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
 import OrderTable from '../components/OrderList/OrderTable';
 import StatusCards from '@/components/ui/StatusCards';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
 
 const statuses: (OrderStatus | '전체')[] = [
   '전체',
@@ -54,6 +58,26 @@ const getDateRange = (preset: DateRangePreset): { startDate: string; endDate: st
 
   return { startDate: toDateStr(start), endDate: end };
 };
+const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
+  { key: 'id', label: '주문번호' },
+  { key: 'orderDate', label: '주문일시', format: (v) => new Date(v as string).toLocaleString() },
+  { key: 'customer', label: '주문자' },
+  { key: 'recipient', label: '수령인' },
+  { key: 'phone', label: '연락처' },
+  { key: 'address', label: '주소' },
+  { key: 'addressDetail', label: '상세주소' },
+  { key: 'shippingRequest', label: '배송메시지' },
+  { key: 'productName', label: '상품명' },
+  { key: 'quantity', label: '수량' },
+  { key: 'unitPrice', label: '단가' },
+  { key: 'totalPrice', label: '주문상품금액' },
+  { key: 'shippingFee', label: '배송비' },
+  { key: 'couponDiscount', label: '쿠폰할인' },
+  { key: 'pointAmount', label: '포인트사용' },
+  { key: 'finalAmount', label: '최종결제금액' },
+  { key: 'paymentMethod', label: '결제수단', format: (v) => PAYMENT_LABEL[v as PaymentMethod] },
+  { key: 'status', label: '주문상태' },
+];
 
 export default function OrdersPage() {
   const [status, setStatus] = useState<OrderStatusFilter>('전체');
@@ -78,6 +102,14 @@ export default function OrdersPage() {
     배송완료: 0,
     취소: 0,
     환불: 0,
+  });
+
+  const { exportToExcel, isExporting, progress } = useExcelExport<OrderExportRow>({
+    endpoint: '/seller/orders/export',
+    columns: EXPORT_COLUMNS,
+    sheetName: '주문내역',
+    fileNamePrefix: '주문내역',
+    countBy: 'id',
   });
 
   const handleDatePresetChange = (preset: DateRangePreset) => {
@@ -187,15 +219,33 @@ export default function OrdersPage() {
     setIsAllSelectedMode(false);
   }, [page, status, search, startDate, endDate]);
 
+  const handleExcelDownload = () => {
+    if (!isAllSelectedMode && selectedIds.length === 0) {
+      toast.error('다운로드할 주문을 선택해주세요.');
+      return;
+    }
+
+    const params = isAllSelectedMode
+      ? {
+          status: status === '전체' ? undefined : status,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          keyword: search || undefined,
+        }
+      : { orderIds: selectedIds.join(',') };
+
+    exportToExcel(params);
+  };
+
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
     <div className="bg-background p-8">
       <div className="flex flex-row justify-between items-center mb-8">
         <h1 className="text-h2 font-bold text-dark-text">주문 관리</h1>
-        <Button>
+        <Button onClick={handleExcelDownload} disabled={isExporting}>
           <Download />
-          엑셀 다운로드
+          {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
         </Button>
       </div>
       <StatusCards
