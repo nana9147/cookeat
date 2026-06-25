@@ -13,7 +13,6 @@ const menuItems = [
   { label: '주문관리', href: '/admin/orders' },
   { label: '정산관리', href: '/admin/settlements' },
   { label: '레시피/포인트', href: '/admin/recipes' },
-  { label: '카테고리', href: '/admin/categories' },
   { label: '리뷰/신고', href: '/admin/reviews' },
   { label: '고객센터', href: '/admin/support' },
   { label: '통계/분석', href: '/admin/analytics' },
