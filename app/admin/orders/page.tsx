@@ -100,8 +100,8 @@ export default function OrdersPage() {
 
         const { data } = await api.get('/admin/orders', { params });
         if (!cancelled) {
-          setOrderList(data.orders as Order[]);
-          setTotal(data.pagination.total as number);
+          setOrderList((data.orders as Order[]) ?? []);
+          setTotal(data.pagination?.total ?? 0);
         }
       } catch (e) {
         if (!cancelled)

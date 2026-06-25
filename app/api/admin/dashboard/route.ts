@@ -75,13 +75,13 @@ export async function GET(req: NextRequest) {
     todayOrderIds.length > 0
       ? await supabaseAdmin
           .from('order_items')
-          .select('quantity, unit_price, products!inner(ingredients!inner(category))')
+          .select('quantity, unit_price, products!inner(categories!inner(ingredients!parent_id!inner(category)))')
           .in('order_id', todayOrderIds)
       : {
           data: [] as {
             quantity: number;
             unit_price: number;
-            products: { ingredients: { category: string } } | null;
+            products: { categories: { ingredients: { category: string }[] }[] }[];
           }[],
           error: null,
         };
@@ -100,14 +100,15 @@ export async function GET(req: NextRequest) {
     price: `${(p.sales_count * p.price).toLocaleString('ko-KR')}원`,
   }));
 
+  type DashCatRow = {
+    quantity: number;
+    unit_price: number;
+    products: { categories: { ingredients: { category: string }[] }[] }[];
+  };
   const categoryMap = new Map<string, number>();
   let totalRevenue = 0;
-  for (const item of categoryItems ?? []) {
-    const products = Array.isArray(item.products) ? item.products[0] : item.products;
-    const ingredients = Array.isArray(products?.ingredients)
-      ? products?.ingredients[0]
-      : products?.ingredients;
-    const category = ingredients?.category ?? '기타';
+  for (const item of (categoryItems as unknown as DashCatRow[]) ?? []) {
+    const category = item.products?.[0]?.categories?.[0]?.ingredients?.[0]?.category ?? '기타';
     const revenue = (item.quantity ?? 0) * (item.unit_price ?? 0);
     categoryMap.set(category, (categoryMap.get(category) ?? 0) + revenue);
     totalRevenue += revenue;

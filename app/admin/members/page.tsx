@@ -80,17 +80,17 @@ export default function MembersPage() {
         const params = new URLSearchParams();
         if (debouncedSearch) params.set('keyword', debouncedSearch);
         if (filterStatus !== 'all') params.set('status', filterStatus);
-        if (filterGrade !== 'all') {
-          params.set('limit', '1000');
-        } else {
-          params.set('page', String(page));
-          params.set('limit', String(PAGE_SIZE));
-        }
+        if (filterGrade !== 'all') params.set('grade', filterGrade);
+        params.set('page', String(page));
+        params.set('limit', String(PAGE_SIZE));
         const { data } = await api.get(`/admin/users?${params}`);
         if (!cancelled) {
-          setMembers(data.users);
-          setTotal(data.pagination.total);
+          setMembers(data.users ?? []);
+          setTotal(data.pagination?.total ?? 0);
         }
+      } catch (e) {
+        if (!cancelled)
+          alert(e instanceof Error ? e.message : '회원 목록을 불러오지 못했습니다.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -130,11 +130,8 @@ export default function MembersPage() {
     }
   }
 
-  const filtered = members.filter((m) => filterGrade === 'all' || m.grade === filterGrade);
-  const displayTotal = filterGrade !== 'all' ? filtered.length : total;
-  const totalPages = Math.ceil(displayTotal / PAGE_SIZE);
-  const displayMembers =
-    filterGrade !== 'all' ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : members;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const displayMembers = members;
 
   function getPageNumbers() {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -276,7 +273,9 @@ export default function MembersPage() {
       </div>
 
       <div className="text-sm text-muted-foreground">
-        {displayTotal}명 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, displayTotal)}명
+        {total > 0
+          ? `${total}명 중 ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)}명`
+          : '결과 없음'}
       </div>
       <Pagination
         currentPage={page}

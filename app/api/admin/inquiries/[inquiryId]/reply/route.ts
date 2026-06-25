@@ -21,12 +21,16 @@ export async function POST(
     return NextResponse.json({ error: '답변 내용을 입력해 주세요.' }, { status: 400 });
   }
 
-  const { data: existing } = await supabaseAdmin
+  const { data: existing, error: checkError } = await supabaseAdmin
     .from('inquiry_replies')
     .select('reply_id')
     .eq('inquiry_id', id)
     .maybeSingle();
 
+  if (checkError) {
+    console.error('[POST /api/admin/inquiries/:inquiryId/reply] duplicate check error:', checkError);
+    return NextResponse.json({ error: checkError.message }, { status: 500 });
+  }
   if (existing) {
     return NextResponse.json({ error: '이미 답변된 문의입니다.' }, { status: 409 });
   }
