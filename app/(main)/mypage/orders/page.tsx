@@ -1,4 +1,4 @@
-import OrderList from '@/components/(auth)/mypage/orders/OrderList';
+import OrderList from './_components/OrderList';
 
 export default function MyOrdersPage() {
   return <OrderList />;

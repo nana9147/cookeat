@@ -19,7 +19,9 @@ export async function POST(req: NextRequest) {
     .eq('auth_id', data.user.id)
     .maybeSingle();
 
-  const role = profile?.role ?? 'user'
+  // users 테이블에 해당 계정 행이 없으면(수동 생성 계정 등) 기존 app_metadata.role 사용
+  const existingRole = data.user.app_metadata?.role as string | undefined
+  const role = (profile?.role ?? existingRole ?? 'user') as 'user' | 'seller' | 'admin'
 
   // app_metadata에 role 저장 → 토큰 갱신 후부터는 JWT에서 직접 읽어 쿠키 위변조 방어
   await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
