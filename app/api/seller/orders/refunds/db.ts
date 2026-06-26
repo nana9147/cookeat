@@ -2,13 +2,20 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function getOrdersWithRefundRequests(
   sellerId: number,
-  options: { page: number; limit: number; status?: '환불요청' | '환불' }
+  options: {
+    page: number;
+    limit: number;
+    tab?: '전체' | '취소요청' | '환불요청' | '처리완료';
+    keyword?: string;
+    startDate?: string;
+    endDate?: string;
+  }
 ) {
-  const { page, limit, status } = options;
+  const { page, limit, tab, keyword, startDate, endDate } = options;
 
   const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
     .from('order_items')
-    .select('item_id')
+    .select('item_id, order_id')
     .eq('seller_id', sellerId);
 
   if (sellerItemsError) throw sellerItemsError;
@@ -25,9 +32,8 @@ export async function getOrdersWithRefundRequests(
     )
     .in('item_id', sellerItemIds);
 
-  if (status) {
-    refundQuery = refundQuery.eq('status', status);
-  }
+  if (startDate) refundQuery = refundQuery.gte('requested_at', `${startDate}T00:00:00`);
+  if (endDate) refundQuery = refundQuery.lte('requested_at', `${endDate}T23:59:59`);
 
   const { data: refunds, error: refundsError } = await refundQuery.order('requested_at', {
     ascending: false,
@@ -39,14 +45,68 @@ export async function getOrdersWithRefundRequests(
     return { orders: [], total: 0 };
   }
 
-  // 3. order_id 단위로 그룹핑
-  const orderIds = [
-    ...new Set(refunds.map((r) => (r.order_items as unknown as { order_id: string }).order_id)),
-  ];
+  const latestByItem = new Map<number, (typeof refunds)[number]>();
+  for (const r of refunds) {
+    if (!latestByItem.has(r.item_id)) {
+      latestByItem.set(r.item_id, r);
+    }
+  }
+  let claims = [...latestByItem.values()];
 
+  if (tab === '취소요청') {
+    claims = claims.filter((r) => r.status === '취소요청' && !r.reject_reason);
+  } else if (tab === '환불요청') {
+    claims = claims.filter((r) => r.status === '환불요청' && !r.reject_reason);
+  } else if (tab === '처리완료') {
+    claims = claims.filter((r) => r.status === '취소' || r.status === '환불' || r.reject_reason);
+  }
+
+  if (keyword) {
+    const allOrderIds = [
+      ...new Set(claims.map((r) => (r.order_items as unknown as { order_id: string }).order_id)),
+    ];
+
+    const { data: orderMeta, error: orderMetaError } = await supabaseAdmin
+      .from('orders')
+      .select('order_id, user_id, users(nickname)')
+      .in('order_id', allOrderIds);
+
+    if (orderMetaError) throw orderMetaError;
+
+    const customerByOrderId = new Map(
+      (orderMeta ?? []).map((o) => [
+        o.order_id,
+        (o.users as unknown as { nickname: string } | null)?.nickname ?? '',
+      ])
+    );
+
+    claims = claims.filter((r) => {
+      const orderItem = r.order_items as unknown as {
+        order_id: string;
+        products: { name: string } | null;
+      };
+      const product = orderItem.products?.name ?? '';
+      const customer = customerByOrderId.get(orderItem.order_id) ?? '';
+      const lowerKeyword = keyword.toLowerCase();
+      return (
+        orderItem.order_id.toLowerCase().includes(lowerKeyword) ||
+        product.toLowerCase().includes(lowerKeyword) ||
+        customer.toLowerCase().includes(lowerKeyword)
+      );
+    });
+  }
+
+  const total = claims.length;
   const from = (page - 1) * limit;
-  const to = from + limit;
-  const pagedOrderIds = orderIds.slice(from, to);
+  const pagedClaims = claims.slice(from, from + limit);
+
+  if (pagedClaims.length === 0) {
+    return { orders: [], total };
+  }
+
+  const pagedOrderIds = [
+    ...new Set(pagedClaims.map((r) => (r.order_items as unknown as { order_id: string }).order_id)),
+  ];
 
   const { data: orders, error: ordersError } = await supabaseAdmin
     .from('orders')
@@ -56,7 +116,7 @@ export async function getOrdersWithRefundRequests(
   if (ordersError) throw ordersError;
 
   const result = (orders ?? []).map((o) => {
-    const orderRefunds = refunds.filter(
+    const orderRefunds = pagedClaims.filter(
       (r) => (r.order_items as unknown as { order_id: string }).order_id === o.order_id
     );
     const user = o.users as unknown as { nickname: string } | null;
@@ -70,7 +130,6 @@ export async function getOrdersWithRefundRequests(
       phone: o.phone ?? '',
       refundItems: orderRefunds.map((r) => {
         const orderItem = r.order_items as unknown as {
-          product_id: number;
           quantity: number;
           unit_price: number;
           products: { name: string } | null;
@@ -91,7 +150,53 @@ export async function getOrdersWithRefundRequests(
     };
   });
 
-  return { orders: result, total: orderIds.length };
+  return { orders: result, total };
+}
+
+export async function getRefundCounts(sellerId: number) {
+  const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
+    .from('order_items')
+    .select('item_id')
+    .eq('seller_id', sellerId);
+
+  if (sellerItemsError) throw sellerItemsError;
+
+  const sellerItemIds = (sellerItemRows ?? []).map((r) => r.item_id);
+
+  const emptyCounts = { 전체: 0, 취소요청: 0, 환불요청: 0, 처리완료: 0 };
+
+  if (sellerItemIds.length === 0) {
+    return emptyCounts;
+  }
+
+  const { data: refunds, error: refundsError } = await supabaseAdmin
+    .from('refund_requests')
+    .select('item_id, status, reject_reason')
+    .in('item_id', sellerItemIds)
+    .order('requested_at', { ascending: false });
+
+  if (refundsError) throw refundsError;
+
+  const latestByItem = new Map<number, { status: string; rejectReason: string | null }>();
+  for (const r of refunds ?? []) {
+    if (!latestByItem.has(r.item_id)) {
+      latestByItem.set(r.item_id, { status: r.status, rejectReason: r.reject_reason });
+    }
+  }
+
+  const counts = { ...emptyCounts };
+  for (const { status, rejectReason } of latestByItem.values()) {
+    counts.전체 += 1;
+    if (rejectReason || status === '취소' || status === '환불') {
+      counts.처리완료 += 1;
+    } else if (status === '취소요청') {
+      counts.취소요청 += 1;
+    } else if (status === '환불요청') {
+      counts.환불요청 += 1;
+    }
+  }
+
+  return counts;
 }
 
 export async function approveRefund(sellerId: number, refundId: number) {
@@ -110,21 +215,22 @@ export async function approveRefund(sellerId: number, refundId: number) {
   if (orderItem.seller_id !== sellerId) {
     throw new Error('환불 요청을 찾을 수 없습니다.');
   }
-  if (refund.status !== '환불요청') {
-    throw new Error('환불요청 상태가 아닙니다.');
+  if (refund.status !== '환불요청' && refund.status !== '취소요청') {
+    throw new Error('처리 대기 중인 요청이 아닙니다.');
   }
+
+  const approvedStatus = refund.status === '취소요청' ? '취소' : '환불';
 
   const { error: updateError } = await supabaseAdmin
     .from('refund_requests')
-    .update({ status: '환불', processed_at: new Date().toISOString() })
+    .update({ status: approvedStatus, processed_at: new Date().toISOString() })
     .eq('refund_id', refundId);
 
   if (updateError) throw updateError;
 
-  // 이 주문의 모든 상품(order_items)이 다 환불 완료됐는지 체크
   await syncOrderStatusIfFullyRefunded(orderItem.order_id);
 
-  return { status: '환불' };
+  return { status: approvedStatus };
 }
 
 async function syncOrderStatusIfFullyRefunded(orderId: string) {
@@ -184,8 +290,8 @@ export async function rejectRefund(sellerId: number, refundId: number, reason: s
   if (orderItem.seller_id !== sellerId) {
     throw new Error('환불 요청을 찾을 수 없습니다.');
   }
-  if (refund.status !== '환불요청') {
-    throw new Error('환불요청 상태가 아닙니다.');
+  if (refund.status !== '환불요청' && refund.status !== '취소요청') {
+    throw new Error('처리 대기 중인 요청이 아닙니다.');
   }
 
   const { error: updateError } = await supabaseAdmin

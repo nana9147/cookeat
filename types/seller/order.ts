@@ -191,7 +191,7 @@ export interface RefundItem {
   productName: string;
   quantity: number;
   unitPrice: number;
-  itemStatus: '환불요청' | '환불';
+  itemStatus: '환불요청' | '환불' | '취소요청' | '취소';
   refundRequestReason: string | null;
   refundRejectReason: string | null;
   requestedAt: string;

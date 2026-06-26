@@ -32,13 +32,7 @@ export default function RefundTable({
 }: RefundTableProps) {
   const [viewingReasonItem, setViewingReasonItem] = useState<RefundItem | null>(null);
 
-  const rows = orders.flatMap((order) =>
-    order.refundItems.map((item, index) => ({
-      order,
-      item,
-      isFirstInOrder: index === 0,
-    }))
-  );
+  const rows = orders.flatMap((order) => order.refundItems.map((item) => ({ order, item })));
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -61,7 +55,7 @@ export default function RefundTable({
               <TableHead className="text-center">상품명</TableHead>
               <TableHead className="text-center whitespace-nowrap">수량</TableHead>
               <TableHead className="text-center whitespace-nowrap">금액</TableHead>
-              <TableHead className="text-center whitespace-nowrap">상태</TableHead>
+              <TableHead className="text-center whitespace-nowrap">배송상태</TableHead>
               <TableHead className="text-center whitespace-nowrap">신청일</TableHead>
               <TableHead className="text-center whitespace-nowrap">처리일</TableHead>
               <TableHead className="text-center whitespace-nowrap">사유</TableHead>
@@ -83,9 +77,12 @@ export default function RefundTable({
               </TableRow>
             ) : (
               <>
-                {rows.map(({ order, item, isFirstInOrder }) => {
+                {rows.map(({ order, item }) => {
                   const isRejected = Boolean(item.refundRejectReason);
-                  const isPending = item.itemStatus === '환불요청' && !isRejected;
+                  const isPending =
+                    (item.itemStatus === '환불요청' || item.itemStatus === '취소요청') &&
+                    !isRejected;
+                  const rejectedLabel = item.itemStatus === '취소요청' ? '취소반려' : '환불반려';
 
                   return (
                     <TableRow key={item.refundId} className={isPending ? 'bg-amber-50' : undefined}>
@@ -97,13 +94,13 @@ export default function RefundTable({
                         />
                       </TableCell>
                       <TableCell className="text-center text-sm font-mono text-gray-500 whitespace-nowrap">
-                        {isFirstInOrder ? order.id : '″'}
+                        {order.id}
                       </TableCell>
                       <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
-                        {isFirstInOrder ? formatDateTime(order.orderDate) : ''}
+                        {formatDateTime(order.orderDate)}
                       </TableCell>
                       <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
-                        {isFirstInOrder ? order.customer : ''}
+                        {order.customer}
                       </TableCell>
                       <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
                         <span
@@ -120,13 +117,7 @@ export default function RefundTable({
                         {(item.quantity * item.unitPrice).toLocaleString()}원
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap">
-                        {isRejected ? (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                            환불반려
-                          </span>
-                        ) : (
-                          <StatusBadge status={item.itemStatus} />
-                        )}
+                        <StatusBadge status={order.orderStatus} />
                       </TableCell>
                       <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
                         {formatDateTime(item.requestedAt)}
@@ -161,8 +152,10 @@ export default function RefundTable({
                               거부
                             </Button>
                           </div>
+                        ) : isRejected ? (
+                          <StatusBadge status={rejectedLabel} />
                         ) : (
-                          <span className="text-gray-400 text-sm">-</span>
+                          <StatusBadge status={item.itemStatus} />
                         )}
                       </TableCell>
                     </TableRow>
