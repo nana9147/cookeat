@@ -1,0 +1,209 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
+import type { RefundExportRow } from '@/types/seller/order';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import RefundTable from '../../components/OrderList/RefundTable';
+import type { OrderWithRefunds } from '@/types/seller/order';
+import api from '@/lib/api';
+import { toast } from 'sonner';
+import { Download } from 'lucide-react';
+
+const LIMIT = 10;
+
+const EXPORT_COLUMNS: ExportColumn<RefundExportRow>[] = [
+  { key: 'orderId', label: '주문번호' },
+  { key: 'customer', label: '주문자' },
+  { key: 'productName', label: '상품명' },
+  { key: 'quantity', label: '수량' },
+  { key: 'unitPrice', label: '단가' },
+  { key: 'refundAmount', label: '환불금액' },
+  { key: 'status', label: '처리결과' },
+  { key: 'requestReason', label: '신청사유' },
+  { key: 'rejectReason', label: '거부사유' },
+  { key: 'requestedAt', label: '신청일시', format: (v) => new Date(v as string).toLocaleString() },
+  {
+    key: 'processedAt',
+    label: '처리일시',
+    format: (v) => (v ? new Date(v as string).toLocaleString() : ''),
+  },
+];
+
+export default function CancelRefundPage() {
+  const [orders, setOrders] = useState<OrderWithRefunds[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const [rejectingRefundId, setRejectingRefundId] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isAllSelectedMode, setIsAllSelectedMode] = useState(false);
+
+  const { exportToExcel, isExporting, progress } = useExcelExport<RefundExportRow>({
+    endpoint: '/seller/orders/refunds/export',
+    columns: EXPORT_COLUMNS,
+    sheetName: '환불내역',
+    fileNamePrefix: '환불내역',
+    countBy: 'orderId',
+  });
+
+  const handleSelect = (refundId: number, checked: boolean) => {
+    setSelectedIds((prev) =>
+      checked ? [...prev, refundId] : prev.filter((id) => id !== refundId)
+    );
+    setIsAllSelectedMode(false);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setIsAllSelectedMode(true);
+      setSelectedIds(orders.flatMap((o) => o.refundItems.map((i) => i.refundId)));
+    } else {
+      setIsAllSelectedMode(false);
+      setSelectedIds([]);
+    }
+  };
+
+  const handleExcelDownload = () => {
+    if (!isAllSelectedMode && selectedIds.length === 0) {
+      toast.error('다운로드할 항목을 선택해주세요.');
+      return;
+    }
+
+    const params = isAllSelectedMode ? {} : { refundIds: selectedIds.join(',') };
+    exportToExcel(params);
+  };
+
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/seller/orders/refunds', {
+        params: { page, limit: LIMIT },
+      });
+      setOrders(res.data.data.orders);
+      setTotal(res.data.data.pagination.total);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [page]);
+
+  const handleApprove = async (refundId: number) => {
+    try {
+      await api.patch(`/seller/orders/refunds/${refundId}`, { action: 'approve' });
+      toast.success('환불을 승인했습니다.');
+      fetchOrders();
+    } catch (e) {
+      const message =
+        e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      toast.error(message ?? '승인에 실패했습니다.');
+    }
+  };
+
+  const handleRejectClick = (refundId: number) => {
+    setRejectingRefundId(refundId);
+    setRejectReason('');
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectingRefundId) return;
+    if (!rejectReason.trim()) {
+      toast.error('거부 사유를 입력해주세요.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await api.patch(`/seller/orders/refunds/${rejectingRefundId}`, {
+        action: 'reject',
+        reason: rejectReason,
+      });
+      toast.success('환불 요청을 거부했습니다.');
+      setRejectingRefundId(null);
+      fetchOrders();
+    } catch (e) {
+      const message =
+        e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      toast.error(message ?? '거부 처리에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const totalPages = Math.ceil(total / LIMIT);
+
+  return (
+    <div className="bg-background p-8">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-h2 font-bold text-dark-text">
+          주문 관리
+          <span className="text-light-gray font-normal mx-2">/</span>
+          <span className="text-h4 font-medium">취소·환불 관리</span>
+        </h1>
+        <Button onClick={handleExcelDownload} disabled={isExporting}>
+          <Download />
+          {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+        </Button>
+      </div>
+
+      <RefundTable
+        orders={orders}
+        onApprove={handleApprove}
+        onReject={handleRejectClick}
+        selectedIds={selectedIds}
+        isAllSelectedMode={isAllSelectedMode}
+        onSelect={handleSelect}
+        onSelectAll={handleSelectAll}
+        isLoading={isLoading}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
+
+      <Dialog
+        open={rejectingRefundId !== null}
+        onOpenChange={(open) => !open && setRejectingRefundId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>환불 요청 거부</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="거부 사유를 입력해주세요"
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectingRefundId(null)}>
+              취소
+            </Button>
+            <Button onClick={handleRejectSubmit} disabled={isSubmitting}>
+              거부 처리
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
