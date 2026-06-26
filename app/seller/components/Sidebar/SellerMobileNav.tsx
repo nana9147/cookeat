@@ -8,7 +8,14 @@ import { useState } from 'react';
 const menuItems = [
   { label: '대시보드', href: '/seller' },
   { label: '상품관리', href: '/seller/products' },
-  { label: '주문관리', href: '/seller/orders' },
+  {
+    label: '주문관리',
+    href: '/seller/orders',
+    subItems: [
+      { label: '주문 내역', href: '/seller/orders' },
+      { label: '취소·환불 관리', href: '/seller/orders/cancel-refund' },
+    ],
+  },
   {
     label: '배송관리',
     href: '/seller/shipping',
