@@ -79,6 +79,10 @@ export default function OrderDetailPage() {
     );
   }
 
+  const refundTotal = order.products
+    .filter((p) => p.itemStatus === '환불요청' || p.itemStatus === '환불')
+    .reduce((sum, p) => sum + p.itemTotalPrice, 0);
+
   return (
     <div className="bg-background p-8">
       <div className="flex items-center gap-2 mb-6">
@@ -88,8 +92,8 @@ export default function OrderDetailPage() {
       <OrderDetailHeader info={order.info} paymentMethod={order.payment.paymentMethod} />
       <div className="flex flex-col gap-6">
         <OrderCustomerSection customerName={order.delivery.name} delivery={order.delivery} />
-        <OrderProductSection products={order.products} />
-        <OrderPaymentSection payment={order.payment} />
+        <OrderProductSection products={order.products} refundTotal={refundTotal} />
+        <OrderPaymentSection payment={order.payment} refundTotal={refundTotal} />
       </div>
     </div>
   );
