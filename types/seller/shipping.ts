@@ -239,7 +239,7 @@ export const SHIPPING_STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[
 };
 
 export interface PaymentInfoTableProps extends DateRangeFilterProps {
-  orders: ShippingOrder[];
+  orders: ShippingRow[];
   search: string;
   onSearchChange: (value: string) => void;
   onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
@@ -251,7 +251,7 @@ export interface PaymentInfoTableProps extends DateRangeFilterProps {
 }
 
 export interface TrackingTableProps extends DateRangeFilterProps {
-  orders: ShippingOrder[];
+  orders: ShippingRow[];
   status: '배송준비' | '배송중' | '배송완료';
   search: string;
   onSearchChange: (value: string) => void;
@@ -262,8 +262,9 @@ export interface TrackingTableProps extends DateRangeFilterProps {
   totalPages: number;
   onPageChange: (page: number) => void;
 }
+
 export interface AllOrdersTableProps extends DateRangeFilterProps {
-  orders: ShippingOrder[];
+  orders: ShippingRow[];
   search: string;
   onSearchChange: (value: string) => void;
   onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
@@ -272,4 +273,24 @@ export interface AllOrdersTableProps extends DateRangeFilterProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+}
+
+export interface ShippingRow {
+  orderId: string;
+  orderDate: string;
+  customer: string;
+  recipient: string;
+  phone: string;
+  address: string;
+  addressDetail: string;
+  shippingRequest: string;
+  itemId: number;
+  productName: string;
+  quantity: number;
+  finalAmount: number;
+  status: ShippingStatus;
+  courier: CourierCode | '';
+  trackingNumber: string;
+  shippedAt: string | null;
+  deliveredAt: string | null;
 }

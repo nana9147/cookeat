@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getPageNumbers } from '@/lib/utils';
+import { formatDateTime, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import {
@@ -14,14 +14,14 @@ import {
 } from '@/components/ui/select';
 import {
   CourierCode,
-  ShippingOrder,
+  ShippingRow,
   ShippingInputState,
   AllOrdersTableProps,
 } from '@/types/seller/shipping';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
-import DateRangeFilter from '@/app/seller/components/DateRangeFilter';
+import DateRangeFilter from '../DateRangeFilter';
 import {
   Table,
   TableBody,
@@ -76,16 +76,16 @@ export default function AllOrdersTable({
     onUpdate(orderId, input.courier, input.trackingNumber);
   };
 
-  const renderTrackingCell = (order: ShippingOrder) => {
+  const renderTrackingCell = (orderId: string, order: ShippingRow) => {
     if (order.status === '배송준비') {
       return (
         <div className="flex items-center gap-1.5 justify-center">
           <Select
-            value={inputs[order.id]?.courier ?? ''}
+            value={inputs[orderId]?.courier ?? ''}
             onValueChange={(value) =>
               setInputs((prev) => ({
                 ...prev,
-                [order.id]: { ...prev[order.id], courier: value as CourierCode },
+                [orderId]: { ...prev[orderId], courier: value as CourierCode },
               }))
             }
           >
@@ -102,11 +102,11 @@ export default function AllOrdersTable({
           </Select>
           <Input
             type="number"
-            value={inputs[order.id]?.trackingNumber ?? ''}
+            value={inputs[orderId]?.trackingNumber ?? ''}
             onChange={(e) =>
               setInputs((prev) => ({
                 ...prev,
-                [order.id]: { ...prev[order.id], trackingNumber: e.target.value },
+                [orderId]: { ...prev[orderId], trackingNumber: e.target.value },
               }))
             }
             placeholder="운송장번호"
@@ -127,23 +127,23 @@ export default function AllOrdersTable({
     return <span className="text-sm text-gray-400">-</span>;
   };
 
-  const renderActionCell = (order: ShippingOrder) => {
+  const renderActionCell = (orderId: string, order: ShippingRow) => {
     switch (order.status) {
       case '결제완료':
         return (
-          <Button size="sm" onClick={() => onStatusChange(order.id, '배송준비')}>
+          <Button size="sm" onClick={() => onStatusChange(orderId, '배송준비')}>
             발주확인
           </Button>
         );
       case '배송준비':
         return (
-          <Button size="sm" onClick={() => handleConfirm(order.id)}>
+          <Button size="sm" onClick={() => handleConfirm(orderId)}>
             저장
           </Button>
         );
       case '배송중':
         return (
-          <Button size="sm" variant="outline" onClick={() => onStatusChange(order.id, '배송완료')}>
+          <Button size="sm" variant="outline" onClick={() => onStatusChange(orderId, '배송완료')}>
             배송완료 처리
           </Button>
         );
@@ -179,6 +179,7 @@ export default function AllOrdersTable({
               <TableHead className="text-center whitespace-nowrap">주문일시</TableHead>
               <TableHead className="text-center whitespace-nowrap">주문자</TableHead>
               <TableHead className="text-center">상품명</TableHead>
+              <TableHead className="text-center whitespace-nowrap">수량</TableHead>
               <TableHead className="text-center whitespace-nowrap">상태</TableHead>
               <TableHead className="text-center whitespace-nowrap">택배사 / 운송장번호</TableHead>
               <TableHead className="text-center whitespace-nowrap">관리</TableHead>
@@ -187,25 +188,25 @@ export default function AllOrdersTable({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
+                <TableCell colSpan={8} className="text-center py-16 text-gray-400 text-sm">
                   목록을 불러오는 중...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
+                <TableCell colSpan={8} className="text-center py-16 text-gray-400 text-sm">
                   조회된 주문건이 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
               <>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.itemId}>
                     <TableCell className="text-center text-sm font-mono text-gray-500 whitespace-nowrap">
-                      {order.id}
+                      {order.orderId}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
-                      {new Date(order.orderDate).toLocaleDateString()}
+                      {formatDateTime(order.orderDate)}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
                       {order.customer}
@@ -213,26 +214,26 @@ export default function AllOrdersTable({
                     <TableCell className="text-center text-sm text-gray-800">
                       <span
                         className="block max-w-[160px] truncate mx-auto"
-                        title={order.products[0]?.name}
+                        title={order.productName}
                       >
-                        {order.products[0]?.name}
-                        {order.products.length > 1 && (
-                          <span className="text-gray-500"> 외 {order.products.length - 1}건</span>
-                        )}
+                        {order.productName}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-600 whitespace-nowrap">
+                      {order.quantity}
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
                       <StatusBadge status={order.status} />
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      {renderTrackingCell(order)}
+                      {renderTrackingCell(order.orderId, order)}
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      {renderActionCell(order)}
+                      {renderActionCell(order.orderId, order)}
                     </TableCell>
                   </TableRow>
                 ))}
-                <EmptyRows count={10 - orders.length} colSpan={7} />
+                <EmptyRows count={10 - orders.length} colSpan={8} />
               </>
             )}
           </TableBody>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CourierCode, ShippingOrder, ShippingStatus } from '@/types/seller/shipping';
+import { CourierCode, ShippingRow, ShippingStatus } from '@/types/seller/shipping';
 import { DateRangePreset } from '@/types/seller/common';
 import PaymentInfoTable from '../components/Shipping/PaymentInfoTable';
 import TrackingTable from '../components/Shipping/TrackingTable';
@@ -39,7 +39,7 @@ const getDateRange = (preset: DateRangePreset): { startDate: string; endDate: st
 export default function ShippingPage() {
   const [status, setStatus] = useState<ShippingStatus | '전체'>('전체');
   const [search, setSearch] = useState('');
-  const [orders, setOrders] = useState<ShippingOrder[]>([]);
+  const [orders, setOrders] = useState<ShippingRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -130,7 +130,7 @@ export default function ShippingPage() {
   const handleStatusChange = async (orderId: string, newStatus: ShippingStatus) => {
     try {
       await api.patch(`/seller/shipping/orders/${orderId}/status`, { status: newStatus });
-      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
       fetchCounts();
       toast.success(`'${newStatus}'로 변경되었습니다.`);
     } catch (e) {
@@ -145,7 +145,9 @@ export default function ShippingPage() {
   const handleStatusChangeInAllView = async (orderId: string, newStatus: ShippingStatus) => {
     try {
       await api.patch(`/seller/shipping/orders/${orderId}/status`, { status: newStatus });
-      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+      setOrders((prev) =>
+        prev.map((o) => (o.orderId === orderId ? { ...o, status: newStatus } : o))
+      );
       fetchCounts();
       toast.success(`'${newStatus}'로 변경되었습니다.`);
     } catch (e) {
@@ -166,7 +168,7 @@ export default function ShippingPage() {
       await api.patch(`/seller/shipping/orders/${orderId}`, { courier, trackingNumber });
       setOrders((prev) =>
         prev.map((o) =>
-          o.id === orderId
+          o.orderId === orderId
             ? { ...o, courier, trackingNumber, status: '배송중' as ShippingStatus }
             : o
         )
@@ -182,8 +184,8 @@ export default function ShippingPage() {
     }
   };
 
-  const handleBulkSuccess = (processedIds: string[]) => {
-    setOrders((prev) => prev.filter((o) => !processedIds.includes(o.id)));
+  const handleBulkSuccess = (processedOrderIds: string[]) => {
+    setOrders((prev) => prev.filter((o) => !processedOrderIds.includes(o.orderId)));
     fetchCounts();
   };
 
@@ -194,7 +196,7 @@ export default function ShippingPage() {
   ) => {
     try {
       await api.patch(`/seller/shipping/orders/${orderId}`, { courier, trackingNumber });
-      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
       fetchCounts();
       toast.success('운송장 정보가 등록되었습니다.');
     } catch (e) {

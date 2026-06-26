@@ -22,62 +22,56 @@ export async function getSellerShippingOrders(
 ) {
   const { page, limit, keyword, status, startDate, endDate } = options;
 
-  const { data: orderItemRows, error: orderItemsError } = await supabaseAdmin
+  const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
     .from('order_items')
-    .select('order_id')
+    .select('item_id, order_id')
     .eq('seller_id', sellerId);
 
-  if (orderItemsError) throw orderItemsError;
+  if (sellerItemsError) throw sellerItemsError;
 
-  const orderIds = [...new Set((orderItemRows ?? []).map((r) => r.order_id))];
+  const sellerOrderIds = [...new Set((sellerItemRows ?? []).map((r) => r.order_id))];
 
-  if (orderIds.length === 0) {
+  if (sellerOrderIds.length === 0) {
     return { orders: [], total: 0 };
   }
 
-  let query = supabaseAdmin
+  let orderQuery = supabaseAdmin
     .from('orders')
     .select(
-      'order_id, created_at, status, recipient, phone, address, address_detail, shipping_request, final_amount, users(nickname)',
-      { count: 'exact' }
+      'order_id, created_at, status, recipient, phone, address, address_detail, shipping_request, final_amount, users(nickname)'
     )
-    .in('order_id', orderIds)
+    .in('order_id', sellerOrderIds)
     .in('status', ['결제완료', '배송준비', '배송중', '배송완료']);
 
-  if (status) {
-    query = query.eq('status', status);
+  if (status && status !== '전체') {
+    orderQuery = orderQuery.eq('status', status);
   }
 
   if (keyword) {
-    query = query.ilike('order_id', `%${keyword}%`);
+    orderQuery = orderQuery.or(
+      `order_id.ilike.%${keyword}%,recipient.ilike.%${keyword}%,phone.ilike.%${keyword}%`
+    );
   }
 
-  if (startDate) {
-    query = query.gte('created_at', `${startDate}T00:00:00`);
+  if (startDate) orderQuery = orderQuery.gte('created_at', `${startDate}T00:00:00`);
+  if (endDate) orderQuery = orderQuery.lte('created_at', `${endDate}T23:59:59`);
+
+  const { data: matchedOrders, error: matchedOrdersError } = await orderQuery.order('created_at', {
+    ascending: false,
+  });
+
+  if (matchedOrdersError) throw matchedOrdersError;
+
+  const matchedOrderIds = (matchedOrders ?? []).map((o) => o.order_id);
+  if (matchedOrderIds.length === 0) {
+    return { orders: [], total: 0 };
   }
-
-  if (endDate) {
-    query = query.lte('created_at', `${endDate}T23:59:59`);
-  }
-
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-
-  const {
-    data: orders,
-    count,
-    error: ordersError,
-  } = await query.order('created_at', { ascending: false }).range(from, to);
-
-  if (ordersError) throw ordersError;
-
-  const pagedOrderIds = (orders ?? []).map((o) => o.order_id);
 
   const { data: items, error: itemsError } = await supabaseAdmin
     .from('order_items')
-    .select('order_id, quantity, unit_price, products(name)')
+    .select('item_id, order_id, quantity, unit_price, products(name)')
     .eq('seller_id', sellerId)
-    .in('order_id', pagedOrderIds);
+    .in('order_id', matchedOrderIds);
 
   if (itemsError) throw itemsError;
 
@@ -85,44 +79,43 @@ export async function getSellerShippingOrders(
     .from('shippings')
     .select('order_id, carrier, tracking_number, shipped_at, delivered_at')
     .eq('seller_id', sellerId)
-    .in('order_id', pagedOrderIds);
+    .in('order_id', matchedOrderIds);
 
   if (shippingsError) throw shippingsError;
 
-  const result = (orders ?? []).map((o) => {
-    const products = (items ?? [])
-      .filter((i) => i.order_id === o.order_id)
-      .map((i) => {
-        const product = i.products as unknown as { name: string } | null;
-        return product
-          ? { name: product.name, quantity: i.quantity, unitPrice: i.unit_price }
-          : null;
-      })
-      .filter((p): p is { name: string; quantity: number; unitPrice: number } => Boolean(p));
-
-    const shipping = (shippings ?? []).find((s) => s.order_id === o.order_id);
-    const user = o.users as unknown as { nickname: string } | null;
+  let rows = (items ?? []).map((item) => {
+    const order = (matchedOrders ?? []).find((o) => o.order_id === item.order_id);
+    const shipping = (shippings ?? []).find((s) => s.order_id === item.order_id);
+    const user = order?.users as unknown as { nickname: string } | null;
+    const product = item.products as unknown as { name: string } | null;
 
     return {
-      id: o.order_id,
+      orderId: item.order_id,
+      orderDate: order?.created_at ?? '',
       customer: user?.nickname ?? '알 수 없음',
-      recipient: o.recipient ?? '',
-      phone: o.phone ?? '',
-      address: o.address ?? '',
-      addressDetail: o.address_detail ?? '',
-      products,
-      orderDate: o.created_at,
-      status: o.status,
+      recipient: order?.recipient ?? '',
+      phone: order?.phone ?? '',
+      address: order?.address ?? '',
+      addressDetail: order?.address_detail ?? '',
+      shippingRequest: order?.shipping_request ?? '',
+      itemId: item.item_id,
+      productName: product?.name ?? '알 수 없음',
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+      finalAmount: order?.final_amount ?? 0,
+      status: order?.status,
       courier: shipping?.carrier ?? '',
       trackingNumber: shipping?.tracking_number ?? '',
-      shippingRequest: o.shipping_request ?? '',
-      finalAmount: o.final_amount ?? 0,
       shippedAt: shipping?.shipped_at ?? null,
       deliveredAt: shipping?.delivered_at ?? null,
     };
   });
 
-  return { orders: result, total: count ?? 0 };
+  const total = rows.length;
+  const from = (page - 1) * limit;
+  const paged = rows.slice(from, from + limit);
+
+  return { orders: paged, total };
 }
 
 export async function getSellerShippingOrderCounts(
@@ -131,40 +124,41 @@ export async function getSellerShippingOrderCounts(
 ) {
   const { startDate, endDate } = options ?? {};
 
-  const { data: orderItemRows, error: orderItemsError } = await supabaseAdmin
+  const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
     .from('order_items')
-    .select('order_id')
+    .select('item_id, order_id')
     .eq('seller_id', sellerId);
 
-  if (orderItemsError) throw orderItemsError;
+  if (sellerItemsError) throw sellerItemsError;
 
-  const orderIds = [...new Set((orderItemRows ?? []).map((r) => r.order_id))];
+  const sellerOrderIds = [...new Set((sellerItemRows ?? []).map((r) => r.order_id))];
 
-  if (orderIds.length === 0) {
-    return { 결제완료: 0, 배송준비: 0, 배송중: 0, 배송완료: 0 };
+  const emptyCounts = { 결제완료: 0, 배송준비: 0, 배송중: 0, 배송완료: 0 };
+
+  if (sellerOrderIds.length === 0) {
+    return emptyCounts;
   }
 
-  let query = supabaseAdmin
+  let orderQuery = supabaseAdmin
     .from('orders')
-    .select('status')
-    .in('order_id', orderIds)
+    .select('order_id, status')
+    .in('order_id', sellerOrderIds)
     .in('status', ['결제완료', '배송준비', '배송중', '배송완료']);
 
-  if (startDate) {
-    query = query.gte('created_at', `${startDate}T00:00:00`);
-  }
+  if (startDate) orderQuery = orderQuery.gte('created_at', `${startDate}T00:00:00`);
+  if (endDate) orderQuery = orderQuery.lte('created_at', `${endDate}T23:59:59`);
 
-  if (endDate) {
-    query = query.lte('created_at', `${endDate}T23:59:59`);
-  }
+  const { data: orders, error: ordersError } = await orderQuery;
+  if (ordersError) throw ordersError;
 
-  const { data, error } = await query;
+  const orderStatusMap = new Map((orders ?? []).map((o) => [o.order_id, o.status]));
 
-  if (error) throw error;
-
-  const counts = { 결제완료: 0, 배송준비: 0, 배송중: 0, 배송완료: 0 };
-  for (const row of data ?? []) {
-    counts[row.status as keyof typeof counts] += 1;
+  const counts = { ...emptyCounts };
+  for (const item of sellerItemRows ?? []) {
+    const status = orderStatusMap.get(item.order_id) as keyof typeof counts | undefined;
+    if (status && status in counts) {
+      counts[status] += 1;
+    }
   }
 
   return counts;
