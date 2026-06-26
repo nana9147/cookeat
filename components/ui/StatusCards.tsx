@@ -35,7 +35,7 @@ export default function StatusCards<T extends string>({
           <CardContent className="py-2">
             <p className="text-sm text-gray-500 mb-2">{item.label}</p>
             <p className={`text-2xl font-bold ${colorMap[item.label] ?? 'text-gray-800'}`}>
-              {item.count}건
+              {item.count.toLocaleString()}건
             </p>
           </CardContent>
         </Card>

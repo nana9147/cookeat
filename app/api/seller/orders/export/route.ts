@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const offset = Number(searchParams.get('offset') ?? '0');
   const limit = Number(searchParams.get('limit') ?? '1000');
-  const orderIdsParam = searchParams.get('orderIds');
-  const orderIds = orderIdsParam ? orderIdsParam.split(',') : undefined;
+  const itemIdsParam = searchParams.get('itemIds');
+  const itemIds = itemIdsParam ? itemIdsParam.split(',') : undefined;
   const statusParam = searchParams.get('status') ?? undefined;
   const status = statusParam === '전체' ? undefined : statusParam;
   const startDate = searchParams.get('startDate') || undefined;
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const { orders, total } = await getSellerOrdersForExport(sellerCtx.sellerId, {
     offset,
     limit,
-    orderIds,
+    itemIds,
     status,
     startDate,
     endDate,

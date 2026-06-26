@@ -52,7 +52,18 @@ export default function OrderSearchFilter({
           필터
         </Button>
       </div>
-      {isFilterOpen && <FilterTabs options={statuses} value={status} onChange={onStatusChange} />}
+      {isFilterOpen && (
+        <FilterTabs
+          options={statuses}
+          value={status}
+          onChange={onStatusChange}
+          getLabel={(status) => {
+            if (status === '결제완료') return '신규주문';
+            if (status === '배송준비') return '배송준비중';
+            return status;
+          }}
+        />
+      )}
     </div>
   );
 }

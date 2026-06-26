@@ -4,11 +4,13 @@ interface FilterTabsProps<T extends string> {
   options: T[];
   value: T;
   onChange: (value: T) => void;
+  getLabel?: (value: T) => string;
 }
 export default function FilterTabs<T extends string>({
   options,
   value,
   onChange,
+  getLabel,
 }: FilterTabsProps<T>) {
   return (
     <div className="flex gap-1.5 flex-wrap">
@@ -22,10 +24,9 @@ export default function FilterTabs<T extends string>({
               : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
           }`}
         >
-          {option}
+          {getLabel ? getLabel(option) : option}
         </button>
       ))}
     </div>
   );
 }
-

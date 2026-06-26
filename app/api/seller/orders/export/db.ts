@@ -7,7 +7,7 @@ export async function getSellerOrdersForExport(
   options: {
     offset: number;
     limit: number;
-    orderIds?: string[];
+    itemIds?: string[];
     status?: string;
     startDate?: string;
     endDate?: string;
@@ -17,24 +17,17 @@ export async function getSellerOrdersForExport(
   const { offset, status, startDate, endDate, keyword } = options;
   const limit = Math.min(options.limit, MAX_EXPORT_BATCH_SIZE);
 
-  const { data: orderItemRows, error: orderItemsError } = await supabaseAdmin
+  const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
     .from('order_items')
-    .select('order_id')
+    .select('item_id, order_id')
     .eq('seller_id', sellerId);
 
-  if (orderItemsError) throw orderItemsError;
+  if (sellerItemsError) throw sellerItemsError;
 
-  const sellerOrderIds = [...new Set((orderItemRows ?? []).map((r) => r.order_id))];
+  const sellerItemIdSet = new Set((sellerItemRows ?? []).map((r) => r.item_id));
+  const sellerOrderIds = [...new Set((sellerItemRows ?? []).map((r) => r.order_id))];
 
   if (sellerOrderIds.length === 0) {
-    return { orders: [], total: 0 };
-  }
-
-  const targetOrderIds = options.orderIds
-    ? options.orderIds.filter((id) => sellerOrderIds.includes(id))
-    : sellerOrderIds;
-
-  if (targetOrderIds.length === 0) {
     return { orders: [], total: 0 };
   }
 
@@ -51,7 +44,7 @@ export async function getSellerOrdersForExport(
   let orderQuery = supabaseAdmin
     .from('orders')
     .select('order_id')
-    .in('order_id', targetOrderIds)
+    .in('order_id', sellerOrderIds)
     .in('status', ['결제완료', '배송준비', '배송중', '배송완료', '취소', '환불']);
 
   if (status && status !== '전체') {
@@ -84,36 +77,40 @@ export async function getSellerOrdersForExport(
     return { orders: [], total: 0 };
   }
 
-  const { count: totalItemCount, error: countError } = await supabaseAdmin
+  let itemQuery = supabaseAdmin
     .from('order_items')
-    .select('item_id', { count: 'exact', head: true })
+    .select('item_id, order_id, quantity, unit_price, products(name)', { count: 'exact' })
     .eq('seller_id', sellerId)
     .in('order_id', matchedOrderIds);
 
-  if (countError) throw countError;
+  if (options.itemIds) {
+    const targetItemIds = options.itemIds.map(Number).filter((id) => sellerItemIdSet.has(id));
+    if (targetItemIds.length === 0) {
+      return { orders: [], total: 0 };
+    }
+    itemQuery = itemQuery.in('item_id', targetItemIds);
+  }
 
-  const { data: pagedItems, error: pagedItemsError } = await supabaseAdmin
-    .from('order_items')
-    .select('order_id, quantity, unit_price, products(name)')
-    .eq('seller_id', sellerId)
-    .in('order_id', matchedOrderIds)
-    .order('order_id', { ascending: true })
-    .range(offset, offset + limit - 1);
+  const {
+    data: items,
+    count,
+    error: itemsError,
+  } = await itemQuery.order('order_id', { ascending: true }).range(offset, offset + limit - 1);
 
-  if (pagedItemsError) throw pagedItemsError;
+  if (itemsError) throw itemsError;
 
-  const batchOrderIds = [...new Set((pagedItems ?? []).map((i) => i.order_id))];
+  const batchOrderIds = [...new Set((items ?? []).map((i) => i.order_id))];
 
   const { data: orderDetails, error: orderDetailsError } = await supabaseAdmin
     .from('orders')
     .select(
-      'order_id, created_at, status, recipient, phone, address, address_detail,shipping_request, total_amount, shipping_fee, coupon_discount, used_point, final_amount, payment_method, users(nickname)'
+      'order_id, created_at, status, recipient, phone, address, address_detail, shipping_request, total_amount, shipping_fee, coupon_discount, used_point, final_amount, payment_method, users(nickname)'
     )
     .in('order_id', batchOrderIds);
 
   if (orderDetailsError) throw orderDetailsError;
 
-  const rows = (pagedItems ?? []).map((item) => {
+  const rows = (items ?? []).map((item) => {
     const order = (orderDetails ?? []).find((o) => o.order_id === item.order_id);
     const product = item.products as unknown as { name: string } | null;
     const user = order?.users as unknown as { nickname: string } | null;
@@ -140,5 +137,5 @@ export async function getSellerOrdersForExport(
     };
   });
 
-  return { orders: rows, total: totalItemCount ?? 0 };
+  return { orders: rows, total: count ?? 0 };
 }

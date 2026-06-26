@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import type {
@@ -8,12 +9,12 @@ import type {
   SortOrder,
   OrderStatus,
   OrderStatusFilter,
-  Order,
+  SellerOrderRow,
   OrderExportRow,
   StatusCardItem,
   PaymentMethod,
 } from '@/types/seller/order';
-import { PAYMENT_LABEL } from '@/types/seller/order';
+import { ORDER_STATUS_LABEL, PAYMENT_LABEL } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
 import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
 import OrderTable from '../components/OrderList/OrderTable';
@@ -33,8 +34,8 @@ const statuses: (OrderStatus | '전체')[] = [
 ];
 
 const ORDER_COLOR_MAP = {
-  결제완료: 'text-emerald-500',
-  배송준비: 'text-amber-500',
+  신규주문: 'text-emerald-500',
+  배송준비중: 'text-amber-500',
   배송중: 'text-blue-500',
   배송완료: 'text-taupe-500',
   '취소/환불': 'text-red-500',
@@ -58,6 +59,7 @@ const getDateRange = (preset: DateRangePreset): { startDate: string; endDate: st
 
   return { startDate: toDateStr(start), endDate: end };
 };
+
 const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
   { key: 'id', label: '주문번호' },
   { key: 'orderDate', label: '주문일시', format: (v) => new Date(v as string).toLocaleString() },
@@ -66,7 +68,7 @@ const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
   { key: 'phone', label: '연락처' },
   { key: 'address', label: '주소' },
   { key: 'addressDetail', label: '상세주소' },
-  { key: 'shippingRequest', label: '배송메시지' },
+  { key: 'shippingRequest', label: '배송메모' },
   { key: 'productName', label: '상품명' },
   { key: 'quantity', label: '수량' },
   { key: 'unitPrice', label: '단가' },
@@ -80,20 +82,35 @@ const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
 ];
 
 export default function OrdersPage() {
-  const [status, setStatus] = useState<OrderStatusFilter>('전체');
-  const [search, setSearch] = useState('');
-  const [orders, setOrders] = useState<Order[]>([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [status, setStatus] = useState<OrderStatusFilter>(
+    (searchParams.get('status') as OrderStatusFilter) || '전체'
+  );
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [orders, setOrders] = useState<SellerOrderRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [total, setTotal] = useState(0);
-  const [sortBy, setSortBy] = useState<OrderSortBy>('orderDate');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<OrderSortBy>(
+    (searchParams.get('sortBy') as OrderSortBy) || 'orderDate'
+  );
+  const [sortOrder, setSortOrder] = useState<SortOrder>(
+    (searchParams.get('sortOrder') as SortOrder) || 'desc'
+  );
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isAllSelectedMode, setIsAllSelectedMode] = useState(false);
 
-  const [datePreset, setDatePreset] = useState<DateRangePreset>('전체');
-  const [startDate, setStartDate] = useState(() => getDateRange('전체').startDate);
-  const [endDate, setEndDate] = useState(() => getDateRange('전체').endDate);
+  const [datePreset, setDatePreset] = useState<DateRangePreset>(
+    (searchParams.get('datePreset') as DateRangePreset) || '전체'
+  );
+  const [startDate, setStartDate] = useState(
+    searchParams.get('startDate') || getDateRange('전체').startDate
+  );
+  const [endDate, setEndDate] = useState(
+    searchParams.get('endDate') || getDateRange('전체').endDate
+  );
 
   const [counts, setCounts] = useState({
     결제완료: 0,
@@ -101,7 +118,9 @@ export default function OrdersPage() {
     배송중: 0,
     배송완료: 0,
     취소: 0,
+    취소요청: 0,
     환불: 0,
+    환불요청: 0,
   });
 
   const { exportToExcel, isExporting, progress } = useExcelExport<OrderExportRow>({
@@ -111,6 +130,20 @@ export default function OrdersPage() {
     fileNamePrefix: '주문내역',
     countBy: 'id',
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('status', status);
+    if (search) params.set('search', search);
+    params.set('sortBy', sortBy);
+    params.set('sortOrder', sortOrder);
+    params.set('datePreset', datePreset);
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+
+    router.replace(`/seller/orders?${params.toString()}`, { scroll: false });
+  }, [page, status, search, sortBy, sortOrder, datePreset, startDate, endDate]);
 
   const handleDatePresetChange = (preset: DateRangePreset) => {
     setDatePreset(preset);
@@ -178,13 +211,29 @@ export default function OrdersPage() {
   }, [page, status, search, startDate, endDate, sortBy, sortOrder]);
 
   const statusCardData: StatusCardItem[] = [
-    { label: '결제완료', count: counts.결제완료, filterValue: '결제완료' },
-    { label: '배송준비', count: counts.배송준비, filterValue: '배송준비' },
-    { label: '배송중', count: counts.배송중, filterValue: '배송중' },
-    { label: '배송완료', count: counts.배송완료, filterValue: '배송완료' },
+    {
+      label: ORDER_STATUS_LABEL.결제완료,
+      count: counts.결제완료,
+      filterValue: '결제완료',
+    },
+    {
+      label: ORDER_STATUS_LABEL.배송준비,
+      count: counts.배송준비,
+      filterValue: '배송준비',
+    },
+    {
+      label: ORDER_STATUS_LABEL.배송중,
+      count: counts.배송중,
+      filterValue: '배송중',
+    },
+    {
+      label: ORDER_STATUS_LABEL.배송완료,
+      count: counts.배송완료,
+      filterValue: '배송완료',
+    },
     {
       label: '취소/환불',
-      count: counts.취소 + counts.환불,
+      count: counts.취소 + counts.환불 + counts.환불요청,
       filterValue: '취소환불',
     },
   ];
@@ -199,15 +248,15 @@ export default function OrdersPage() {
     setPage(1);
   };
 
-  const handleSelect = (orderId: string, checked: boolean) => {
-    setSelectedIds((prev) => (checked ? [...prev, orderId] : prev.filter((id) => id !== orderId)));
+  const handleSelect = (itemId: number, checked: boolean) => {
+    setSelectedIds((prev) => (checked ? [...prev, itemId] : prev.filter((id) => id !== itemId)));
     setIsAllSelectedMode(false);
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setIsAllSelectedMode(true);
-      setSelectedIds(orders.map((o) => o.id));
+      setSelectedIds(orders.map((o) => o.itemId));
     } else {
       setIsAllSelectedMode(false);
       setSelectedIds([]);
@@ -232,7 +281,7 @@ export default function OrdersPage() {
           endDate: endDate || undefined,
           keyword: search || undefined,
         }
-      : { orderIds: selectedIds.join(',') };
+      : { itemIds: selectedIds.join(',') };
 
     exportToExcel(params);
   };

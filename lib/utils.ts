@@ -18,3 +18,26 @@ export function getPageNumbers(currentPage: number, totalPages: number) {
     return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
   return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
 }
+
+/** 일시표기 */
+export const formatDateTime = (dateStr: string) => {
+  const d = new Date(dateStr);
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+};
+
+export const formatDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+
+  return `${yyyy}-${mm}-${dd}`;
+};
