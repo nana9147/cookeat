@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getPageNumbers } from '@/lib/utils';
+import { formatDateTime, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import {
@@ -14,14 +14,14 @@ import {
 } from '@/components/ui/select';
 import {
   CourierCode,
-  ShippingOrder,
+  ShippingRow,
   ShippingInputState,
   TrackingTableProps,
 } from '@/types/seller/shipping';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
-import DateRangeFilter from '@/app/seller/components/DateRangeFilter';
+import DateRangeFilter from '../DateRangeFilter';
 import {
   Table,
   TableBody,
@@ -72,15 +72,17 @@ export default function TrackingTable({
   const isShipping = status === '배송중';
   const hasActionColumn = isEditable || isShipping;
 
+  const uniqueOrderIds = [...new Set(orders.map((o) => o.orderId))];
+
   useEffect(() => {
     if (!defaultCourier || !isEditable) return;
 
     setInputs((prev) => {
       const next = { ...prev };
-      orders.forEach((order) => {
-        const current = next[order.id];
+      uniqueOrderIds.forEach((orderId) => {
+        const current = next[orderId];
         if (!current?.courier || current.isAutoFilledCourier) {
-          next[order.id] = {
+          next[orderId] = {
             courier: defaultCourier,
             trackingNumber: current?.trackingNumber ?? '',
             isEditing: current?.isEditing ?? false,
@@ -90,7 +92,8 @@ export default function TrackingTable({
       });
       return next;
     });
-  }, [defaultCourier, orders, isEditable]);
+  }, [defaultCourier, isEditable]);
+
   const handleConfirm = (orderId: string) => {
     const input = inputs[orderId];
 
@@ -106,16 +109,16 @@ export default function TrackingTable({
     onUpdate(orderId, input.courier, input.trackingNumber);
   };
 
-  const renderCourierCell = (order: ShippingOrder) => {
+  const renderCourierCell = (orderId: string, order: ShippingRow) => {
     if (isEditable) {
       return (
         <Select
-          value={inputs[order.id]?.courier ?? ''}
+          value={inputs[orderId]?.courier ?? ''}
           onValueChange={(value) =>
             setInputs((prev) => ({
               ...prev,
-              [order.id]: {
-                ...prev[order.id],
+              [orderId]: {
+                ...prev[orderId],
                 courier: value as CourierCode,
                 isAutoFilledCourier: false,
               },
@@ -139,16 +142,16 @@ export default function TrackingTable({
     return <span className="text-sm text-gray-600 whitespace-nowrap">{order.courier}</span>;
   };
 
-  const renderTrackingCell = (order: ShippingOrder) => {
+  const renderTrackingCell = (orderId: string, order: ShippingRow) => {
     if (isEditable) {
       return (
         <Input
           type="number"
-          value={inputs[order.id]?.trackingNumber ?? ''}
+          value={inputs[orderId]?.trackingNumber ?? ''}
           onChange={(e) =>
             setInputs((prev) => ({
               ...prev,
-              [order.id]: { ...prev[order.id], trackingNumber: e.target.value },
+              [orderId]: { ...prev[orderId], trackingNumber: e.target.value },
             }))
           }
           placeholder="운송장번호 입력"
@@ -210,6 +213,7 @@ export default function TrackingTable({
               <TableHead className="text-center whitespace-nowrap">주문일시</TableHead>
               <TableHead className="text-center whitespace-nowrap">주문자</TableHead>
               <TableHead className="text-center">상품명</TableHead>
+              <TableHead className="text-center whitespace-nowrap">수량</TableHead>
               <TableHead className="text-center whitespace-nowrap">택배사</TableHead>
               <TableHead className="text-center whitespace-nowrap">운송장번호</TableHead>
               <TableHead className="text-center whitespace-nowrap">발송일</TableHead>
@@ -224,7 +228,7 @@ export default function TrackingTable({
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={hasActionColumn ? 10 : 9}
+                  colSpan={hasActionColumn ? 11 : 10}
                   className="text-center py-16 text-gray-400 text-sm"
                 >
                   목록을 불러오는 중...
@@ -233,7 +237,7 @@ export default function TrackingTable({
             ) : orders.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={hasActionColumn ? 10 : 9}
+                  colSpan={hasActionColumn ? 11 : 10}
                   className="text-center py-16 text-gray-400 text-sm"
                 >
                   {EMPTY_MESSAGE[status]}
@@ -242,12 +246,12 @@ export default function TrackingTable({
             ) : (
               <>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.itemId}>
                     <TableCell className="text-center text-sm font-mono text-gray-500 whitespace-nowrap">
-                      {order.id}
+                      {order.orderId}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
-                      {new Date(order.orderDate).toLocaleDateString()}
+                      {formatDateTime(order.orderDate)}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
                       {order.customer}
@@ -255,25 +259,25 @@ export default function TrackingTable({
                     <TableCell className="text-center text-sm text-gray-800">
                       <span
                         className="block max-w-[160px] truncate mx-auto"
-                        title={order.products[0]?.name}
+                        title={order.productName}
                       >
-                        {order.products[0]?.name}
-                        {order.products.length > 1 && (
-                          <span className="text-gray-500"> 외 {order.products.length - 1}건</span>
-                        )}
+                        {order.productName}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center whitespace-nowrap">
-                      {renderCourierCell(order)}
+                    <TableCell className="text-center text-sm text-gray-600 whitespace-nowrap">
+                      {order.quantity}
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      {renderTrackingCell(order)}
+                      {renderCourierCell(order.orderId, order)}
+                    </TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
+                      {renderTrackingCell(order.orderId, order)}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
-                      {order.shippedAt ? new Date(order.shippedAt).toLocaleDateString() : '-'}
+                      {order.shippedAt ? formatDateTime(order.shippedAt) : '-'}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
-                      {order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString() : '-'}
+                      {order.deliveredAt ? formatDateTime(order.deliveredAt) : '-'}
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
                       <StatusBadge status={order.status} />
@@ -281,7 +285,7 @@ export default function TrackingTable({
                     {hasActionColumn && (
                       <TableCell className="text-center whitespace-nowrap">
                         {isEditable && (
-                          <Button size="sm" onClick={() => handleConfirm(order.id)}>
+                          <Button size="sm" onClick={() => handleConfirm(order.orderId)}>
                             저장
                           </Button>
                         )}
@@ -289,7 +293,7 @@ export default function TrackingTable({
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => onStatusChange(order.id, '배송완료')}
+                            onClick={() => onStatusChange(order.orderId, '배송완료')}
                           >
                             배송완료 처리
                           </Button>
@@ -298,7 +302,7 @@ export default function TrackingTable({
                     )}
                   </TableRow>
                 ))}
-                <EmptyRows count={10 - orders.length} colSpan={hasActionColumn ? 10 : 9} />
+                <EmptyRows count={10 - orders.length} colSpan={hasActionColumn ? 11 : 10} />
               </>
             )}
           </TableBody>

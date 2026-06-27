@@ -2,11 +2,11 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getPageNumbers } from '@/lib/utils';
+import { formatDateTime, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import { PaymentInfoTableProps, ShippingStatus } from '@/types/seller/shipping';
-import DateRangeFilter from '@/app/seller/components/DateRangeFilter';
+import DateRangeFilter from '../DateRangeFilter';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -39,23 +39,27 @@ export default function PaymentInfoTable({
   const actionLabel = '발주확인';
   const nextStatus: ShippingStatus = '배송준비';
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
+  const uniqueOrderIds = [...new Set(orders.map((o) => o.orderId))];
+
   useEffect(() => {
-    setSelectedIds([]);
+    setSelectedOrderIds([]);
   }, [orders]);
 
   const handleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? orders.map((o) => o.id) : []);
+    setSelectedOrderIds(checked ? uniqueOrderIds : []);
   };
 
-  const handleSelect = (id: string, checked: boolean) => {
-    setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((i) => i !== id)));
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+    setSelectedOrderIds((prev) =>
+      checked ? [...prev, orderId] : prev.filter((id) => id !== orderId)
+    );
   };
 
   const handleBulkConfirm = async () => {
-    if (selectedIds.length === 0) {
+    if (selectedOrderIds.length === 0) {
       toast.error('선택된 주문이 없습니다.');
       return;
     }
@@ -63,7 +67,7 @@ export default function PaymentInfoTable({
     setIsBulkProcessing(true);
     try {
       const res = await api.patch('/seller/shipping/orders/bulk-status', {
-        orderIds: selectedIds,
+        orderIds: selectedOrderIds,
         status: nextStatus,
       });
       const { results, successCount, failCount } = res.data.data;
@@ -79,7 +83,7 @@ export default function PaymentInfoTable({
         .map((r: { orderId: string }) => r.orderId);
 
       onBulkSuccess(succeededIds);
-      setSelectedIds([]);
+      setSelectedOrderIds([]);
     } catch (e) {
       const message =
         e && typeof e === 'object' && 'response' in e
@@ -112,10 +116,10 @@ export default function PaymentInfoTable({
         </div>
         <Button
           size="sm"
-          disabled={selectedIds.length === 0 || isBulkProcessing}
+          disabled={selectedOrderIds.length === 0 || isBulkProcessing}
           onClick={handleBulkConfirm}
         >
-          일괄 발주확인 {selectedIds.length > 0 && `(${selectedIds.length})`}
+          일괄 발주확인 {selectedOrderIds.length > 0 && `(${selectedOrderIds.length})`}
         </Button>
       </div>
 
@@ -126,7 +130,9 @@ export default function PaymentInfoTable({
               <TableHead className="text-center w-10">
                 <input
                   type="checkbox"
-                  checked={selectedIds.length === orders.length && orders.length > 0}
+                  checked={
+                    selectedOrderIds.length === uniqueOrderIds.length && uniqueOrderIds.length > 0
+                  }
                   onChange={(e) => handleSelectAll(e.target.checked)}
                 />
               </TableHead>
@@ -137,40 +143,40 @@ export default function PaymentInfoTable({
               <TableHead className="text-center whitespace-nowrap">연락처</TableHead>
               <TableHead className="text-center">배송지</TableHead>
               <TableHead className="text-center">상품명</TableHead>
+              <TableHead className="text-center whitespace-nowrap">수량</TableHead>
               <TableHead className="text-center">배송메모</TableHead>
-              <TableHead className="text-center whitespace-nowrap">결제금액</TableHead>
               <TableHead className="text-center whitespace-nowrap">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-16 text-gray-400 text-sm">
+                <TableCell colSpan={10} className="text-center py-16 text-gray-400 text-sm">
                   목록을 불러오는 중...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-16 text-gray-400 text-sm">
+                <TableCell colSpan={10} className="text-center py-16 text-gray-400 text-sm">
                   결제완료된 주문건이 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
               <>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.itemId}>
                     <TableCell className="text-center">
                       <input
                         type="checkbox"
-                        checked={selectedIds.includes(order.id)}
-                        onChange={(e) => handleSelect(order.id, e.target.checked)}
+                        checked={selectedOrderIds.includes(order.orderId)}
+                        onChange={(e) => handleSelectOrder(order.orderId, e.target.checked)}
                       />
                     </TableCell>
                     <TableCell className="text-center text-sm font-mono text-gray-500 whitespace-nowrap">
-                      {order.id}
+                      {order.orderId}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
-                      {new Date(order.orderDate).toLocaleDateString()}
+                      {formatDateTime(order.orderDate)}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
                       {order.customer}
@@ -192,13 +198,13 @@ export default function PaymentInfoTable({
                     <TableCell className="text-center text-sm text-gray-800">
                       <span
                         className="block max-w-[160px] truncate mx-auto"
-                        title={order.products[0]?.name}
+                        title={order.productName}
                       >
-                        {order.products[0]?.name}
-                        {order.products.length > 1 && (
-                          <span className="text-gray-500"> 외 {order.products.length - 1}건</span>
-                        )}
+                        {order.productName}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-600 whitespace-nowrap">
+                      {order.quantity}
                     </TableCell>
                     <TableCell className="text-center text-sm text-gray-500">
                       <span
@@ -208,17 +214,14 @@ export default function PaymentInfoTable({
                         {order.shippingRequest || '-'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center text-sm text-gray-800 whitespace-nowrap">
-                      {order.finalAmount.toLocaleString()}원
-                    </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      <Button size="sm" onClick={() => onStatusChange(order.id, nextStatus)}>
+                      <Button size="sm" onClick={() => onStatusChange(order.orderId, nextStatus)}>
                         {actionLabel}
                       </Button>
                     </TableCell>
                   </TableRow>
                 ))}
-                <EmptyRows count={10 - orders.length} colSpan={11} />
+                <EmptyRows count={10 - orders.length} colSpan={10} />
               </>
             )}
           </TableBody>
