@@ -43,6 +43,7 @@ export default function PaymentInfoTable({
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
   const uniqueOrderIds = [...new Set(orders.map((o) => o.orderId))];
+  const selectedItemCount = orders.filter((o) => selectedOrderIds.includes(o.orderId)).length;
 
   useEffect(() => {
     setSelectedOrderIds([]);
@@ -64,13 +65,15 @@ export default function PaymentInfoTable({
       return;
     }
 
+    const itemIds = orders.filter((o) => selectedOrderIds.includes(o.orderId)).map((o) => o.itemId);
+
     setIsBulkProcessing(true);
     try {
       const res = await api.patch('/seller/shipping/orders/bulk-status', {
-        orderIds: selectedOrderIds,
+        itemIds,
         status: nextStatus,
       });
-      const { results, successCount, failCount } = res.data.data;
+      const { successCount, failCount } = res.data.data;
 
       if (failCount > 0) {
         toast.error(`${successCount}건 처리 완료, ${failCount}건 실패했습니다.`);
@@ -78,11 +81,7 @@ export default function PaymentInfoTable({
         toast.success(`${successCount}건이 일괄 발주확인되었습니다.`);
       }
 
-      const succeededIds = results
-        .filter((r: { orderId: string; success: boolean }) => r.success)
-        .map((r: { orderId: string }) => r.orderId);
-
-      onBulkSuccess(succeededIds);
+      onBulkSuccess(selectedOrderIds);
       setSelectedOrderIds([]);
     } catch (e) {
       const message =
@@ -119,7 +118,7 @@ export default function PaymentInfoTable({
           disabled={selectedOrderIds.length === 0 || isBulkProcessing}
           onClick={handleBulkConfirm}
         >
-          일괄 발주확인 {selectedOrderIds.length > 0 && `(${selectedOrderIds.length})`}
+          일괄 발주확인 {selectedItemCount > 0 && `(${selectedItemCount})`}
         </Button>
       </div>
 

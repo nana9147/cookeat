@@ -125,8 +125,19 @@ export default function OrderTable({
                     {order.itemTotalPrice.toLocaleString()}원
                   </TableCell>
                   <TableCell className="text-center">
-                    <StatusBadge status={order.status} />
+                    <div className="flex items-center justify-center gap-1.5">
+                      <StatusBadge status={order.status} />
+                      {order.hasActiveClaim && (
+                        <span
+                          className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"
+                          title="취소·환불 요청이 있습니다"
+                        >
+                          클레임
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
+
                   <TableCell className="text-center">
                     <Link href={`/seller/orders/${order.orderId}`}>
                       <Button size="sm">상세</Button>

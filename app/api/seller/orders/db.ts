@@ -43,6 +43,10 @@ export async function getSellerOrders(
     .select('order_id, created_at, status, recipient, phone, user_id, users(nickname)')
     .in('order_id', sellerOrderIds);
 
+  if (status && status !== '전체') {
+    orderQuery = orderQuery.eq('status', status);
+  }
+
   if (keyword) {
     const orConditions = [
       `order_id.ilike.%${keyword}%`,
@@ -94,9 +98,7 @@ export async function getSellerOrders(
     const user = order?.users as unknown as { nickname: string } | null;
     const product = item.products as unknown as { name: string } | null;
     const refund = latestRefundByItem.get(item.item_id);
-
-    const itemStatus =
-      refund && !refund.rejectReason ? refund.status : (order?.status ?? '결제완료');
+    const hasActiveClaim = Boolean(refund && !refund.rejectReason);
 
     return {
       orderId: item.order_id,
@@ -109,19 +111,10 @@ export async function getSellerOrders(
       quantity: item.quantity,
       unitPrice: item.unit_price,
       itemTotalPrice: item.quantity * item.unit_price,
-      status: itemStatus,
+      status: order?.status ?? '결제완료',
+      hasActiveClaim,
     };
   });
-
-  if (status && status !== '전체') {
-    if (status === '취소환불') {
-      rows = rows.filter(
-        (r) => r.status === '취소' || r.status === '환불' || r.status === '환불요청'
-      );
-    } else {
-      rows = rows.filter((r) => r.status === status);
-    }
-  }
 
   if (sortBy === 'orderDate') {
     const orderDateMap = new Map<string, string>();
@@ -177,14 +170,11 @@ export async function getSellerOrderCounts(
   const sellerOrderIds = [...new Set((sellerItemRows ?? []).map((r) => r.order_id))];
 
   const emptyCounts = {
+    전체: 0,
     결제완료: 0,
     배송준비: 0,
     배송중: 0,
     배송완료: 0,
-    취소: 0,
-    취소요청: 0,
-    환불: 0,
-    환불요청: 0,
   };
 
   if (sellerOrderIds.length === 0) {
@@ -202,41 +192,13 @@ export async function getSellerOrderCounts(
   const { data: orders, error: ordersError } = await orderQuery;
   if (ordersError) throw ordersError;
 
-  const orderStatusMap = new Map((orders ?? []).map((o) => [o.order_id, o.status]));
-  const inScopeOrderIds = new Set(orderStatusMap.keys());
-
-  const itemsInScope = (sellerItemRows ?? []).filter((i) => inScopeOrderIds.has(i.order_id));
-  const itemIds = itemsInScope.map((i) => i.item_id);
-
-  if (itemIds.length === 0) {
-    return emptyCounts;
-  }
-
-  const { data: refunds, error: refundsError } = await supabaseAdmin
-    .from('refund_requests')
-    .select('item_id, status, reject_reason')
-    .in('item_id', itemIds)
-    .order('requested_at', { ascending: false });
-
-  if (refundsError) throw refundsError;
-
-  const latestRefundByItem = new Map<number, { status: string; rejectReason: string | null }>();
-  for (const r of refunds ?? []) {
-    if (!latestRefundByItem.has(r.item_id)) {
-      latestRefundByItem.set(r.item_id, { status: r.status, rejectReason: r.reject_reason });
-    }
-  }
-
   const counts = { ...emptyCounts };
-  for (const item of itemsInScope) {
-    const refund = latestRefundByItem.get(item.item_id);
-    const orderStatus = orderStatusMap.get(item.order_id) as keyof typeof counts;
+  counts.전체 = (orders ?? []).length;
 
-    const finalStatus =
-      refund && !refund.rejectReason ? (refund.status as keyof typeof counts) : orderStatus;
-
-    if (finalStatus in counts) {
-      counts[finalStatus] += 1;
+  for (const order of orders ?? []) {
+    const status = order.status as keyof typeof counts;
+    if (status in counts) {
+      counts[status] += 1;
     }
   }
 
