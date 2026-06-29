@@ -273,7 +273,6 @@ export async function getSellerSettlements(
   sellerId: number,
   options: { page: number; limit: number; status?: string; keyword?: string }
 ) {
-  await ensureSettlements(sellerId);
 
   const { page, limit, status, keyword } = options;
 
@@ -412,7 +411,6 @@ export async function getSellerSettlements(
 }
 
 export async function getSellerSettlementSummary(sellerId: number) {
-  await ensureSettlements(sellerId);
 
   const { data: settlements, error } = await supabaseAdmin
     .from('settlements')

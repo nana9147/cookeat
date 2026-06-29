@@ -224,10 +224,12 @@ export default function TrackingTable({
         itemIds: selectedItemIds,
         status: '배송완료',
       });
-      const { successCount, failCount, results } = res.data.data;
+      const { successCount, failCount, failures, results } = res.data.data;
 
       if (failCount > 0) {
-        toast.error(`${successCount}건 처리 완료, ${failCount}건 실패했습니다.`);
+        toast.error(
+          `${successCount}건 처리 완료, ${failCount}건 실패: ${failures.map((f: { itemId: number; error?: string }) => `항목 ${f.itemId}(${f.error})`).join(', ')}`
+        );
       } else {
         toast.success(`${successCount}건이 일괄 배송완료 처리되었습니다.`);
       }

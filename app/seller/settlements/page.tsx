@@ -156,7 +156,10 @@ export default function SettlementsPage() {
   };
 
   useEffect(() => {
-    fetchSummary();
+    api
+      .post('/seller/settlements/ensure')
+      .catch(() => {})
+      .finally(fetchSummary);
   }, []);
 
   useEffect(() => {
