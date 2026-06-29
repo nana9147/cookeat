@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Pagination from '@/components/ui/Pagination';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -16,41 +16,26 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import api from '@/lib/api';
+import { useDebounce } from '@/hooks/useDebounce';
+import { getPageNumbers } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
+import type { AdminRecipe, AdminPointStats } from '@/types/admin';
 
 const PAGE_SIZE = 20;
 
-interface Recipe {
-  recipeId: number;
-  title: string;
-  author: string;
-  authorEmail: string;
-  category: string;
-  difficulty: '쉬움' | '보통' | '어려움';
-  cookingTime: number;
-  likeCount: number;
-  scrapCount: number;
-  createdAt: string;
-}
-
-interface PointStats {
-  totalEarned: number;
-  totalUsed: number;
-  netOutstanding: number;
-  totalRecipes: number;
-  referralOrderCount: number;
-  totalReferralPoints: number;
-}
-
 export default function RecipesPage() {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<AdminRecipe[]>([]);
   const [total, setTotal] = useState(0);
-  const [pointStats, setPointStats] = useState<PointStats | null>(null);
+  const [pointStats, setPointStats] = useState<AdminPointStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const search = useDebounce(searchInput, 300);
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,14 +69,6 @@ export default function RecipesPage() {
       .catch(() => {});
   }, []);
 
-  function handleSearchChange(value: string) {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setSearch(value);
-      setPage(1);
-    }, 300);
-  }
-
   async function handleDelete(recipeId: number) {
     if (!confirm('레시피를 삭제하시겠습니까? ')) return;
     try {
@@ -106,16 +83,7 @@ export default function RecipesPage() {
   }
 
   const selected = recipes.find((r) => r.recipeId === selectedId) ?? null;
-
   const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  function getPageNumbers(): (number | string)[] {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (page >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', page - 1, page, page + 1, '...', totalPages];
-  }
 
   return (
     <div className="p-6 space-y-6">
@@ -183,7 +151,8 @@ export default function RecipesPage() {
         <Input
           className="pl-4 bg-white"
           placeholder="레시피 제목 검색"
-          onChange={(e) => handleSearchChange(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
       </div>
 
@@ -262,7 +231,7 @@ export default function RecipesPage() {
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        getPageNumbers={getPageNumbers}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
       />
 
       <Dialog open={!!selected} onOpenChange={() => setSelectedId(null)}>
@@ -291,7 +260,7 @@ export default function RecipesPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">작성일</p>
-                    <p>{new Date(selected.createdAt).toLocaleDateString('ko-KR')}</p>
+                    <p>{formatDate(selected.createdAt)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">카테고리</p>

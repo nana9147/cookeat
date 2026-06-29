@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
+import { getPageNumbers } from '@/lib/utils';
+import type { AdminReview, AdminReport, AdminReviewStats } from '@/types/admin';
 
 const PAGE_SIZE = 20;
 
@@ -28,33 +30,9 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-interface Report {
-  reporter: string;
-  date: string;
-  reason: string;
-}
-
-interface Review {
-  id: number;
-  productName: string;
-  author: string;
-  email: string;
-  rating: number;
-  date: string;
-  reportCount: number;
-  state: '정상' | '신고';
-  content: string;
-  reports: Report[];
-}
-
-interface Stats {
-  total: number;
-  pendingReports: number;
-}
-
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, pendingReports: 0 });
+  const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [stats, setStats] = useState<AdminReviewStats>({ total: 0, pendingReports: 0 });
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -63,14 +41,6 @@ export default function ReviewsPage() {
   const selected = reviews.find((r) => r.id === selectedId) ?? null;
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  function getPageNumbers() {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (page >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', page - 1, page, page + 1, '...', totalPages];
-  }
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +53,7 @@ export default function ReviewsPage() {
         if (cancelled) return;
 
         setStats(data.stats ?? { total: 0, pendingReports: 0, resolved: 0 });
-        const mapped: Review[] = (data.reviews ?? []).map(
+        const mapped: AdminReview[] = (data.reviews ?? []).map(
           (r: {
             reviewId: number;
             targetName: string;
@@ -94,7 +64,7 @@ export default function ReviewsPage() {
             createdAt: string;
             state: '정상' | '신고';
             reportCount: number;
-            reports: Report[];
+            reports: AdminReport[];
           }) => ({
             id: r.reviewId,
             productName: r.targetName,
@@ -262,7 +232,7 @@ export default function ReviewsPage() {
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        getPageNumbers={getPageNumbers}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
       />
 
       <Dialog open={!!selected} onOpenChange={() => setSelectedId(null)}>

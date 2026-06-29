@@ -7,39 +7,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
 import api from '@/lib/api';
+import { formatWon } from '@/lib/format';
+import type { AdminSettlement, AdminSettlementStats, AdminSettlementRawStatus } from '@/types/admin';
 
-type Status = '대기' | '완료';
-
-interface Settlement {
-  settlementId: number;
-  sellerId: number;
-  storeName: string;
-  bankName: string;
-  bankAccount: string;
-  commissionRate: number;
-  amount: number;
-  fee: number;
-  status: Status;
-  periodStart: string;
-  periodEnd: string;
-  settledAt: string | null;
-  createdAt: string;
-}
-
-interface SettlementStats {
-  pendingCount: number;
-  pendingAmount: number;
-  completedCount: number;
-  completedAmount: number;
-  totalFee: number;
-}
-
-type SettlementStatus = '정산대기' | '정산완료';
+type SettlementDisplayStatus = '정산대기' | '정산완료';
 
 function formatKoreanAmount(won: number): string {
   if (won >= 100_000_000) return `${(won / 100_000_000).toFixed(1)}억원`;
   if (won >= 10_000) return `${Math.round(won / 10_000)}만원`;
-  return `${won.toLocaleString()}원`;
+  return formatWon(won);
 }
 
 function formatPeriod(start: string, end: string): string {
@@ -48,16 +24,16 @@ function formatPeriod(start: string, end: string): string {
   return `${s} ~ ${em}.${ed}`;
 }
 
-function toDisplayStatus(status: Status): SettlementStatus {
+function toDisplayStatus(status: AdminSettlementRawStatus): SettlementDisplayStatus {
   return status === '대기' ? '정산대기' : '정산완료';
 }
 
 export default function SettlementsPage() {
-  const [activeTab, setActiveTab] = useState<SettlementStatus>('정산대기');
+  const [activeTab, setActiveTab] = useState<SettlementDisplayStatus>('정산대기');
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const [settlements, setSettlements] = useState<Settlement[]>([]);
-  const [stats, setStats] = useState<SettlementStats>({
+  const [settlements, setSettlements] = useState<AdminSettlement[]>([]);
+  const [stats, setStats] = useState<AdminSettlementStats>({
     pendingCount: 0,
     pendingAmount: 0,
     completedCount: 0,
@@ -304,21 +280,17 @@ export default function SettlementsPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">총 매출액</span>
-                    <span>
-                      {(selectedSettlement.amount + selectedSettlement.fee).toLocaleString()}원
-                    </span>
+                    <span>{formatWon(selectedSettlement.amount + selectedSettlement.fee)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
                       수수료 ({selectedSettlement.commissionRate}%)
                     </span>
-                    <span className="text-red">-{selectedSettlement.fee.toLocaleString()}원</span>
+                    <span className="text-red">-{formatWon(selectedSettlement.fee)}</span>
                   </div>
                   <div className="flex justify-between border-t pt-2 font-semibold">
                     <span>최종 정산액</span>
-                    <span className="text-primary">
-                      {selectedSettlement.amount.toLocaleString()}원
-                    </span>
+                    <span className="text-primary">{formatWon(selectedSettlement.amount)}</span>
                   </div>
                 </div>
               </div>
@@ -328,7 +300,7 @@ export default function SettlementsPage() {
                   className="w-full"
                   onClick={() => handleSettle(selectedSettlement.settlementId)}
                 >
-                  정산 처리하기 → {selectedSettlement.amount.toLocaleString()}원 이체
+                  정산 처리하기 → {formatWon(selectedSettlement.amount)} 이체
                 </Button>
               )}
             </div>

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -23,66 +23,29 @@ import {
 } from '@/components/ui/select';
 import api from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
+import { getPageNumbers } from '@/lib/utils';
+import { formatWon, formatDate } from '@/lib/format';
+import type { AdminOrder, AdminOrderStatus } from '@/types/admin';
 
 const PAGE_SIZE = 20;
-const STATUSES = ['결제완료', '주문확인', '배송준비', '배송중', '배송완료', '취소'] as const;
-type Status = (typeof STATUSES)[number];
-
-interface OrderItem {
-  itemId: number;
-  orderId: string;
-  productId: number;
-  productName: string;
-  sellerId: number;
-  quantity: number;
-  unitPrice: number;
-}
-
-interface Order {
-  orderId: string;
-  userId: number;
-  totalAmount: number;
-  shippingFee: number;
-  usedPoint: number;
-  couponId: number | null;
-  couponDiscount: number;
-  finalAmount: number;
-  paymentMethod: string;
-  status: Status;
-  recipient: string;
-  phone: string;
-  address: string;
-  addressDetail: string;
-  shippingRequest: string | null;
-  createdAt: string;
-  updatedAt: string;
-  orderItems: OrderItem[];
-}
+const STATUSES: AdminOrderStatus[] = ['결제완료', '주문확인', '배송준비', '배송중', '배송완료', '취소'];
 
 export default function OrdersPage() {
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [orderList, setOrderList] = useState<Order[]>([]);
+  const debouncedSearch = useDebounce(search, 400);
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [orderList, setOrderList] = useState<AdminOrder[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [filterStatus, setFilterStatus] = useState<AdminOrderStatus | 'all'>('all');
 
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 400);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [search]);
+    setPage(1);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,7 +63,7 @@ export default function OrdersPage() {
 
         const { data } = await api.get('/admin/orders', { params });
         if (!cancelled) {
-          setOrderList((data.orders as Order[]) ?? []);
+          setOrderList((data.orders as AdminOrder[]) ?? []);
           setTotal(data.pagination?.total ?? 0);
         }
       } catch (e) {
@@ -119,15 +82,7 @@ export default function OrdersPage() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  function getPageNumbers(): (number | string)[] {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (page >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', page - 1, page, page + 1, '...', totalPages];
-  }
-
-  function handleFilterStatusChange(value: Status | 'all') {
+  function handleFilterStatusChange(value: AdminOrderStatus | 'all') {
     setFilterStatus(value);
     setPage(1);
   }
@@ -156,7 +111,7 @@ export default function OrdersPage() {
             <span className="text-xs text-muted-foreground">상태</span>
             <Select
               value={filterStatus}
-              onValueChange={(v) => handleFilterStatusChange(v as Status | 'all')}
+              onValueChange={(v) => handleFilterStatusChange(v as AdminOrderStatus | 'all')}
             >
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
@@ -220,10 +175,10 @@ export default function OrdersPage() {
                   <TableCell className="font-medium">{o.orderId}</TableCell>
                   <TableCell className="text-muted-foreground">{o.recipient}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {new Date(o.createdAt).toLocaleDateString('ko-KR')}
+                    {formatDate(o.createdAt)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{o.orderItems.length}개</TableCell>
-                  <TableCell className="hidden md:table-cell">{o.finalAmount.toLocaleString()}원</TableCell>
+                  <TableCell className="hidden md:table-cell">{formatWon(o.finalAmount)}</TableCell>
                   <TableCell>
                     <StatusBadge status={o.status} />
                   </TableCell>
@@ -254,7 +209,7 @@ export default function OrdersPage() {
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        getPageNumbers={getPageNumbers}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
       />
 
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
@@ -299,7 +254,7 @@ export default function OrdersPage() {
                       <span>
                         {item.productName} x{item.quantity}
                       </span>
-                      <span>{(item.unitPrice * item.quantity).toLocaleString()}원</span>
+                      <span>{formatWon(item.unitPrice * item.quantity)}</span>
                     </div>
                   ))}
                 </div>
@@ -310,27 +265,23 @@ export default function OrdersPage() {
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">상품 합계</span>
-                    <span>{selectedOrder.totalAmount.toLocaleString()}원</span>
+                    <span>{formatWon(selectedOrder.totalAmount)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">배송비</span>
-                    <span>{selectedOrder.shippingFee.toLocaleString()}원</span>
+                    <span>{formatWon(selectedOrder.shippingFee)}</span>
                   </div>
-                  {
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">쿠폰 할인</span>
-                      <span>-{selectedOrder.couponDiscount.toLocaleString()}원</span>
-                    </div>
-                  }
-                  {
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">포인트 사용</span>
-                      <span>-{selectedOrder.usedPoint.toLocaleString()}원</span>
-                    </div>
-                  }
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">쿠폰 할인</span>
+                    <span>-{formatWon(selectedOrder.couponDiscount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">포인트 사용</span>
+                    <span>-{formatWon(selectedOrder.usedPoint)}</span>
+                  </div>
                   <div className="flex justify-between border-t pt-1 font-semibold">
                     <span>최종 결제금액</span>
-                    <span>{selectedOrder.finalAmount.toLocaleString()}원</span>
+                    <span>{formatWon(selectedOrder.finalAmount)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">결제수단</span>

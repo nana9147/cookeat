@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -30,6 +30,10 @@ import {
 } from '@/components/ui/select';
 import api from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
+import { getPageNumbers } from '@/lib/utils';
+import { formatWon } from '@/lib/format';
+import type { AdminProduct, AdminProductStatus } from '@/types/admin';
 
 const PAGE_SIZE = 20;
 const PARENT_CATEGORIES = [
@@ -40,47 +44,25 @@ const PARENT_CATEGORIES = [
   { id: 5, label: '가공식품' },
   { id: 6, label: '유제품' },
 ] as const;
-const STATUSES = ['판매중', '품절', '숨김'] as const;
-type Status = (typeof STATUSES)[number];
-
-interface Product {
-  productId: number;
-  name: string;
-  sellerName: string;
-  categoryId: number | null;
-  categoryName: string | null;
-  parentId: number | null;
-  price: number;
-  stock: number;
-  status: Status;
-}
+const STATUSES: AdminProductStatus[] = ['판매중', '품절', '숨김'];
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [productList, setProductList] = useState<Product[]>([]);
+  const debouncedSearch = useDebounce(search, 400);
+  const [productList, setProductList] = useState<AdminProduct[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(null);
+  const [editProduct, setEditProduct] = useState<AdminProduct | null>(null);
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterParentId, setFilterParentId] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [filterStatus, setFilterStatus] = useState<AdminProductStatus | 'all'>('all');
 
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 400);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [search]);
+    setPage(1);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +80,7 @@ export default function ProductsPage() {
 
         const { data } = await api.get('/admin/products', { params });
         if (!cancelled) {
-          setProductList(data.products as Product[]);
+          setProductList(data.products as AdminProduct[]);
           setTotal(data.pagination.total as number);
         }
       } finally {
@@ -114,15 +96,7 @@ export default function ProductsPage() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  function getPageNumbers(): (number | string)[] {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (page >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', page - 1, page, page + 1, '...', totalPages];
-  }
-
-  function handleFilterStatusChange(value: Status | 'all') {
+  function handleFilterStatusChange(value: AdminProductStatus | 'all') {
     setFilterStatus(value);
     setPage(1);
   }
@@ -165,7 +139,7 @@ export default function ProductsPage() {
             <span className="text-xs text-muted-foreground">상태</span>
             <Select
               value={filterStatus}
-              onValueChange={(v) => handleFilterStatusChange(v as Status | 'all')}
+              onValueChange={(v) => handleFilterStatusChange(v as AdminProductStatus | 'all')}
             >
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
@@ -244,7 +218,7 @@ export default function ProductsPage() {
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{p.sellerName}</TableCell>
                   <TableCell className="hidden lg:table-cell text-muted-foreground">{p.categoryName ?? '-'}</TableCell>
-                  <TableCell className="hidden md:table-cell">{p.price.toLocaleString()}원</TableCell>
+                  <TableCell className="hidden md:table-cell">{formatWon(p.price)}</TableCell>
                   <TableCell className="hidden lg:table-cell">{p.stock}개</TableCell>
                   <TableCell>
                     <StatusBadge status={p.status} />
@@ -283,7 +257,7 @@ export default function ProductsPage() {
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        getPageNumbers={getPageNumbers}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
       />
 
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
@@ -307,7 +281,7 @@ export default function ProductsPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">판매가</span>
-                <span>{selectedProduct.price.toLocaleString()}원</span>
+                <span>{formatWon(selectedProduct.price)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">재고</span>
@@ -333,7 +307,9 @@ export default function ProductsPage() {
                 <label className="text-sm font-medium">판매 상태</label>
                 <Select
                   value={editProduct.status}
-                  onValueChange={(v) => setEditProduct({ ...editProduct, status: v as Status })}
+                  onValueChange={(v) =>
+                    setEditProduct({ ...editProduct, status: v as AdminProductStatus })
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -357,7 +333,6 @@ export default function ProductsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
