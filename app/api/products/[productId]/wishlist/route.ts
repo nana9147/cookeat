@@ -30,9 +30,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     .from('product_wishlists').select('wishlist_id').eq('product_id', id).eq('user_id', authed.userId).maybeSingle();
 
   if (existing) {
-    await supabaseAdmin.from('product_wishlists').delete().eq('wishlist_id', existing.wishlist_id);
+    const { error: deleteError } = await supabaseAdmin
+      .from('product_wishlists').delete().eq('wishlist_id', existing.wishlist_id);
+    if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
   } else {
-    await supabaseAdmin.from('product_wishlists').insert({ product_id: id, user_id: authed.userId });
+    const { error: insertError } = await supabaseAdmin
+      .from('product_wishlists').insert({ product_id: id, user_id: authed.userId });
+    if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
   return NextResponse.json({ isActive: !existing });

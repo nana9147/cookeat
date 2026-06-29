@@ -29,19 +29,21 @@ export default function LikesList() {
   const [recipePagination, setRecipePagination] = useState<Pagination | null>(null);
   const [recipePage, setRecipePage] = useState(1);
   const [recipeLoading, setRecipeLoading] = useState(true);
+  const [recipeError, setRecipeError] = useState<string | null>(null);
 
   const [products, setProducts] = useState<WishlistProduct[]>([]);
   const [productPagination, setProductPagination] = useState<Pagination | null>(null);
   const [productPage, setProductPage] = useState(1);
   const [productLoading, setProductLoading] = useState(true);
+  const [productError, setProductError] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab !== '레시피') return;
     let cancelled = false;
     setRecipeLoading(true);
     api.get<{ recipes: BookmarkedRecipe[]; pagination: Pagination }>(`/users/me/bookmarks?page=${recipePage}`)
-      .then(({ data }) => { if (!cancelled) { setRecipes(data.recipes); setRecipePagination(data.pagination); } })
-      .catch(() => { if (!cancelled) setRecipes([]); })
+      .then(({ data }) => { if (!cancelled) { setRecipeError(null); setRecipes(data.recipes); setRecipePagination(data.pagination); } })
+      .catch(() => { if (!cancelled) setRecipeError('북마크 목록을 불러오지 못했습니다.'); })
       .finally(() => { if (!cancelled) setRecipeLoading(false); });
     return () => { cancelled = true; };
   }, [recipePage, activeTab]);
@@ -51,8 +53,8 @@ export default function LikesList() {
     let cancelled = false;
     setProductLoading(true);
     api.get<{ products: WishlistProduct[]; pagination: Pagination }>(`/users/me/wishlists?page=${productPage}`)
-      .then(({ data }) => { if (!cancelled) { setProducts(data.products); setProductPagination(data.pagination); } })
-      .catch(() => { if (!cancelled) setProducts([]); })
+      .then(({ data }) => { if (!cancelled) { setProductError(null); setProducts(data.products); setProductPagination(data.pagination); } })
+      .catch((e) => { if (!cancelled) { console.error('[wishlists]', e); setProductError('찜 목록을 불러오지 못했습니다.'); } })
       .finally(() => { if (!cancelled) setProductLoading(false); });
     return () => { cancelled = true; };
   }, [productPage, activeTab]);
@@ -74,6 +76,10 @@ export default function LikesList() {
       {activeTab === '레시피' ? (
         recipeLoading ? (
           <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-3 tablet:gap-4">{[1,2,3,4,5,6].map((i) => <div key={i} className="rounded-xl h-52 bg-beige animate-pulse" />)}</div>
+        ) : recipeError ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <p className="text-sm text-red">{recipeError}</p>
+          </div>
         ) : recipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <UtensilsCrossed className="w-12 h-12 text-muted" />
@@ -101,6 +107,10 @@ export default function LikesList() {
       ) : (
         productLoading ? (
           <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-3 tablet:gap-4">{[1,2,3,4,5,6].map((i) => <div key={i} className="rounded-xl h-52 bg-beige animate-pulse" />)}</div>
+        ) : productError ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <p className="text-sm text-red">{productError}</p>
+          </div>
         ) : products.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <ShoppingBag className="w-12 h-12 text-muted" />

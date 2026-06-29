@@ -10,11 +10,12 @@ export default function PointHistory() {
   const [balance, setBalance] = useState(0);
   const [history, setHistory] = useState<PointEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<{ balance: number; history: PointEntry[] }>('/users/me/points')
       .then(({ data }) => { setBalance(data.balance); setHistory(data.history); })
-      .catch(() => {})
+      .catch(() => setError('포인트 내역을 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -32,6 +33,10 @@ export default function PointHistory() {
         <p className="text-sm font-medium text-dark-text">포인트 내역</p>
         {loading ? (
           <div className="flex flex-col gap-2">{[1,2,3].map((i) => <div key={i} className="h-14 rounded-xl bg-beige animate-pulse" />)}</div>
+        ) : error ? (
+          <div className="flex items-center justify-center py-12">
+            <p className="text-sm text-red">{error}</p>
+          </div>
         ) : history.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-gray-text">포인트 내역이 없습니다.</p>
