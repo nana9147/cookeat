@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Filter, Plus, Search } from 'lucide-react';
+import { Filter, Plus } from 'lucide-react';
 import ProductTable from '@/app/seller/components/ProductTable';
 import FilterTabs from '@/app/seller/components/FilterTabs';
 import Pagination from '@/components/ui/Pagination';
@@ -19,7 +19,6 @@ const LIMIT = 10;
 export default function ProductsPage() {
   const [status, setStatus] = useState<ProductStatus | '전체'>('전체');
   const [search, setSearch] = useState('');
-  const [keyword, setKeyword] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
@@ -47,7 +46,7 @@ export default function ProductsPage() {
       setIsLoading(true);
       try {
         const params: Record<string, string | number> = { page, limit: LIMIT };
-        if (keyword) params.keyword = keyword;
+        if (search) params.keyword = search;
         if (status !== '전체') params.status = status;
         if (selectedCategoryId) params.categoryId = selectedCategoryId;
         else if (selectedParentId) params.parentId = selectedParentId;
@@ -64,14 +63,9 @@ export default function ProductsPage() {
       }
     }
     load();
-  }, [page, keyword, status, selectedParentId, selectedCategoryId]);
+  }, [page, search, status, selectedParentId, selectedCategoryId]);
 
   const totalPages = Math.ceil(total / LIMIT);
-
-  const handleSearchSubmit = (value: string) => {
-    setKeyword(value);
-    setPage(1);
-  };
 
   const handleSelectParent = (parentId: number | null) => {
     setSelectedParentId(parentId);
@@ -103,17 +97,11 @@ export default function ProductsPage() {
             placeholder="상품명으로 검색"
             className="py-5 bg-card"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(search)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
-          <Button
-            onClick={() => handleSearchSubmit(search)}
-            variant="outline"
-            className="flex items-center gap-1.5 px-4 shrink-0 py-5 bg-card"
-          >
-            <Search />
-            검색
-          </Button>
           <Button
             onClick={() => setIsFilterOpen((prev) => !prev)}
             variant="outline"
