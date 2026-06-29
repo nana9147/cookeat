@@ -30,7 +30,7 @@ function toShoppingProduct(item: ProductListItem): ShoppingProduct {
   };
 }
 
-export function useShoppingFilter() {
+export function useShoppingFilter(keyword = '') {
   const [category, setCategory] = useState<IngredientCategory>('전체');
   const [sortOption, setSortOption] = useState<SortOption>('추천순');
   const [currentPage, setCurrentPage] = useState(1);
@@ -92,6 +92,7 @@ export function useShoppingFilter() {
           limit: String(PAGE_SIZE),
           sort: sortOption,
         });
+        if (keyword) params.set('keyword', keyword);
         if (category !== '전체') params.set('category', category);
         if (minPrice) params.set('minPrice', minPrice);
         if (maxPrice) params.set('maxPrice', maxPrice);
@@ -119,7 +120,7 @@ export function useShoppingFilter() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [currentPage, category, sortOption, minPrice, maxPrice, selectedSellers]);
+  }, [currentPage, category, sortOption, minPrice, maxPrice, selectedSellers, keyword]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 

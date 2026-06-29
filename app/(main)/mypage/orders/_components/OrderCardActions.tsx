@@ -1,15 +1,16 @@
-import Link from 'next/link';
 import type { Order } from './types';
 
-export default function OrderCardActions({ order }: { order: Order }) {
+type Props = { order: Order; onDetailClick: () => void };
+
+export default function OrderCardActions({ order, onDetailClick }: Props) {
   return (
     <div className="flex gap-2">
-      <Link
-        href={`/mypage/orders/${order.orderId}`}
+      <button
+        onClick={onDetailClick}
         className="flex-1 h-9 flex items-center justify-center rounded-xl border border-border text-sm text-gray-text font-medium hover:bg-hover transition-colors"
       >
         주문 상세
-      </Link>
+      </button>
       {order.status === '배송완료' && (
         <button
           disabled

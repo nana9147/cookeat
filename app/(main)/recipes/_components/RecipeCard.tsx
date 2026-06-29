@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
 import { Heart, Clock, Users, UtensilsCrossed } from 'lucide-react';
 import { RecipeListItem } from '../types';
+import { useBookmark } from '@/hooks/user/useBookmark';
 
 export default function RecipeCard({ recipe }: { recipe: RecipeListItem }) {
-  const [liked, setLiked] = useState(false);
+  const { isActive: liked, toggle, loading } = useBookmark(recipe.recipeId);
 
   return (
     <div className="rounded-xl overflow-hidden border border-border bg-white flex flex-col">
@@ -21,11 +21,9 @@ export default function RecipeCard({ recipe }: { recipe: RecipeListItem }) {
             </div>
           )}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              setLiked((p) => !p);
-            }}
-            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+            onClick={(e) => { e.preventDefault(); toggle(); }}
+            disabled={loading}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm hover:bg-white transition-colors disabled:opacity-50"
             aria-label="북마크"
           >
             <Heart

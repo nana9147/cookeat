@@ -5,7 +5,6 @@ import {
   PointIcon,
   UserIcon,
   LikeIcon,
-  AlarmIcon,
   QuestionIcon,
   LogoutIcon,
   SecessionIcon,
@@ -32,14 +31,13 @@ export const sections = [
     title: '계정',
     items: [
       { icon: <UserIcon />, label: '개인정보 수정', href: '/mypage/profile' },
-      { icon: <AlarmIcon />, label: '알림 설정', href: '/mypage/alarm' },
       { icon: <QuestionIcon />, label: '고객센터', href: '/mypage/support' },
+      { icon: <SellerIcon />, label: '판매자 신청', href: '/mypage/sellerapply' },
     ],
   },
   {
     title: '',
     items: [
-      { icon: <SellerIcon />, label: '판매자 신청', href: '/mypage/sellerapply' },
       { icon: <LogoutIcon />, label: '로그아웃', href: '/mypage/logout' },
       { icon: <SecessionIcon />, label: '회원탈퇴', href: '/mypage/withdraw' },
     ],

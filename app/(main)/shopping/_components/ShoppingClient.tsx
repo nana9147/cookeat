@@ -7,14 +7,14 @@ import ShoppingSort from './ShoppingSort';
 import FilterSheet from './FilterSheet';
 import ShoppingProductArea from './ShoppingProductArea';
 
-export default function ShoppingClient() {
+export default function ShoppingClient({ keyword = '' }: { keyword?: string }) {
   const {
     category, setCategory, sortOption, setSortOption,
     currentPage, setCurrentPage, minPrice, setMinPrice, maxPrice, setMaxPrice,
     selectedSellers, isFilterOpen, setIsFilterOpen,
     resetPage, handleSellerToggle, handleReset,
     activeFilterCount, products, sellers, total, isLoading, error, totalPages,
-  } = useShoppingFilter();
+  } = useShoppingFilter(keyword);
 
   const sharedFilterProps = {
     selectedCategory: category,

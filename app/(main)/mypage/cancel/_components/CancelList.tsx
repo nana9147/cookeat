@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import OrderCard from '../../orders/_components/OrderCard';
+import OrderDetailModal from '../../orders/_components/OrderDetailModal';
 import OrderPagination from '../../orders/_components/OrderPagination';
 import type { Order, Pagination } from '../../orders/_components/types';
 
@@ -15,10 +16,10 @@ export default function CancelList() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<CancelTab>('취소');
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     api
       .get<{ orders: Order[]; pagination: Pagination }>(
         `/orders?page=${page}&status=${encodeURIComponent(activeTab)}`
@@ -66,7 +67,13 @@ export default function CancelList() {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {orders.map((order) => <OrderCard key={order.orderId} order={order} />)}
+          {orders.map((order) => (
+            <OrderCard
+              key={order.orderId}
+              order={order}
+              onDetailClick={() => setSelectedOrderId(order.orderId)}
+            />
+          ))}
         </div>
       )}
       {pagination && pagination.total > pagination.limit && (
@@ -75,8 +82,11 @@ export default function CancelList() {
           total={pagination.total}
           limit={pagination.limit}
           hasNext={pagination.hasNext}
-          onPageChange={(p) => { setLoading(true); setPage(p); }}
+          onPageChange={setPage}
         />
+      )}
+      {selectedOrderId && (
+        <OrderDetailModal orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} />
       )}
     </div>
   );

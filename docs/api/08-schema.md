@@ -311,6 +311,17 @@ faqs (자주 묻는 질문, 셀러/사용자 도메인과 직접 연결 없음)
 
 > UNIQUE KEY `uq_bookmark` (`recipe_id`, `user_id`)
 
+### product_wishlists
+
+| 컬럼           | 타입          | 제약                    | 설명       |
+| -------------- | ------------- | ----------------------- | ---------- |
+| `wishlist_id`  | `INT`         | PK, AI                  | 찜 ID      |
+| `user_id`      | `INT`         | FK → users, NOT NULL    | 사용자 ID  |
+| `product_id`   | `INT`         | FK → products, NOT NULL | 상품 ID    |
+| `created_at`   | `TIMESTAMPTZ` | DEFAULT now()           | 찜 일시    |
+
+> UNIQUE KEY `uq_product_wishlist` (`user_id`, `product_id`)
+
 ### point_history
 
 | 컬럼          | 타입               | 제약                 | 설명             |

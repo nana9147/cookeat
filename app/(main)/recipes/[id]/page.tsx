@@ -8,6 +8,7 @@ import RecipeAuthor from './_components/RecipeAuthor';
 import RecipeIngredients from './_components/RecipeIngredients';
 import RecipeSteps from './_components/RecipeSteps';
 import ReviewSection from '@/components/common/ReviewSection';
+import RecipeBookmarkButton from './_components/RecipeBookmarkButton';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -34,6 +35,9 @@ export default async function RecipeDetailPage({ params }: Props) {
       </nav>
 
       <RecipeHero title={recipe.title} description={recipe.description} imageUrl={recipe.thumbnail ?? undefined} />
+      <div className="flex justify-end mb-4">
+        <RecipeBookmarkButton recipeId={idNum} />
+      </div>
       <RecipeMetaRow
         cookingTime={recipe.cookingTime}
         servings={recipe.servings}
