@@ -15,6 +15,7 @@ export default function CancelList() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<CancelTab>('취소');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
@@ -26,10 +27,11 @@ export default function CancelList() {
       )
       .then(({ data }) => {
         if (cancelled) return;
+        setError(null);
         setOrders(data.orders);
         setPagination(data.pagination);
       })
-      .catch(() => { if (!cancelled) setOrders([]); })
+      .catch(() => { if (!cancelled) setError('주문 내역을 불러오지 못했습니다.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [page, activeTab]);
@@ -60,6 +62,10 @@ export default function CancelList() {
           {[1, 2].map((i) => (
             <div key={i} className="border border-border rounded-2xl h-48 bg-beige animate-pulse" />
           ))}
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <p className="text-sm text-red">{error}</p>
         </div>
       ) : orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
