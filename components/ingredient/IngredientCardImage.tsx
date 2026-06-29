@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import { Heart } from 'lucide-react';
 import { ShoppingProduct } from '@/types/ingredient';
+import { useWishlist } from '@/hooks/user/useWishlist';
 
 interface IngredientCardImageProps {
   product: ShoppingProduct;
 }
 
 export default function IngredientCardImage({ product }: IngredientCardImageProps) {
-  const [liked, setLiked] = useState(false);
+  const { isActive: liked, toggle, loading } = useWishlist(Number(product.id));
 
   return (
     <div className="relative aspect-square bg-card-bg">
@@ -42,8 +42,9 @@ export default function IngredientCardImage({ product }: IngredientCardImageProp
       )}
 
       <button
-        onClick={() => setLiked((prev) => !prev)}
-        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+        onClick={(e) => { e.preventDefault(); toggle(); }}
+        disabled={loading}
+        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm hover:bg-white transition-colors disabled:opacity-50"
         aria-label="위시리스트"
       >
         <Heart className={`w-4 h-4 transition-colors ${liked ? 'fill-red text-red' : 'text-gray-text'}`} />

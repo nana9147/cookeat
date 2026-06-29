@@ -6,6 +6,7 @@ import { ProductInfoSection } from './ProductInfoSection';
 import { PurchaseControls } from './PurchaseControls';
 import { PurchaseActionButtons } from './PurchaseActionButtons';
 import { useAddToCart } from '@/hooks/useAddToCart';
+import { useWishlist } from '@/hooks/user/useWishlist';
 
 export type { ProductOption };
 export type { ProductPurchasePanelProps };
@@ -25,7 +26,7 @@ export default function ProductPurchasePanel({
   stock,
   onAddToCart,
 }: ProductPurchasePanelProps) {
-  const [liked, setLiked] = useState(false);
+  const { isActive: liked, toggle: toggleLike } = useWishlist(productId);
   const [selectedOption, setSelectedOption] = useState<ProductOption | null>(
     options.length === 0 ? { label: name, price } : options.length === 1 ? options[0] : null
   );
@@ -63,7 +64,7 @@ export default function ProductPurchasePanel({
       />
       <PurchaseActionButtons
         liked={liked}
-        onToggleLike={() => setLiked((p) => !p)}
+        onToggleLike={toggleLike}
         disabled={!selectedOption}
         onAddToCart={handleAddToCart}
       />

@@ -17,25 +17,47 @@ type BookmarkedRecipe = {
   cookingTime: number; servings: number; author: { nickname: string };
 };
 
+type WishlistProduct = {
+  wishlistId: number; productId: number; name: string; image: string;
+  price: number; discountedPrice: number; seller: string;
+};
+
 export default function LikesList() {
   const [activeTab, setActiveTab] = useState<LikeTab>('레시피');
+
   const [recipes, setRecipes] = useState<BookmarkedRecipe[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [recipePagination, setRecipePagination] = useState<Pagination | null>(null);
+  const [recipePage, setRecipePage] = useState(1);
+  const [recipeLoading, setRecipeLoading] = useState(true);
+
+  const [products, setProducts] = useState<WishlistProduct[]>([]);
+  const [productPagination, setProductPagination] = useState<Pagination | null>(null);
+  const [productPage, setProductPage] = useState(1);
+  const [productLoading, setProductLoading] = useState(true);
 
   useEffect(() => {
     if (activeTab !== '레시피') return;
     let cancelled = false;
-    setLoading(true);
-    api.get<{ recipes: BookmarkedRecipe[]; pagination: Pagination }>(`/users/me/bookmarks?page=${page}`)
-      .then(({ data }) => { if (!cancelled) { setRecipes(data.recipes); setPagination(data.pagination); } })
+    setRecipeLoading(true);
+    api.get<{ recipes: BookmarkedRecipe[]; pagination: Pagination }>(`/users/me/bookmarks?page=${recipePage}`)
+      .then(({ data }) => { if (!cancelled) { setRecipes(data.recipes); setRecipePagination(data.pagination); } })
       .catch(() => { if (!cancelled) setRecipes([]); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => { if (!cancelled) setRecipeLoading(false); });
     return () => { cancelled = true; };
-  }, [page, activeTab]);
+  }, [recipePage, activeTab]);
 
-  const handleTabChange = (tab: LikeTab) => { setActiveTab(tab); setPage(1); };
+  useEffect(() => {
+    if (activeTab !== '재료쇼핑') return;
+    let cancelled = false;
+    setProductLoading(true);
+    api.get<{ products: WishlistProduct[]; pagination: Pagination }>(`/users/me/wishlists?page=${productPage}`)
+      .then(({ data }) => { if (!cancelled) { setProducts(data.products); setProductPagination(data.pagination); } })
+      .catch(() => { if (!cancelled) setProducts([]); })
+      .finally(() => { if (!cancelled) setProductLoading(false); });
+    return () => { cancelled = true; };
+  }, [productPage, activeTab]);
+
+  const handleTabChange = (tab: LikeTab) => { setActiveTab(tab); };
 
   return (
     <div className="flex flex-col gap-5">
@@ -50,15 +72,15 @@ export default function LikesList() {
       </div>
 
       {activeTab === '레시피' ? (
-        loading ? (
-          <div className="grid grid-cols-2 gap-3">{[1,2,3,4].map((i) => <div key={i} className="rounded-xl h-52 bg-beige animate-pulse" />)}</div>
+        recipeLoading ? (
+          <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-3 tablet:gap-4">{[1,2,3,4,5,6].map((i) => <div key={i} className="rounded-xl h-52 bg-beige animate-pulse" />)}</div>
         ) : recipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <UtensilsCrossed className="w-12 h-12 text-muted" />
             <p className="text-sm text-gray-text">북마크한 레시피가 없습니다.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-3 tablet:gap-4">
             {recipes.map((r) => (
               <Link key={r.recipeId} href={`/recipes/${r.recipeId}`} className="rounded-xl overflow-hidden border border-border bg-white flex flex-col">
                 <div className="relative aspect-4/3 bg-card-bg">
@@ -77,14 +99,42 @@ export default function LikesList() {
           </div>
         )
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <ShoppingBag className="w-12 h-12 text-muted" />
-          <p className="text-sm text-gray-text">재료쇼핑 찜 기능은 준비 중입니다.</p>
-        </div>
+        productLoading ? (
+          <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-3 tablet:gap-4">{[1,2,3,4,5,6].map((i) => <div key={i} className="rounded-xl h-52 bg-beige animate-pulse" />)}</div>
+        ) : products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <ShoppingBag className="w-12 h-12 text-muted" />
+            <p className="text-sm text-gray-text">찜한 상품이 없습니다.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-3 tablet:gap-4">
+            {products.map((p) => (
+              <Link key={p.wishlistId} href={`/shopping/${p.productId}`} className="rounded-xl overflow-hidden border border-border bg-white flex flex-col">
+                <div className="relative aspect-square bg-card-bg">
+                  {p.image
+                    ? <Image src={p.image} alt={p.name} fill className="object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-8 h-8 text-muted" /></div>
+                  }
+                </div>
+                <div className="p-3 flex flex-col gap-1">
+                  <p className="text-sm font-medium text-dark-text line-clamp-2">{p.name}</p>
+                  {p.discountedPrice < p.price && (
+                    <p className="text-xs line-through text-muted">{p.price.toLocaleString()}원</p>
+                  )}
+                  <p className="text-sm font-bold text-dark-text">{p.discountedPrice.toLocaleString()}원</p>
+                  <p className="text-xs text-light-gray">{p.seller}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )
       )}
 
-      {activeTab === '레시피' && pagination && pagination.total > pagination.limit && (
-        <OrderPagination page={page} total={pagination.total} limit={pagination.limit} hasNext={pagination.hasNext} onPageChange={setPage} />
+      {activeTab === '레시피' && recipePagination && recipePagination.total > recipePagination.limit && (
+        <OrderPagination page={recipePage} total={recipePagination.total} limit={recipePagination.limit} hasNext={recipePagination.hasNext} onPageChange={setRecipePage} />
+      )}
+      {activeTab === '재료쇼핑' && productPagination && productPagination.total > productPagination.limit && (
+        <OrderPagination page={productPage} total={productPagination.total} limit={productPagination.limit} hasNext={productPagination.hasNext} onPageChange={setProductPage} />
       )}
     </div>
   );
