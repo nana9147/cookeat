@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { logOrderItemStatusHistory } from '@/lib/orderItemStatusHistory';
 
 const SHIPPING_STATUS_TRANSITIONS: Record<string, string[]> = {
   결제완료: ['배송준비', '취소'],
@@ -240,6 +241,8 @@ export async function updateShippingStatus(sellerId: number, itemId: number, new
 
   if (updateError) throw updateError;
 
+  await logOrderItemStatusHistory(itemId, newStatus);
+
   if (newStatus === '배송완료') {
     const { error: deliveredAtError } = await supabaseAdmin
       .from('shippings')
@@ -249,8 +252,6 @@ export async function updateShippingStatus(sellerId: number, itemId: number, new
 
     if (deliveredAtError) throw deliveredAtError;
   }
-
-  await syncOrderStatus(orderId);
 
   return { status: newStatus };
 }
@@ -319,7 +320,7 @@ export async function updateShippingTracking(
 
   if (statusUpdateError) throw statusUpdateError;
 
-  await syncOrderStatus(orderId);
+  await logOrderItemStatusHistory(itemId, '배송중');
 
   return { newStatus: '배송중' };
 }
@@ -427,6 +428,8 @@ export async function bulkUpdateShippingTracking(
         .from('order_items')
         .update({ shipping_status: '배송중' })
         .eq('item_id', item.item_id);
+
+      await logOrderItemStatusHistory(item.item_id, '배송중');
     }
 
     await syncOrderStatus(orderId);

@@ -27,7 +27,7 @@ export default function StatusBadge({ status }: { status: BadgeStatus }) {
 
     정산완료: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
     정산예정: 'bg-blue-50 text-blue-600 border border-blue-200',
-    정산보류: 'bg-amber-50 text-yellow border border-amber-200',
+    정산대기: 'bg-amber-50 text-yellow border border-amber-200',
 
     pending: 'bg-amber-50 text-amber-600 border border-amber-200',
     approved: 'bg-green-100 text-green-700',
