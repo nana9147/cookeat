@@ -14,6 +14,15 @@ interface StatusCardsProps<T extends string> {
   cols?: number;
 }
 
+const GRID_COLS_MAP: Record<number, string> = {
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+  5: 'grid-cols-5',
+  6: 'grid-cols-6',
+  7: 'grid-cols-7',
+};
+
 export default function StatusCards<T extends string>({
   cards,
   status,
@@ -21,8 +30,10 @@ export default function StatusCards<T extends string>({
   colorMap,
   cols = 5,
 }: StatusCardsProps<T>) {
+  const gridColsClass = GRID_COLS_MAP[cols] ?? 'grid-cols-5';
+
   return (
-    <div className={`grid grid-cols-${cols} gap-4 mb-5`}>
+    <div className={`grid ${gridColsClass} gap-4 mb-5`}>
       {cards.map((item) => (
         <Card
           key={item.label}

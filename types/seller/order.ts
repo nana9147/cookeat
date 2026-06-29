@@ -72,6 +72,7 @@ export interface SellerOrderRow {
   unitPrice: number;
   itemTotalPrice: number;
   status: OrderStatus;
+  hasActiveClaim: boolean;
 }
 export interface OrderExportRow {
   id: string;

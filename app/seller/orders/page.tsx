@@ -23,15 +23,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
 
-const statuses: (OrderStatus | '전체')[] = [
-  '전체',
-  '결제완료',
-  '배송완료',
-  '배송준비',
-  '배송중',
-  '취소',
-  '환불',
-];
+const statuses: (OrderStatus | '전체')[] = ['전체', '결제완료', '배송준비', '배송중', '배송완료'];
 
 const ORDER_COLOR_MAP = {
   신규주문: 'text-emerald-500',
@@ -113,14 +105,11 @@ export default function OrdersPage() {
   );
 
   const [counts, setCounts] = useState({
+    전체: 0,
     결제완료: 0,
     배송준비: 0,
     배송중: 0,
     배송완료: 0,
-    취소: 0,
-    취소요청: 0,
-    환불: 0,
-    환불요청: 0,
   });
 
   const { exportToExcel, isExporting, progress } = useExcelExport<OrderExportRow>({
@@ -130,6 +119,8 @@ export default function OrdersPage() {
     fileNamePrefix: '주문내역',
     countBy: 'id',
   });
+
+  const uniqueOrderCount = new Set(orders.map((o) => o.orderId)).size;
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -211,6 +202,7 @@ export default function OrdersPage() {
   }, [page, status, search, startDate, endDate, sortBy, sortOrder]);
 
   const statusCardData: StatusCardItem[] = [
+    { label: '전체', count: counts.전체, filterValue: '전체' },
     {
       label: ORDER_STATUS_LABEL.결제완료,
       count: counts.결제완료,
@@ -230,11 +222,6 @@ export default function OrdersPage() {
       label: ORDER_STATUS_LABEL.배송완료,
       count: counts.배송완료,
       filterValue: '배송완료',
-    },
-    {
-      label: '취소/환불',
-      count: counts.취소 + counts.환불 + counts.환불요청,
-      filterValue: '취소환불',
     },
   ];
 
@@ -336,7 +323,7 @@ export default function OrdersPage() {
       />
       <div className="flex items-center justify-start mb-2 px-5">
         <p className="text-sm text-gray-500">
-          총 <span className="font-semibold text-gray-800">{total}</span>건
+          상품 <span className="font-semibold text-gray-800">{total}</span>개
         </p>
       </div>
 

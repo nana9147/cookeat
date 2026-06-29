@@ -21,7 +21,6 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
-import DateRangeFilter from '../DateRangeFilter';
 import {
   Table,
   TableBody,
@@ -44,25 +43,19 @@ const COURIERS: CourierCode[] = [
 
 export default function AllOrdersTable({
   orders,
-  search,
-  onSearchChange,
+  total,
   onUpdate,
   onStatusChange,
+  onConfirmOrder,
   isLoading,
   page,
   totalPages,
   onPageChange,
-  datePreset,
-  onDatePresetChange,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
 }: AllOrdersTableProps) {
-  const [inputs, setInputs] = useState<Record<string, ShippingInputState>>({});
+  const [inputs, setInputs] = useState<Record<number, ShippingInputState>>({});
 
-  const handleConfirm = (orderId: string) => {
-    const input = inputs[orderId];
+  const handleConfirm = (itemId: number) => {
+    const input = inputs[itemId];
 
     if (!input?.courier) {
       toast.error('택배사를 선택해주세요.');
@@ -73,19 +66,19 @@ export default function AllOrdersTable({
       return;
     }
 
-    onUpdate(orderId, input.courier, input.trackingNumber);
+    onUpdate(itemId, input.courier, input.trackingNumber);
   };
 
-  const renderTrackingCell = (orderId: string, order: ShippingRow) => {
+  const renderTrackingCell = (order: ShippingRow) => {
     if (order.status === '배송준비') {
       return (
         <div className="flex items-center gap-1.5 justify-center">
           <Select
-            value={inputs[orderId]?.courier ?? ''}
+            value={inputs[order.itemId]?.courier ?? ''}
             onValueChange={(value) =>
               setInputs((prev) => ({
                 ...prev,
-                [orderId]: { ...prev[orderId], courier: value as CourierCode },
+                [order.itemId]: { ...prev[order.itemId], courier: value as CourierCode },
               }))
             }
           >
@@ -102,11 +95,11 @@ export default function AllOrdersTable({
           </Select>
           <Input
             type="number"
-            value={inputs[orderId]?.trackingNumber ?? ''}
+            value={inputs[order.itemId]?.trackingNumber ?? ''}
             onChange={(e) =>
               setInputs((prev) => ({
                 ...prev,
-                [orderId]: { ...prev[orderId], trackingNumber: e.target.value },
+                [order.itemId]: { ...prev[order.itemId], trackingNumber: e.target.value },
               }))
             }
             placeholder="운송장번호"
@@ -127,23 +120,27 @@ export default function AllOrdersTable({
     return <span className="text-sm text-gray-400">-</span>;
   };
 
-  const renderActionCell = (orderId: string, order: ShippingRow) => {
+  const renderActionCell = (order: ShippingRow) => {
     switch (order.status) {
       case '결제완료':
         return (
-          <Button size="sm" onClick={() => onStatusChange(orderId, '배송준비')}>
+          <Button size="sm" onClick={() => onConfirmOrder(order.orderId)}>
             발주확인
           </Button>
         );
       case '배송준비':
         return (
-          <Button size="sm" onClick={() => handleConfirm(orderId)}>
+          <Button size="sm" onClick={() => handleConfirm(order.itemId)}>
             저장
           </Button>
         );
       case '배송중':
         return (
-          <Button size="sm" variant="outline" onClick={() => onStatusChange(orderId, '배송완료')}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onStatusChange(order.itemId, '배송완료')}
+          >
             배송완료 처리
           </Button>
         );
@@ -154,21 +151,10 @@ export default function AllOrdersTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
-        <Input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="주문번호, 주문자로 검색"
-          className="w-64 bg-card"
-        />
-        <DateRangeFilter
-          datePreset={datePreset}
-          onDatePresetChange={onDatePresetChange}
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={onStartDateChange}
-          onEndDateChange={onEndDateChange}
-        />
+      <div className="flex items-center px-5 py-4 border-b border-gray-100">
+        <p className="text-sm text-gray-500">
+          상품 <span className="font-semibold text-gray-800">{total}</span>개
+        </p>
       </div>
 
       <div className="overflow-x-auto">
@@ -226,10 +212,10 @@ export default function AllOrdersTable({
                       <StatusBadge status={order.status} />
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      {renderTrackingCell(order.orderId, order)}
+                      {renderTrackingCell(order)}
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      {renderActionCell(order.orderId, order)}
+                      {renderActionCell(order)}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -1,12 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { formatDateTime, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import { PaymentInfoTableProps, ShippingStatus } from '@/types/seller/shipping';
-import DateRangeFilter from '../DateRangeFilter';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -21,20 +19,13 @@ import {
 
 export default function PaymentInfoTable({
   orders,
-  search,
-  onSearchChange,
+  total,
   onStatusChange,
   onBulkSuccess,
   isLoading,
   page,
   totalPages,
   onPageChange,
-  datePreset,
-  onDatePresetChange,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
 }: PaymentInfoTableProps) {
   const actionLabel = '발주확인';
   const nextStatus: ShippingStatus = '배송준비';
@@ -43,6 +34,7 @@ export default function PaymentInfoTable({
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
   const uniqueOrderIds = [...new Set(orders.map((o) => o.orderId))];
+  const selectedItemCount = orders.filter((o) => selectedOrderIds.includes(o.orderId)).length;
 
   useEffect(() => {
     setSelectedOrderIds([]);
@@ -64,13 +56,15 @@ export default function PaymentInfoTable({
       return;
     }
 
+    const itemIds = orders.filter((o) => selectedOrderIds.includes(o.orderId)).map((o) => o.itemId);
+
     setIsBulkProcessing(true);
     try {
       const res = await api.patch('/seller/shipping/orders/bulk-status', {
-        orderIds: selectedOrderIds,
+        itemIds,
         status: nextStatus,
       });
-      const { results, successCount, failCount } = res.data.data;
+      const { successCount, failCount } = res.data.data;
 
       if (failCount > 0) {
         toast.error(`${successCount}건 처리 완료, ${failCount}건 실패했습니다.`);
@@ -78,11 +72,7 @@ export default function PaymentInfoTable({
         toast.success(`${successCount}건이 일괄 발주확인되었습니다.`);
       }
 
-      const succeededIds = results
-        .filter((r: { orderId: string; success: boolean }) => r.success)
-        .map((r: { orderId: string }) => r.orderId);
-
-      onBulkSuccess(succeededIds);
+      onBulkSuccess(selectedOrderIds);
       setSelectedOrderIds([]);
     } catch (e) {
       const message =
@@ -98,28 +88,15 @@ export default function PaymentInfoTable({
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <Input
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="주문번호, 주문자로 검색"
-            className="w-64 bg-card"
-          />
-          <DateRangeFilter
-            datePreset={datePreset}
-            onDatePresetChange={onDatePresetChange}
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={onStartDateChange}
-            onEndDateChange={onEndDateChange}
-          />
-        </div>
+        <p className="text-sm text-gray-500">
+  상품 <span className="font-semibold text-gray-800">{total}</span>개
+</p>
         <Button
           size="sm"
           disabled={selectedOrderIds.length === 0 || isBulkProcessing}
           onClick={handleBulkConfirm}
         >
-          일괄 발주확인 {selectedOrderIds.length > 0 && `(${selectedOrderIds.length})`}
+          일괄 발주확인 {selectedItemCount > 0 && `(${selectedItemCount})`}
         </Button>
       </div>
 

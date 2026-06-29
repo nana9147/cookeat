@@ -238,10 +238,9 @@ export const SHIPPING_STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[
   환불: [],
 };
 
-export interface PaymentInfoTableProps extends DateRangeFilterProps {
+export interface PaymentInfoTableProps {
   orders: ShippingRow[];
-  search: string;
-  onSearchChange: (value: string) => void;
+  total: number;
   onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
   onBulkSuccess: (processedIds: string[]) => void;
   isLoading?: boolean;
@@ -250,25 +249,26 @@ export interface PaymentInfoTableProps extends DateRangeFilterProps {
   onPageChange: (page: number) => void;
 }
 
-export interface TrackingTableProps extends DateRangeFilterProps {
+export interface TrackingTableProps {
   orders: ShippingRow[];
+  total: number;
   status: '배송준비' | '배송중' | '배송완료';
-  search: string;
-  onSearchChange: (value: string) => void;
-  onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
-  onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
+  onUpdate: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
+  onStatusChange: (itemId: number, newStatus: ShippingStatus) => void;
+  onBulkTrackingSuccess?: () => void;
+  onBulkStatusSuccess?: (processedIds: number[]) => void;
   isLoading?: boolean;
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
-export interface AllOrdersTableProps extends DateRangeFilterProps {
+export interface AllOrdersTableProps {
   orders: ShippingRow[];
-  search: string;
-  onSearchChange: (value: string) => void;
-  onUpdate: (orderId: string, courier: CourierCode | '', trackingNumber: string) => void;
-  onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
+  total: number;
+  onUpdate: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
+  onStatusChange: (itemId: number, newStatus: ShippingStatus) => void;
+  onConfirmOrder: (orderId: string) => void;
   isLoading?: boolean;
   page: number;
   totalPages: number;
@@ -293,4 +293,13 @@ export interface ShippingRow {
   trackingNumber: string;
   shippedAt: string | null;
   deliveredAt: string | null;
+}
+
+interface TrackingDownloadRow {
+  orderId: string;
+  recipient: string;
+  productName: string;
+  quantity: number;
+  courier: string;
+  trackingNumber: string;
 }

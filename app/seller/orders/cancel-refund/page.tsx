@@ -262,8 +262,8 @@ export default function CancelRefundPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          placeholder="주문번호, 상품명, 구매자명으로 검색"
-          className="w-64 bg-card"
+          placeholder="주문번호, 상품명으로 검색"
+          className="flex-1 py-5 bg-card"
         />
         <DateRangeFilter
           datePreset={datePreset}
