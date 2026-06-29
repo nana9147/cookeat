@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
@@ -23,10 +23,12 @@ import {
 import StatusBadge from '@/components/common/StatusBadge';
 import api from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
+import { getPageNumbers } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
+import type { AdminApiSeller, AdminSellerStatus } from '@/types/admin';
 
 const PAGE_SIZE = 20;
-
-type Status = '승인' | '대기' | '거절' | '정지';
 
 interface Seller {
   id: number;
@@ -41,32 +43,16 @@ interface Seller {
   representativeName: string;
   csPhone: string;
   rating: number | null;
-  status: Status;
+  status: AdminSellerStatus;
 }
 
-interface ApiSeller {
-  sellerId: number;
-  storeName: string;
-  businessNumber: string;
-  businessAddress: string;
-  bankName: string;
-  bankAccount: string;
-  commissionRate: number;
-  representativeName: string;
-  csPhone: string;
-  status: Status;
-  productCount: number;
-  rating: number | null;
-  createdAt: string;
-}
-
-function toSeller(s: ApiSeller): Seller {
+function toSeller(s: AdminApiSeller): Seller {
   return {
     id: s.sellerId,
     number: s.businessNumber,
     name: s.storeName,
     charge: `${s.commissionRate}%`,
-    joinedAt: s.createdAt.split('T')[0].replace(/-/g, '.'),
+    joinedAt: formatDate(s.createdAt),
     productCount: s.productCount,
     address: s.businessAddress,
     bankName: s.bankName,
@@ -90,7 +76,7 @@ function StarRating({ rating }: { rating: number | null }) {
 
 export default function SellersPage() {
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [sellerList, setSellerList] = useState<Seller[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -99,22 +85,13 @@ export default function SellersPage() {
   const [editSeller, setEditSeller] = useState<Seller | null>(null);
 
   const [showFilter, setShowFilter] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<AdminSellerStatus | 'all'>('all');
   const [filterCharge, setFilterCharge] = useState<string>('all');
   const [filterRating, setFilterRating] = useState<string>('all');
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 400);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [search]);
+    setPage(1);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,7 +109,7 @@ export default function SellersPage() {
           params.set('page', String(page));
           params.set('limit', String(PAGE_SIZE));
         }
-        const { data } = await api.get<{ sellers: ApiSeller[]; pagination: { total: number } }>(
+        const { data } = await api.get<{ sellers: AdminApiSeller[]; pagination: { total: number } }>(
           `/admin/sellers?${params}`
         );
         if (!cancelled) {
@@ -152,7 +129,7 @@ export default function SellersPage() {
     };
   }, [debouncedSearch, filterStatus, filterCharge, filterRating, page]);
 
-  function handleFilterStatusChange(value: Status | 'all') {
+  function handleFilterStatusChange(value: AdminSellerStatus | 'all') {
     setFilterStatus(value);
     setPage(1);
   }
@@ -174,7 +151,7 @@ export default function SellersPage() {
     if (!editSeller) return;
     try {
       const isSuspend = editSeller.status === '정지';
-      const statusMap: Record<Exclude<Status, '정지'>, string> = {
+      const statusMap: Record<Exclude<AdminSellerStatus, '정지'>, string> = {
         승인: 'approved',
         대기: 'pending',
         거절: 'rejected',
@@ -183,7 +160,7 @@ export default function SellersPage() {
       await api.patch(`/admin/sellers/${editSeller.id}/approve`, {
         ...(isSuspend
           ? { suspend: true }
-          : { status: statusMap[editSeller.status as Exclude<Status, '정지'>] }),
+          : { status: statusMap[editSeller.status as Exclude<AdminSellerStatus, '정지'>] }),
         ...(!isNaN(commissionRate) ? { commissionRate } : {}),
       });
       setSellerList((prev) => prev.map((s) => (s.id === editSeller.id ? editSeller : s)));
@@ -206,14 +183,6 @@ export default function SellersPage() {
   const totalPages = Math.ceil(filteredTotal / PAGE_SIZE);
   const pagedSellers =
     filterRating !== 'all' ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : filtered;
-
-  function getPageNumbers(): (number | string)[] {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (page >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', page - 1, page, page + 1, '...', totalPages];
-  }
 
   return (
     <div className="p-6 space-y-4">
@@ -239,7 +208,7 @@ export default function SellersPage() {
             <span className="text-xs text-muted-foreground">상태</span>
             <Select
               value={filterStatus}
-              onValueChange={(v) => handleFilterStatusChange(v as Status | 'all')}
+              onValueChange={(v) => handleFilterStatusChange(v as AdminSellerStatus | 'all')}
             >
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
@@ -374,7 +343,7 @@ export default function SellersPage() {
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        getPageNumbers={getPageNumbers}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
       />
 
       <Dialog open={!!selectedSeller} onOpenChange={() => setSelectedSeller(null)}>
@@ -455,7 +424,7 @@ export default function SellersPage() {
                 <Select
                   value={editSeller.status}
                   onValueChange={(value) =>
-                    setEditSeller({ ...editSeller, status: value as Status })
+                    setEditSeller({ ...editSeller, status: value as AdminSellerStatus })
                   }
                 >
                   <SelectTrigger>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, Pencil, Filter, Search } from 'lucide-react';
 import {
   Table,
@@ -23,22 +23,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import api from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
 import StatusBadge, { StatusBadgeStatus } from '@/components/common/StatusBadge';
+import { useDebounce } from '@/hooks/useDebounce';
+import { getPageNumbers } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
+import type { AdminMember, AdminMemberGrade, AdminMemberStatus } from '@/types/admin';
 
-type Grade = '일반' | 'VIP';
-type Status = 'active' | 'suspended';
-
-interface Member {
-  userId: number;
-  email: string;
-  nickname: string;
-  createdAt: string;
-  grade: Grade;
-  orderCount: number;
-  status: Status;
-  point: number;
-}
-
-const statusLabel: Record<Status, StatusBadgeStatus> = {
+const statusLabel: Record<AdminMemberStatus, StatusBadgeStatus> = {
   active: '정상',
   suspended: '정지',
 };
@@ -46,30 +36,22 @@ const statusLabel: Record<Status, StatusBadgeStatus> = {
 const PAGE_SIZE = 20;
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<AdminMember[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [showFilter, setShowFilter] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [filterGrade, setFilterGrade] = useState<Grade | 'all'>('all');
-  const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [editMember, setEditMember] = useState<Member | null>(null);
-  const [editStatus, setEditStatus] = useState<Status>('active');
+  const [filterGrade, setFilterGrade] = useState<AdminMemberGrade | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<AdminMemberStatus | 'all'>('all');
+  const [selectedMember, setSelectedMember] = useState<AdminMember | null>(null);
+  const [editMember, setEditMember] = useState<AdminMember | null>(null);
+  const [editStatus, setEditStatus] = useState<AdminMemberStatus>('active');
 
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 400);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [search]);
+    setPage(1);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,17 +84,17 @@ export default function MembersPage() {
     };
   }, [debouncedSearch, filterStatus, filterGrade, page]);
 
-  function handleFilterStatusChange(value: Status | 'all') {
+  function handleFilterStatusChange(value: AdminMemberStatus | 'all') {
     setFilterStatus(value);
     setPage(1);
   }
 
-  function handleFilterGradeChange(value: Grade | 'all') {
+  function handleFilterGradeChange(value: AdminMemberGrade | 'all') {
     setFilterGrade(value);
     setPage(1);
   }
 
-  function handleEdit(member: Member) {
+  function handleEdit(member: AdminMember) {
     setEditMember(member);
     setEditStatus(member.status);
   }
@@ -131,15 +113,6 @@ export default function MembersPage() {
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const displayMembers = members;
-
-  function getPageNumbers() {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (page >= totalPages - 3)
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', page - 1, page, page + 1, '...', totalPages];
-  }
 
   return (
     <div className="p-6 space-y-4">
@@ -163,7 +136,10 @@ export default function MembersPage() {
         <div className="flex flex-wrap items-end gap-3 rounded-md border bg-white p-4">
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">등급</span>
-            <Select value={filterGrade} onValueChange={(v) => handleFilterGradeChange(v as Grade | 'all')}>
+            <Select
+              value={filterGrade}
+              onValueChange={(v) => handleFilterGradeChange(v as AdminMemberGrade | 'all')}
+            >
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
               </SelectTrigger>
@@ -178,7 +154,7 @@ export default function MembersPage() {
             <span className="text-xs text-muted-foreground">상태</span>
             <Select
               value={filterStatus}
-              onValueChange={(v) => handleFilterStatusChange(v as Status | 'all')}
+              onValueChange={(v) => handleFilterStatusChange(v as AdminMemberStatus | 'all')}
             >
               <SelectTrigger className="w-28">
                 <SelectValue placeholder="전체" />
@@ -226,19 +202,19 @@ export default function MembersPage() {
                   불러오는 중...
                 </TableCell>
               </TableRow>
-            ) : displayMembers.length === 0 ? (
+            ) : members.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
                   회원이 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              displayMembers.map((member) => (
+              members.map((member) => (
                 <TableRow key={member.userId}>
                   <TableCell className="font-medium">{member.nickname}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{member.email}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {new Date(member.createdAt).toLocaleDateString('ko-KR')}
+                    {formatDate(member.createdAt)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <StatusBadge status={member.grade} />
@@ -281,7 +257,7 @@ export default function MembersPage() {
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
-        getPageNumbers={getPageNumbers}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
       />
 
       <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
@@ -301,7 +277,7 @@ export default function MembersPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">가입일</span>
-                <span>{new Date(selectedMember.createdAt).toLocaleDateString('ko-KR')}</span>
+                <span>{formatDate(selectedMember.createdAt)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">등급</span>
@@ -336,7 +312,10 @@ export default function MembersPage() {
               </p>
               <div className="space-y-1">
                 <label className="text-sm text-muted-foreground">상태</label>
-                <Select value={editStatus} onValueChange={(v) => setEditStatus(v as Status)}>
+                <Select
+                  value={editStatus}
+                  onValueChange={(v) => setEditStatus(v as AdminMemberStatus)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
