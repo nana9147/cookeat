@@ -15,8 +15,13 @@ api.interceptors.request.use((config) => {
 
   if (user?.role === 'admin' && typeof config.url === 'string' && config.url.startsWith('/seller/')) {
     const { viewAsSellerId } = useSellerViewStore.getState()
-    if (viewAsSellerId) {
-      config.params = { ...config.params, sellerId: viewAsSellerId }
+    const sellerId =
+      viewAsSellerId ??
+      (typeof window !== 'undefined'
+        ? Number(new URLSearchParams(window.location.search).get('sellerId')) || null
+        : null)
+    if (sellerId) {
+      config.params = { ...config.params, sellerId }
     }
   }
 
