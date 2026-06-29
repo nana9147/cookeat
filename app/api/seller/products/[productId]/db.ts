@@ -154,6 +154,18 @@ export async function deleteSellerProduct(sellerId: number, productId: number) {
     throw new Error('해당 상품을 삭제할 권한이 없습니다.');
   }
 
+  const { data: activeOrders, error: activeOrdersError } = await supabaseAdmin
+    .from('order_items')
+    .select('item_id')
+    .eq('product_id', productId)
+    .in('shipping_status', ['결제완료', '배송준비', '배송중'])
+    .limit(1);
+
+  if (activeOrdersError) throw activeOrdersError;
+  if (activeOrders && activeOrders.length > 0) {
+    throw new Error('주문건이 존재하여 삭제할 수 없습니다. 판매종료로 상태변경하세요.');
+  }
+
   const { data: subImages, error: subImagesError } = await supabaseAdmin
     .from('product_images')
     .select('image_id, url')

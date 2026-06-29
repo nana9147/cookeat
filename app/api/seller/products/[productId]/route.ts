@@ -163,7 +163,9 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
         ? 404
         : message === '해당 상품을 삭제할 권한이 없습니다.'
           ? 403
-          : 500;
+          : message === '주문건이 존재하여 삭제할 수 없습니다. 판매종료로 상태변경하세요.'
+            ? 409
+            : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }
