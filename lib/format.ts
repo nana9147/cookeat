@@ -3,4 +3,4 @@ export const formatDate = (iso: string) => {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 };
 
-export const formatWon = (n: number) => `${n.toLocaleString()}원`;
+export const formatWon = (n?: number | null) => (n == null ? '-' : `${n.toLocaleString()}원`);
