@@ -308,14 +308,15 @@ export async function rejectRefund(sellerId: number, refundId: number, reason: s
     throw new Error('처리 대기 중인 요청이 아닙니다.');
   }
 
+  const rejectedStatus = refund.status === '취소요청' ? '취소거부' : '환불거부';
   const { error: updateError } = await supabaseAdmin
     .from('refund_requests')
-    .update({ reject_reason: reason, processed_at: new Date().toISOString() })
+    .update({ status: rejectedStatus, reject_reason: reason, processed_at: new Date().toISOString() })
     .eq('refund_id', refundId);
 
   if (updateError) throw updateError;
 
-  await logOrderItemStatusHistory(refund.item_id, `${refund.status}_거부`, reason);
+  await logOrderItemStatusHistory(refund.item_id, rejectedStatus, reason);
 
-  return { status: refund.status };
+  return { status: rejectedStatus };
 }
