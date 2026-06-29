@@ -72,13 +72,20 @@ export async function POST(
   const orderItemId = Number(body.orderItemId);
   const rating = Number(body.rating);
   const content = String(body.content ?? '').trim();
-  const images: string[] = Array.isArray(body.images) ? body.images : [];
+  const rawImages: unknown[] = Array.isArray(body.images) ? body.images : [];
+  const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`;
 
   if (!Number.isInteger(orderItemId) || orderItemId <= 0)
     return NextResponse.json({ error: 'orderItemId가 필요합니다' }, { status: 400 });
   if (!Number.isInteger(rating) || rating < 1 || rating > 5)
     return NextResponse.json({ error: '평점은 1~5 정수여야 합니다' }, { status: 400 });
   if (!content) return NextResponse.json({ error: '리뷰 내용을 입력해주세요' }, { status: 400 });
+  if (rawImages.length > 5)
+    return NextResponse.json({ error: '이미지는 최대 5개까지 첨부할 수 있습니다' }, { status: 400 });
+  if (!rawImages.every((u) => typeof u === 'string' && u.startsWith(storageBase)))
+    return NextResponse.json({ error: '유효하지 않은 이미지 URL입니다' }, { status: 400 });
+
+  const images = rawImages as string[];
 
   // 구매 확인 및 포인트 계산 기준 조회
   const { data: orderItem, error: itemError } = await supabaseAdmin
@@ -131,30 +138,15 @@ export async function POST(
       .insert(images.map((url) => ({ review_id: inserted.review_id, url })));
   }
 
-  const { data: userData } = await supabaseAdmin
-    .from('users')
-    .select('point')
-    .eq('user_id', authed.userId)
-    .single();
+  const { error: pointError } = await supabaseAdmin.rpc('award_review_point', {
+    p_user_id: authed.userId,
+    p_amount: pointAmount,
+    p_description: '상품 리뷰 작성',
+  });
 
-  const [histResult, pointResult] = await Promise.all([
-    supabaseAdmin.from('point_history').insert({
-      user_id: authed.userId,
-      type: '적립',
-      amount: pointAmount,
-      description: '상품 리뷰 작성',
-    }),
-    supabaseAdmin
-      .from('users')
-      .update({ point: (userData?.point ?? 0) + pointAmount })
-      .eq('user_id', authed.userId),
-  ]);
-
-  if (histResult.error || pointResult.error) {
-    console.error('[POST /api/products/:id/reviews] point award failed', {
-      history: histResult.error,
-      balance: pointResult.error,
-    });
+  if (pointError) {
+    console.error('[POST /api/products/:id/reviews] point award failed', pointError);
+    return NextResponse.json({ reviewId: inserted.review_id, pointAwarded: 0 }, { status: 201 });
   }
 
   return NextResponse.json({ reviewId: inserted.review_id, pointAwarded: pointAmount }, { status: 201 });
