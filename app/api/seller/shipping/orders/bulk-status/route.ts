@@ -7,20 +7,13 @@ export async function PATCH(req: NextRequest) {
   if (sellerCtx instanceof NextResponse) return sellerCtx;
 
   const body = await req.json();
-  const { orderIds, status } = body;
+  const { itemIds, status } = body;
 
-  if (!Array.isArray(orderIds) || orderIds.length === 0) {
-    return NextResponse.json({ success: false, error: '선택된 주문이 없습니다.' }, { status: 400 });
-  }
-  if (!status) {
-    return NextResponse.json(
-      { success: false, error: '변경할 상태를 입력해주세요.' },
-      { status: 400 }
-    );
+  if (!Array.isArray(itemIds) || itemIds.length === 0) {
+    return NextResponse.json({ success: false, error: '처리할 항목이 없습니다.' }, { status: 400 });
   }
 
-  const results = await bulkUpdateShippingStatus(sellerCtx.sellerId, orderIds, status);
-
+  const results = await bulkUpdateShippingStatus(sellerCtx.sellerId, itemIds, status);
   const successCount = results.filter((r) => r.success).length;
   const failCount = results.length - successCount;
 
