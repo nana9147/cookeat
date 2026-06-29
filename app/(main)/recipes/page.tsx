@@ -1,8 +1,14 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { ChevronRight, PenSquare } from 'lucide-react';
 import RecipeClient from './_components/RecipeClient';
 
-export default function RecipesPage() {
+interface Props {
+  searchParams: Promise<{ keyword?: string }>;
+}
+
+export default async function RecipesPage({ searchParams }: Props) {
+  const { keyword = '' } = await searchParams;
   return (
     <div className="max-w-360 mx-auto px-4 tablet:px-6 desktop:px-10 py-6">
       <nav className="flex items-center gap-1 text-xs text-light-gray mb-4">
@@ -27,7 +33,9 @@ export default function RecipesPage() {
         </Link>
       </div>
 
-      <RecipeClient />
+      <Suspense>
+        <RecipeClient keyword={keyword} />
+      </Suspense>
     </div>
   );
 }
