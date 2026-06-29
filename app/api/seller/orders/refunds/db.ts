@@ -14,24 +14,12 @@ export async function getOrdersWithRefundRequests(
 ) {
   const { page, limit, tab, keyword, startDate, endDate } = options;
 
-  const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
-    .from('order_items')
-    .select('item_id, order_id')
-    .eq('seller_id', sellerId);
-
-  if (sellerItemsError) throw sellerItemsError;
-
-  const sellerItemIds = (sellerItemRows ?? []).map((r) => r.item_id);
-  if (sellerItemIds.length === 0) {
-    return { orders: [], total: 0 };
-  }
-
   let refundQuery = supabaseAdmin
     .from('refund_requests')
     .select(
-      'refund_id, item_id, status, request_reason, reject_reason, requested_at, processed_at, order_items(order_id, product_id, quantity, unit_price, products(name))'
+      'refund_id, item_id, status, request_reason, reject_reason, requested_at, processed_at, order_items!inner(order_id, product_id, quantity, unit_price, seller_id, products(name))'
     )
-    .in('item_id', sellerItemIds);
+    .eq('order_items.seller_id', sellerId);
 
   if (startDate) refundQuery = refundQuery.gte('requested_at', `${startDate}T00:00:00`);
   if (endDate) refundQuery = refundQuery.lte('requested_at', `${endDate}T23:59:59`);

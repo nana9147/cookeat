@@ -339,42 +339,52 @@ export async function getSellerSettlements(
 
   const cancelledAmountBySettlement = new Map<number, number>();
 
-  for (const settlement of settlements) {
-    const settlementItemIds =
-      settlementItemIdsBySettlement.get(settlement.settlement_id) ?? new Set();
+  if (settlements.length > 0) {
+    // Batch fetch all history across all settlements — avoids N+1 query per settlement
+    const minPeriodStart = settlements.reduce(
+      (min, s) => (s.period_start < min ? s.period_start : min),
+      settlements[0].period_start
+    );
+    const maxPeriodEnd = settlements.reduce(
+      (max, s) => (s.period_end > max ? s.period_end : max),
+      settlements[0].period_end
+    );
 
-    const { data: cancelledHistory, error: cancelledError } = await supabaseAdmin
+    const { data: allCancelledHistory, error: allCancelledError } = await supabaseAdmin
       .from('order_item_status_history')
-      .select('order_item_id, status')
+      .select('order_item_id, status, changed_at')
       .in('status', ['취소', '환불'])
-      .gte('changed_at', `${settlement.period_start}T00:00:00`)
-      .lte('changed_at', `${settlement.period_end}T23:59:59`);
+      .gte('changed_at', `${minPeriodStart}T00:00:00`)
+      .lte('changed_at', `${maxPeriodEnd}T23:59:59`);
 
-    if (cancelledError) throw cancelledError;
+    if (allCancelledError) throw allCancelledError;
 
-    const cancelledItemIds = [
-      ...new Set(
-        (cancelledHistory ?? [])
-          .filter(
-            (c) => orderItemMap.has(c.order_item_id) && !settlementItemIds.has(c.order_item_id)
-          )
-          .map((c) => c.order_item_id)
-      ),
-    ];
+    for (const settlement of settlements) {
+      const settlementItemIds =
+        settlementItemIdsBySettlement.get(settlement.settlement_id) ?? new Set();
 
-    const cancelledAmount = cancelledItemIds.reduce((sum, itemId) => {
-      const item = orderItemMap.get(itemId);
-      return sum + (item ? item.quantity * item.unit_price : 0);
-    }, 0);
+      const cancelledItemIds = [
+        ...new Set(
+          (allCancelledHistory ?? [])
+            .filter(
+              (c) =>
+                c.changed_at >= `${settlement.period_start}T00:00:00` &&
+                c.changed_at <= `${settlement.period_end}T23:59:59` &&
+                orderItemMap.has(c.order_item_id) &&
+                !settlementItemIds.has(c.order_item_id)
+            )
+            .map((c) => c.order_item_id)
+        ),
+      ];
 
-    cancelledAmountBySettlement.set(settlement.settlement_id, cancelledAmount);
+      const cancelledAmount = cancelledItemIds.reduce((sum, itemId) => {
+        const item = orderItemMap.get(itemId);
+        return sum + (item ? item.quantity * item.unit_price : 0);
+      }, 0);
+
+      cancelledAmountBySettlement.set(settlement.settlement_id, cancelledAmount);
+    }
   }
-
-  const STATUS_LABEL: Record<string, string> = {
-    대기: '정산대기',
-    예정: '정산예정',
-    완료: '정산완료',
-  };
 
   const rows = settlements.map((s) => {
     const cancelledAmount = cancelledAmountBySettlement.get(s.settlement_id) ?? 0;
