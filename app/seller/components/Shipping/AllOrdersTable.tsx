@@ -21,7 +21,6 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
-import DateRangeFilter from '../DateRangeFilter';
 import {
   Table,
   TableBody,
@@ -44,8 +43,6 @@ const COURIERS: CourierCode[] = [
 
 export default function AllOrdersTable({
   orders,
-  search,
-  onSearchChange,
   onUpdate,
   onStatusChange,
   onConfirmOrder,
@@ -53,12 +50,6 @@ export default function AllOrdersTable({
   page,
   totalPages,
   onPageChange,
-  datePreset,
-  onDatePresetChange,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
 }: AllOrdersTableProps) {
   const [inputs, setInputs] = useState<Record<number, ShippingInputState>>({});
 
@@ -159,23 +150,6 @@ export default function AllOrdersTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
-        <Input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="주문번호, 주문자로 검색"
-          className="w-64 bg-card"
-        />
-        <DateRangeFilter
-          datePreset={datePreset}
-          onDatePresetChange={onDatePresetChange}
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={onStartDateChange}
-          onEndDateChange={onEndDateChange}
-        />
-      </div>
-
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>

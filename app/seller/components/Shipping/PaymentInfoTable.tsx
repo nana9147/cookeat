@@ -1,12 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { formatDateTime, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import { PaymentInfoTableProps, ShippingStatus } from '@/types/seller/shipping';
-import DateRangeFilter from '../DateRangeFilter';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -21,20 +19,12 @@ import {
 
 export default function PaymentInfoTable({
   orders,
-  search,
-  onSearchChange,
   onStatusChange,
   onBulkSuccess,
   isLoading,
   page,
   totalPages,
   onPageChange,
-  datePreset,
-  onDatePresetChange,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
 }: PaymentInfoTableProps) {
   const actionLabel = '발주확인';
   const nextStatus: ShippingStatus = '배송준비';
@@ -96,23 +86,7 @@ export default function PaymentInfoTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <Input
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="주문번호, 주문자로 검색"
-            className="w-64 bg-card"
-          />
-          <DateRangeFilter
-            datePreset={datePreset}
-            onDatePresetChange={onDatePresetChange}
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={onStartDateChange}
-            onEndDateChange={onEndDateChange}
-          />
-        </div>
+      <div className="flex items-center justify-end px-5 py-4 border-b border-gray-100">
         <Button
           size="sm"
           disabled={selectedOrderIds.length === 0 || isBulkProcessing}

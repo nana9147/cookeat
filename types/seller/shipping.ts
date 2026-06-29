@@ -238,10 +238,8 @@ export const SHIPPING_STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[
   환불: [],
 };
 
-export interface PaymentInfoTableProps extends DateRangeFilterProps {
+export interface PaymentInfoTableProps {
   orders: ShippingRow[];
-  search: string;
-  onSearchChange: (value: string) => void;
   onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
   onBulkSuccess: (processedIds: string[]) => void;
   isLoading?: boolean;
@@ -250,11 +248,9 @@ export interface PaymentInfoTableProps extends DateRangeFilterProps {
   onPageChange: (page: number) => void;
 }
 
-export interface TrackingTableProps extends DateRangeFilterProps {
+export interface TrackingTableProps {
   orders: ShippingRow[];
   status: '배송준비' | '배송중' | '배송완료';
-  search: string;
-  onSearchChange: (value: string) => void;
   onUpdate: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
   onStatusChange: (itemId: number, newStatus: ShippingStatus) => void;
   onBulkTrackingSuccess?: () => void;
@@ -265,10 +261,8 @@ export interface TrackingTableProps extends DateRangeFilterProps {
   onPageChange: (page: number) => void;
 }
 
-export interface AllOrdersTableProps extends DateRangeFilterProps {
+export interface AllOrdersTableProps {
   orders: ShippingRow[];
-  search: string;
-  onSearchChange: (value: string) => void;
   onUpdate: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
   onStatusChange: (itemId: number, newStatus: ShippingStatus) => void;
   onConfirmOrder: (orderId: string) => void;

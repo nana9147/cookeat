@@ -1,6 +1,5 @@
 'use client';
 
-import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
 import api from '@/lib/api';
 import { useRef } from 'react';
 import * as XLSX from 'xlsx';
@@ -25,7 +24,6 @@ import {
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
-import DateRangeFilter from '../DateRangeFilter';
 import {
   Table,
   TableBody,
@@ -52,20 +50,9 @@ const EMPTY_MESSAGE: Record<'배송준비' | '배송중' | '배송완료', strin
   배송완료: '배송완료된 주문건이 없습니다.',
 };
 
-const TRACKING_EXPORT_COLUMNS: ExportColumn<ShippingRow>[] = [
-  { key: 'orderId', label: '주문번호' },
-  { key: 'recipient', label: '수령인' },
-  { key: 'productName', label: '상품명' },
-  { key: 'quantity', label: '수량' },
-  { key: 'courier', label: '택배사', format: () => '' },
-  { key: 'trackingNumber', label: '운송장번호', format: () => '' },
-];
-
 export default function TrackingTable({
   orders,
   status,
-  search,
-  onSearchChange,
   onStatusChange,
   onBulkTrackingSuccess,
   onBulkStatusSuccess,
@@ -74,12 +61,6 @@ export default function TrackingTable({
   totalPages,
   onPageChange,
   onUpdate,
-  datePreset,
-  onDatePresetChange,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
 }: TrackingTableProps) {
   const [inputs, setInputs] = useState<Record<number, ShippingInputState>>({});
   const [defaultCourier, setDefaultCourier] = useState<CourierCode | ''>('');
@@ -341,53 +322,32 @@ export default function TrackingTable({
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <Input
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="주문번호, 주문자로 검색"
-            className="w-64 bg-card"
-          />
-          {isEditable && (
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
-                양식 다운로드
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleUploadClick}
-                disabled={isUploading}
-              >
-                {isUploading ? '업로드 중...' : '일괄 업로드'}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </div>
-          )}
-          {isCompletable && (
-            <Button
-              size="sm"
-              disabled={selectedItemIds.length === 0 || isBulkProcessing}
-              onClick={handleBulkComplete}
-            >
-              일괄 배송완료 처리 {selectedItemIds.length > 0 && `(${selectedItemIds.length})`}
+        {isEditable && (
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
+              양식 다운로드
             </Button>
-          )}
-          <DateRangeFilter
-            datePreset={datePreset}
-            onDatePresetChange={onDatePresetChange}
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={onStartDateChange}
-            onEndDateChange={onEndDateChange}
-          />
-        </div>
+            <Button size="sm" variant="outline" onClick={handleUploadClick} disabled={isUploading}>
+              {isUploading ? '업로드 중...' : '일괄 업로드'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+        )}
+        {isCompletable && (
+          <Button
+            size="sm"
+            disabled={selectedItemIds.length === 0 || isBulkProcessing}
+            onClick={handleBulkComplete}
+          >
+            일괄 배송완료 처리 {selectedItemIds.length > 0 && `(${selectedItemIds.length})`}
+          </Button>
+        )}
 
         {isEditable && (
           <div className="flex items-center gap-2">

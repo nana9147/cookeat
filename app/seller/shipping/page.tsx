@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { CourierCode, ShippingRow, ShippingStatus } from '@/types/seller/shipping';
 import { DateRangePreset } from '@/types/seller/common';
-import PaymentInfoTable from '../components/Shipping/PaymentInfoTable';
-import TrackingTable from '../components/Shipping/TrackingTable';
 import StatusCards from '@/components/ui/StatusCards';
-import AllOrdersTable from '../components/Shipping/AllOrdersTable';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import DateRangeFilter from '../components/DateRangeFilter';
+import PaymentInfoTable from '../components/Shipping/PaymentInfoTable';
+import TrackingTable from '../components/Shipping/TrackingTable';
+import AllOrdersTable from '../components/Shipping/AllOrdersTable';
 
 const SHIPPING_COLOR_MAP = {
   결제완료: 'text-emerald-500',
@@ -305,14 +307,38 @@ export default function ShippingPage() {
         colorMap={SHIPPING_COLOR_MAP}
         cols={5}
       />
+
+      <div className="flex items-center gap-2 mb-5">
+        <Input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="주문번호, 주문자로 검색"
+          className="flex-1 py-5 bg-card"
+        />
+        <DateRangeFilter
+          datePreset={datePreset}
+          onDatePresetChange={handleDatePresetChange}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={(v) => {
+            setStartDate(v);
+            setDatePreset('직접입력');
+            setPage(1);
+          }}
+          onEndDateChange={(v) => {
+            setEndDate(v);
+            setDatePreset('직접입력');
+            setPage(1);
+          }}
+        />
+      </div>
+
       {isAllStage ? (
         <AllOrdersTable
           orders={orders}
-          search={search}
-          onSearchChange={(v) => {
-            setSearch(v);
-            setPage(1);
-          }}
           onUpdate={handleUpdateInAllView}
           onStatusChange={handleStatusChangeInAllView}
           onConfirmOrder={handleConfirmOrder}
@@ -320,33 +346,21 @@ export default function ShippingPage() {
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          {...dateFilterProps}
         />
       ) : isPaymentInfoStage ? (
         <PaymentInfoTable
           orders={orders}
-          search={search}
-          onSearchChange={(v) => {
-            setSearch(v);
-            setPage(1);
-          }}
           onStatusChange={handleConfirmOrder}
           onBulkSuccess={handleBulkSuccessByOrderId}
           isLoading={isLoading}
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          {...dateFilterProps}
         />
       ) : (
         <TrackingTable
           orders={orders}
           status={status as '배송준비' | '배송중' | '배송완료'}
-          search={search}
-          onSearchChange={(v) => {
-            setSearch(v);
-            setPage(1);
-          }}
           onUpdate={handleUpdate}
           onStatusChange={handleStatusChange}
           onBulkTrackingSuccess={handleBulkTrackingSuccess}
@@ -355,7 +369,6 @@ export default function ShippingPage() {
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          {...dateFilterProps}
         />
       )}
     </div>
