@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import type { SettlementDetailProps } from '@/types/seller/settlement';
@@ -19,29 +21,17 @@ export default function SettlementAmountDetail({ detail }: SettlementDetailProps
             </dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt className="text-sm text-gray-text">
-              플랫폼 수수료 ({detail.amountDetail.commissionRate}%)
-            </dt>
-            <dd className="text-sm font-medium text-red">
-              -{detail.amountDetail.commission.toLocaleString()}원
-            </dd>
-          </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-sm text-gray-text">물류 비용</dt>
-            <dd className="text-sm font-medium text-red">
-              -{detail.amountDetail.shippingFee.toLocaleString()}원
-            </dd>
-          </div>
-          <div className="flex items-center justify-between">
             <dt className="text-sm text-gray-text">취소/환불 차감 ({refundCount}건)</dt>
             <dd className="text-sm font-medium text-red">
               -{detail.amountDetail.refundAmount.toLocaleString()}원
             </dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt className="text-sm text-gray-text">부가세 ({detail.amountDetail.vatRate}%)</dt>
+            <dt className="text-sm text-gray-text">
+              플랫폼 수수료 ({detail.amountDetail.commissionRate}%)
+            </dt>
             <dd className="text-sm font-medium text-red">
-              -{detail.amountDetail.vat.toLocaleString()}원
+              -{detail.amountDetail.commission.toLocaleString()}원
             </dd>
           </div>
           <Separator className="my-1" />

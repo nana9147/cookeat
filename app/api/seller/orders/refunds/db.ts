@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { logOrderItemStatusHistory } from '@/lib/orderItemStatusHistory';
 
 export async function getOrdersWithRefundRequests(
   sellerId: number,
@@ -228,6 +229,8 @@ export async function approveRefund(sellerId: number, refundId: number) {
 
   if (updateError) throw updateError;
 
+  await logOrderItemStatusHistory(refund.item_id, approvedStatus);
+
   await syncOrderStatusIfFullyRefunded(orderItem.order_id);
 
   return { status: approvedStatus };
@@ -277,7 +280,7 @@ async function syncOrderStatusIfFullyRefunded(orderId: string) {
 export async function rejectRefund(sellerId: number, refundId: number, reason: string) {
   const { data: refund, error: refundError } = await supabaseAdmin
     .from('refund_requests')
-    .select('status, order_items(seller_id)')
+    .select('status, item_id, order_items(seller_id)')
     .eq('refund_id', refundId)
     .maybeSingle();
 
@@ -300,6 +303,8 @@ export async function rejectRefund(sellerId: number, refundId: number, reason: s
     .eq('refund_id', refundId);
 
   if (updateError) throw updateError;
+
+  await logOrderItemStatusHistory(refund.item_id, `${refund.status}_거부`, reason);
 
   return { status: refund.status };
 }

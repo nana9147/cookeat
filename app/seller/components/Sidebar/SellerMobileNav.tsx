@@ -26,7 +26,7 @@ const menuItems = [
     ],
   },
   { label: '리뷰관리', href: '/seller/reviews' },
-  { label: '정산관리', href: '/seller/settlement' },
+  { label: '정산관리', href: '/seller/settlements' },
   { label: '판매자정보', href: '/seller/info' },
 ];
 

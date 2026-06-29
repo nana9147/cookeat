@@ -1,8 +1,11 @@
 'use client';
 
-import type { SettlementTableProps } from '@/types/seller/settlement';
-import { usePagination } from '@/hooks/usePagination';
+import { formatDate, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
+import EmptyRows from '@/components/ui/EmptyRows';
+import StatusBadge from '../StatusBadge';
+import { useRouter } from 'next/navigation';
+import type { SettlementTableProps } from '@/types/seller/settlement';
 import {
   Table,
   TableBody,
@@ -11,69 +14,109 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import StatusBadge from '../StatusBadge';
-import Link from 'next/link';
 
-export default function SettlementTable({ data }: SettlementTableProps) {
-  const { currentPage, setCurrentPage, paginated, totalPages, getPageNumbers } = usePagination(
-    data,
-    10
-  );
+export default function SettlementTable({
+  settlements,
+  selectedIds,
+  isAllSelectedMode,
+  onSelect,
+  onSelectAll,
+  isLoading,
+  page,
+  totalPages,
+  onPageChange,
+}: SettlementTableProps) {
+  const router = useRouter();
+  const isAllChecked =
+    isAllSelectedMode || (selectedIds.length === settlements.length && settlements.length > 0);
 
   return (
-    <div className=" bg-white border border-border rounded-xl overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-beige">
-            <TableHead className="text-center text-gray-text font-medium">정산 기간</TableHead>
-            <TableHead className="text-center text-gray-text font-medium">총 판매액</TableHead>
-            <TableHead className="text-center text-gray-text font-medium">수수료</TableHead>
-            <TableHead className="text-center text-gray-text font-medium">물류 비용</TableHead>
-            <TableHead className="text-center text-gray-text font-medium">정산 금액</TableHead>
-            <TableHead className="text-center text-gray-text font-medium">정산일</TableHead>
-            <TableHead className="text-center text-gray-text font-medium">상태</TableHead>
-            <TableHead className="text-center text-gray-text font-medium">상세</TableHead>
+          <TableRow>
+            <TableHead className="text-center w-10">
+              <input
+                type="checkbox"
+                checked={isAllChecked}
+                onChange={(e) => onSelectAll(e.target.checked)}
+              />
+            </TableHead>
+            <TableHead className="text-center whitespace-nowrap">정산기간</TableHead>
+            <TableHead className="text-center whitespace-nowrap">전체판매금액</TableHead>
+            <TableHead className="text-center whitespace-nowrap">취소·환불차감</TableHead>
+            <TableHead className="text-center whitespace-nowrap">수수료</TableHead>
+            <TableHead className="text-center whitespace-nowrap">정산금액</TableHead>
+            <TableHead className="text-center whitespace-nowrap">상태</TableHead>
+            <TableHead className="text-center whitespace-nowrap">정산일</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginated.map((item) => (
-            <TableRow
-              key={item.id}
-              className="text-center hover:bg-beige/50 transition-colors h-14"
-            >
-              <TableCell className="font-medium text-dark-text">{item.period}</TableCell>
-              <TableCell className="text-dark-text">
-                {item.totalSalesAmount.toLocaleString()}원
-              </TableCell>
-              <TableCell className="text-red">-{item.commission.toLocaleString()}원</TableCell>
-              <TableCell className="text-red">-{item.shippingFee.toLocaleString()}원</TableCell>
-              <TableCell className="font-semibold text-dark-text">
-                {item.settlementAmount.toLocaleString()}원
-              </TableCell>
-              <TableCell className="text-gray-text">{item.settlementDate}</TableCell>
-              <TableCell>
-                <StatusBadge status={item.status} />
-              </TableCell>
-              <TableCell>
-                <Link
-                  href={`/seller/settlement/${item.id}`}
-                  className="text-xs px-3 py-1.5 border border-border rounded-md hover:bg-beige transition-colors"
-                >
-                  보기
-                </Link>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center py-16 text-gray-400 text-sm">
+                불러오는 중...
               </TableCell>
             </TableRow>
-          ))}
+          ) : settlements.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center py-16 text-gray-400 text-sm">
+                정산 내역이 없습니다.
+              </TableCell>
+            </TableRow>
+          ) : (
+            <>
+              {settlements.map((s) => (
+                <TableRow
+                  key={s.settlementId}
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => router.push(`/seller/settlements/${s.settlementId}`)}
+                >
+                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelectedMode || selectedIds.includes(s.settlementId)}
+                      onChange={(e) => onSelect(s.settlementId, e.target.checked)}
+                    />
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-gray-700 whitespace-nowrap">
+                    <span className="font-semibold">{s.periodLabel}</span> (
+                    {formatDate(s.periodStart)} ~ {formatDate(s.periodEnd)})
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-gray-700 whitespace-nowrap">
+                    {s.totalAmount.toLocaleString()}원
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-red-500 whitespace-nowrap">
+                    {s.cancelledAmount > 0 ? `-${s.cancelledAmount.toLocaleString()}원` : '-'}
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-red-400 whitespace-nowrap">
+                    -{s.fee.toLocaleString()}원
+                  </TableCell>
+                  <TableCell className="text-center text-sm font-medium text-gray-800 whitespace-nowrap">
+                    {s.amount.toLocaleString()}원
+                  </TableCell>
+                  <TableCell className="text-center whitespace-nowrap">
+                    <StatusBadge status={s.status} />
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
+                    {s.settledAt
+                      ? `${formatDate(s.settledAt)}${s.status === '정산예정' ? ' (예정)' : ''}`
+                      : '-'}
+                  </TableCell>
+                </TableRow>
+              ))}
+              <EmptyRows count={10 - settlements.length} colSpan={8} />
+            </>
+          )}
         </TableBody>
       </Table>
-      <div className="py-4 border-t border-border">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          getPageNumbers={getPageNumbers}
-        />
-      </div>
+
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ interface StatusCardsProps<T extends string> {
   onStatusChange: (value: T) => void;
   colorMap: Record<string, string>;
   cols?: number;
+  unit?: '건' | '원';
 }
 
 const GRID_COLS_MAP: Record<number, string> = {
@@ -29,6 +30,7 @@ export default function StatusCards<T extends string>({
   onStatusChange,
   colorMap,
   cols = 5,
+  unit = '건',
 }: StatusCardsProps<T>) {
   const gridColsClass = GRID_COLS_MAP[cols] ?? 'grid-cols-5';
 
@@ -46,7 +48,8 @@ export default function StatusCards<T extends string>({
           <CardContent className="py-2">
             <p className="text-sm text-gray-500 mb-2">{item.label}</p>
             <p className={`text-2xl font-bold ${colorMap[item.label] ?? 'text-gray-800'}`}>
-              {item.count.toLocaleString()}건
+              {item.count.toLocaleString()}
+              {unit}
             </p>
           </CardContent>
         </Card>

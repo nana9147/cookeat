@@ -5,16 +5,39 @@ export interface SettlementInfo {
   nextDate: string;
 }
 
-export type SettlementStatus = '정산완료' | '정산예정' | '정산보류';
-export interface Settlement {
-  id: string;
-  period: string;
-  totalSalesAmount: number;
-  commission: number;
-  shippingFee: number;
-  settlementAmount: number;
-  settlementDate: string;
+export type SettlementDbStatus = '대기' | '예정' | '완료';
+export type SettlementStatus = '정산대기' | '정산예정' | '정산완료';
+
+export interface SettlementRow {
+  settlementId: number;
+  periodLabel: string;
+  totalAmount: number;
+  cancelledAmount: number;
+  fee: number;
+  amount: number;
   status: SettlementStatus;
+  periodStart: string;
+  periodEnd: string;
+  settledAt: string | null;
+}
+
+export interface SettlementSummary {
+  completedTotal: number;
+  scheduledTotal: number;
+  pendingTotal: number;
+  nextSettlementDate: string | null;
+}
+
+export interface SettlementTableProps {
+  settlements: SettlementRow[];
+  selectedIds: number[];
+  isAllSelectedMode: boolean;
+  onSelect: (settlementId: number, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
+  isLoading?: boolean;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
 export interface SettlementNext {
@@ -43,10 +66,6 @@ export interface SettlementSearchFilterProps {
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
   onSearch: () => void;
-}
-
-export interface SettlementTableProps {
-  data: Settlement[];
 }
 
 // 주문별 정산 내역
