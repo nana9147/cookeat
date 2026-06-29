@@ -257,6 +257,8 @@ export async function updateShippingStatus(sellerId: number, itemId: number, new
     if (deliveredAtError) throw deliveredAtError;
   }
 
+  await syncOrderStatus(orderId);
+
   return { status: newStatus };
 }
 
