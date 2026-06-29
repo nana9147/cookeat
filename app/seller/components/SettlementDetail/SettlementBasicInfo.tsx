@@ -12,12 +12,17 @@ export default function SettlementBasicInfo({ detail }: SettlementDetailProps) {
           <div className="flex flex-col gap-1.5">
             <dt className="text-xs text-light-gray">정산 기간</dt>
             <dd className="text-sm font-medium text-dark-text">
-              {detail.period} ({detail.periodRange})
+              <span className="font-semibold">{detail.period}</span> ({detail.periodRange})
             </dd>
           </div>
           <div className="flex flex-col gap-1.5">
             <dt className="text-xs text-light-gray">정산일</dt>
-            <dd className="text-sm font-medium text-dark-text">{detail.settlementDate}</dd>
+            <dd className="text-sm font-medium text-dark-text">
+              {detail.settlementDate}
+              {detail.status === '정산예정' && (
+                <span className="text-light-gray font-normal ml-1">(예정)</span>
+              )}
+            </dd>
           </div>
           <div className="flex flex-col gap-1.5">
             <dt className="text-xs text-light-gray">정산 상태</dt>

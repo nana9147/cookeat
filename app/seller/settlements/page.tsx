@@ -101,6 +101,7 @@ export default function SettlementsPage() {
       const sheetData = rows.map(
         (
           r: {
+            periodLabel: string;
             periodStart: string;
             periodEnd: string;
             orderId: string;
@@ -110,21 +111,24 @@ export default function SettlementsPage() {
             itemAmount: number;
             itemFee: number;
             itemSettlementAmount: number;
+            itemStatus: string;
             status: string;
             settledAt: string | null;
           },
           index: number
         ) => ({
           'No.': index + 1,
-          정산기간: `${r.periodStart} ~ ${r.periodEnd}`,
+          정산기간: r.periodLabel,
+          기간상세: `${r.periodStart} ~ ${r.periodEnd}`,
           주문번호: r.orderId,
           상품명: r.productName,
           수량: r.quantity,
           단가: r.unitPrice,
-          매출액: r.itemAmount,
+          판매금액: r.itemAmount,
+          구분: r.itemStatus,
           수수료: r.itemFee,
           정산금액: r.itemSettlementAmount,
-          상태: r.status,
+          정산상태: r.status,
           정산일: r.settledAt ? r.settledAt.split('T')[0] : '',
         })
       );
@@ -193,6 +197,11 @@ export default function SettlementsPage() {
   ];
 
   const totalPages = Math.ceil(total / LIMIT);
+
+  useEffect(() => {
+    setSearch('');
+    setPage(1);
+  }, [status]);
 
   return (
     <div className="bg-background p-8">

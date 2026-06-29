@@ -10,7 +10,9 @@ export type SettlementStatus = '정산대기' | '정산예정' | '정산완료';
 
 export interface SettlementRow {
   settlementId: number;
+  periodLabel: string;
   totalAmount: number;
+  cancelledAmount: number;
   fee: number;
   amount: number;
   status: SettlementStatus;

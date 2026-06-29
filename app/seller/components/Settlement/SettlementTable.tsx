@@ -4,6 +4,7 @@ import { formatDate, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import StatusBadge from '../StatusBadge';
+import { useRouter } from 'next/navigation';
 import type { SettlementTableProps } from '@/types/seller/settlement';
 import {
   Table,
@@ -25,6 +26,7 @@ export default function SettlementTable({
   totalPages,
   onPageChange,
 }: SettlementTableProps) {
+  const router = useRouter();
   const isAllChecked =
     isAllSelectedMode || (selectedIds.length === settlements.length && settlements.length > 0);
 
@@ -41,7 +43,8 @@ export default function SettlementTable({
               />
             </TableHead>
             <TableHead className="text-center whitespace-nowrap">정산기간</TableHead>
-            <TableHead className="text-center whitespace-nowrap">매출액</TableHead>
+            <TableHead className="text-center whitespace-nowrap">전체판매금액</TableHead>
+            <TableHead className="text-center whitespace-nowrap">취소·환불차감</TableHead>
             <TableHead className="text-center whitespace-nowrap">수수료</TableHead>
             <TableHead className="text-center whitespace-nowrap">정산금액</TableHead>
             <TableHead className="text-center whitespace-nowrap">상태</TableHead>
@@ -51,21 +54,25 @@ export default function SettlementTable({
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
+              <TableCell colSpan={8} className="text-center py-16 text-gray-400 text-sm">
                 불러오는 중...
               </TableCell>
             </TableRow>
           ) : settlements.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
+              <TableCell colSpan={8} className="text-center py-16 text-gray-400 text-sm">
                 정산 내역이 없습니다.
               </TableCell>
             </TableRow>
           ) : (
             <>
               {settlements.map((s) => (
-                <TableRow key={s.settlementId}>
-                  <TableCell className="text-center">
+                <TableRow
+                  key={s.settlementId}
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => router.push(`/seller/settlements/${s.settlementId}`)}
+                >
+                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={isAllSelectedMode || selectedIds.includes(s.settlementId)}
@@ -73,13 +80,17 @@ export default function SettlementTable({
                     />
                   </TableCell>
                   <TableCell className="text-center text-sm text-gray-700 whitespace-nowrap">
-                    {formatDate(s.periodStart)} ~ {formatDate(s.periodEnd)}
+                    <span className="font-semibold">{s.periodLabel}</span> (
+                    {formatDate(s.periodStart)} ~ {formatDate(s.periodEnd)})
                   </TableCell>
                   <TableCell className="text-center text-sm text-gray-700 whitespace-nowrap">
                     {s.totalAmount.toLocaleString()}원
                   </TableCell>
-                  <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
-                    {s.fee.toLocaleString()}원
+                  <TableCell className="text-center text-sm text-red-500 whitespace-nowrap">
+                    {s.cancelledAmount > 0 ? `-${s.cancelledAmount.toLocaleString()}원` : '-'}
+                  </TableCell>
+                  <TableCell className="text-center text-sm text-red-400 whitespace-nowrap">
+                    -{s.fee.toLocaleString()}원
                   </TableCell>
                   <TableCell className="text-center text-sm font-medium text-gray-800 whitespace-nowrap">
                     {s.amount.toLocaleString()}원
@@ -88,11 +99,13 @@ export default function SettlementTable({
                     <StatusBadge status={s.status} />
                   </TableCell>
                   <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
-                    {s.settledAt ? formatDate(s.settledAt) : '-'}
+                    {s.settledAt
+                      ? `${formatDate(s.settledAt)}${s.status === '정산예정' ? ' (예정)' : ''}`
+                      : '-'}
                   </TableCell>
                 </TableRow>
               ))}
-              <EmptyRows count={10 - settlements.length} colSpan={7} />
+              <EmptyRows count={10 - settlements.length} colSpan={8} />
             </>
           )}
         </TableBody>

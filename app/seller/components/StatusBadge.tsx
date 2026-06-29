@@ -14,9 +14,11 @@ export default function StatusBadge({ status }: { status: BadgeStatus }) {
     취소: 'bg-slate-50 text-slate-500 border border-slate-200',
     환불: 'bg-red-50 text-red-600 border border-red-200',
     환불요청: 'bg-amber-50 text-yellow border border-amber-200',
-    환불반려: 'bg-gray-50 text-light-gray border border-border',
+    환불진행중: 'bg-blue-50 text-blue-600 border border-blue-200',
+    환불거부: 'bg-gray-50 text-light-gray border border-border',
     취소요청: 'bg-amber-50 text-yellow border border-amber-200',
-    취소반려: 'bg-gray-50 text-light-gray border border-border',
+    취소거부: 'bg-gray-50 text-light-gray border border-border',
+    구매확정: 'bg-emerald-50 text-primary border border-emerald-200',
 
     기본출고지: 'bg-violet-50 text-violet-600 border border-violet-200',
     기본반품지: 'bg-cyan-50 text-cyan-600 border border-cyan-200',
