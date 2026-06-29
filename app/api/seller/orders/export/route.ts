@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = req.nextUrl;
   const offset = Number(searchParams.get('offset') ?? '0');
-  const limit = Number(searchParams.get('limit') ?? '1000');
+  const limit = Math.min(Number(searchParams.get('limit') ?? '1000'), 1000);
   const itemIdsParam = searchParams.get('itemIds');
   const itemIds = itemIdsParam ? itemIdsParam.split(',') : undefined;
   const statusParam = searchParams.get('status') ?? undefined;
