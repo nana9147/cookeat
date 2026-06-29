@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function HeroSection() {
   return (
@@ -6,9 +7,9 @@ export default function HeroSection() {
       <div className="flex flex-col justify-center">
         <h1 className="text-3xl desktop:text-5xl font-bold mb-3 text-dark-text">오늘 뭐 먹지?</h1>
         <p className="text-gray-text text-sm mb-6">다양한 레시피를 쿠짓에서 찾아보세요!</p>
-        <button className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-full text-sm font-medium w-fit transition-colors">
+        <Link href="/recipes" className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-full text-sm font-medium w-fit transition-colors">
           레시피 둘러보기 →
-        </button>
+        </Link>
         <div className="flex gap-2 mt-6">
           <div className="w-5 h-1.5 rounded-full bg-primary" />
           <div className="w-1.5 h-1.5 rounded-full bg-muted" />

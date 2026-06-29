@@ -10,7 +10,7 @@ interface RecipeHeroProps {
 export default function RecipeHero({ title, description, imageUrl }: RecipeHeroProps) {
   return (
     <div className="mb-6">
-      <div className="relative w-full aspect-video tablet:aspect-[2/1] desktop:aspect-[3/1] rounded-2xl overflow-hidden bg-card-bg mb-5">
+      <div className="relative w-full aspect-video tablet:aspect-2/1 desktop:aspect-3/1 rounded-2xl overflow-hidden bg-card-bg mb-5">
         {imageUrl ? (
           <Image src={imageUrl} alt={title} fill className="object-cover" />
         ) : (
