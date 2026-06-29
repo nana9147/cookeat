@@ -240,6 +240,7 @@ export const SHIPPING_STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[
 
 export interface PaymentInfoTableProps {
   orders: ShippingRow[];
+  total: number;
   onStatusChange: (orderId: string, newStatus: ShippingStatus) => void;
   onBulkSuccess: (processedIds: string[]) => void;
   isLoading?: boolean;
@@ -250,6 +251,7 @@ export interface PaymentInfoTableProps {
 
 export interface TrackingTableProps {
   orders: ShippingRow[];
+  total: number;
   status: '배송준비' | '배송중' | '배송완료';
   onUpdate: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
   onStatusChange: (itemId: number, newStatus: ShippingStatus) => void;
@@ -263,6 +265,7 @@ export interface TrackingTableProps {
 
 export interface AllOrdersTableProps {
   orders: ShippingRow[];
+  total: number;
   onUpdate: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
   onStatusChange: (itemId: number, newStatus: ShippingStatus) => void;
   onConfirmOrder: (orderId: string) => void;

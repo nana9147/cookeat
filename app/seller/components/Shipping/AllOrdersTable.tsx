@@ -43,6 +43,7 @@ const COURIERS: CourierCode[] = [
 
 export default function AllOrdersTable({
   orders,
+  total,
   onUpdate,
   onStatusChange,
   onConfirmOrder,
@@ -150,6 +151,12 @@ export default function AllOrdersTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="flex items-center px-5 py-4 border-b border-gray-100">
+        <p className="text-sm text-gray-500">
+          상품 <span className="font-semibold text-gray-800">{total}</span>개
+        </p>
+      </div>
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>

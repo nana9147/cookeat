@@ -52,6 +52,7 @@ const EMPTY_MESSAGE: Record<'배송준비' | '배송중' | '배송완료', strin
 
 export default function TrackingTable({
   orders,
+  total,
   status,
   onStatusChange,
   onBulkTrackingSuccess,
@@ -322,53 +323,61 @@ export default function TrackingTable({
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        {isEditable && (
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
-              양식 다운로드
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleUploadClick} disabled={isUploading}>
-              {isUploading ? '업로드 중...' : '일괄 업로드'}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </div>
-        )}
-        {isCompletable && (
-          <Button
-            size="sm"
-            disabled={selectedItemIds.length === 0 || isBulkProcessing}
-            onClick={handleBulkComplete}
-          >
-            일괄 배송완료 처리 {selectedItemIds.length > 0 && `(${selectedItemIds.length})`}
-          </Button>
-        )}
+        <p className="text-sm text-gray-500">
+          상품 <span className="font-semibold text-gray-800">{total}</span>개
+        </p>
 
-        {isEditable && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 whitespace-nowrap">기본 택배사</span>
-            <Select
-              value={defaultCourier}
-              onValueChange={(value) => setDefaultCourier(value as CourierCode)}
+        <div className="flex items-center gap-2">
+          {isEditable && (
+            <>
+              <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
+                양식 다운로드
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleUploadClick}
+                disabled={isUploading}
+              >
+                {isUploading ? '업로드 중...' : '일괄 업로드'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 whitespace-nowrap">기본 택배사</span>
+                <Select
+                  value={defaultCourier}
+                  onValueChange={(value) => setDefaultCourier(value as CourierCode)}
+                >
+                  <SelectTrigger size="sm" className="w-32">
+                    <SelectValue placeholder="택배사 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COURIERS.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+          {isCompletable && (
+            <Button
+              size="sm"
+              disabled={selectedItemIds.length === 0 || isBulkProcessing}
+              onClick={handleBulkComplete}
             >
-              <SelectTrigger size="sm" className="w-32">
-                <SelectValue placeholder="택배사 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {COURIERS.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+              일괄 배송완료 처리 {selectedItemIds.length > 0 && `(${selectedItemIds.length})`}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto">

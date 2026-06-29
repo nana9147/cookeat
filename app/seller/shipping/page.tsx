@@ -253,7 +253,8 @@ export default function ShippingPage() {
       const { successCount, failCount } = res.data.data;
 
       if (failCount > 0) {
-        toast.error(`${successCount}건 처리 완료, ${failCount}건 실패했습니다.`);
+        toast.error(`${successCount}
+           처리 완료, ${failCount}건 실패했습니다.`);
       } else {
         toast.success('발주확인되었습니다.');
       }
@@ -339,6 +340,7 @@ export default function ShippingPage() {
       {isAllStage ? (
         <AllOrdersTable
           orders={orders}
+          total={total}
           onUpdate={handleUpdateInAllView}
           onStatusChange={handleStatusChangeInAllView}
           onConfirmOrder={handleConfirmOrder}
@@ -350,6 +352,7 @@ export default function ShippingPage() {
       ) : isPaymentInfoStage ? (
         <PaymentInfoTable
           orders={orders}
+          total={total}
           onStatusChange={handleConfirmOrder}
           onBulkSuccess={handleBulkSuccessByOrderId}
           isLoading={isLoading}
@@ -360,6 +363,7 @@ export default function ShippingPage() {
       ) : (
         <TrackingTable
           orders={orders}
+          total={total}
           status={status as '배송준비' | '배송중' | '배송완료'}
           onUpdate={handleUpdate}
           onStatusChange={handleStatusChange}

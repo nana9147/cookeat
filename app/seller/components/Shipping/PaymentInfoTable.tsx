@@ -19,6 +19,7 @@ import {
 
 export default function PaymentInfoTable({
   orders,
+  total,
   onStatusChange,
   onBulkSuccess,
   isLoading,
@@ -86,7 +87,10 @@ export default function PaymentInfoTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-end px-5 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <p className="text-sm text-gray-500">
+  상품 <span className="font-semibold text-gray-800">{total}</span>개
+</p>
         <Button
           size="sm"
           disabled={selectedOrderIds.length === 0 || isBulkProcessing}
