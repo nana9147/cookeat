@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { uploadProductImage } from '@/lib/productImage';
+import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
 import type { CreateProductInput, ProductFilters } from '@/types/seller/product';
 
 export async function getSellerProducts(sellerId: number, filters: ProductFilters) {
@@ -112,8 +112,11 @@ export async function createSellerProduct(
 
   const productId = inserted.product_id;
 
+  const uploadedUrls: string[] = [];
+
   try {
     const representativeUrl = await uploadProductImage(productId, representativeImage);
+    uploadedUrls.push(representativeUrl);
 
     const { error: updateError } = await supabaseAdmin
       .from('products')
@@ -126,6 +129,7 @@ export async function createSellerProduct(
       const subImageUrls = await Promise.all(
         subImages.map((file) => uploadProductImage(productId, file))
       );
+      uploadedUrls.push(...subImageUrls);
 
       const rows = subImageUrls.map((url, index) => ({
         product_id: productId,
@@ -139,6 +143,7 @@ export async function createSellerProduct(
 
     return { productId };
   } catch (err) {
+    await Promise.allSettled(uploadedUrls.map((url) => deleteProductImageFile(url)));
     await supabaseAdmin.from('products').delete().eq('product_id', productId);
     throw err;
   }

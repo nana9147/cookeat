@@ -87,7 +87,10 @@ export async function updateSellerProduct(
     })
     .eq('product_id', input.productId);
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    if (newImageUrl) await deleteProductImageFile(newImageUrl);
+    throw updateError;
+  }
 
   if (newImageUrl && existing.image && existing.image !== 'pending') {
     await deleteProductImageFile(existing.image);
@@ -103,9 +106,6 @@ export async function updateSellerProduct(
   const keepIds = new Set(subImages.filter((s) => s.imageId !== undefined).map((s) => s.imageId));
 
   const toDelete = (currentSubImages ?? []).filter((row) => !keepIds.has(row.image_id));
-  for (const row of toDelete) {
-    await deleteProductImageFile(row.url);
-  }
   if (toDelete.length > 0) {
     const { error: deleteRowsError } = await supabaseAdmin
       .from('product_images')
@@ -115,6 +115,7 @@ export async function updateSellerProduct(
         toDelete.map((r) => r.image_id)
       );
     if (deleteRowsError) throw deleteRowsError;
+    await Promise.allSettled(toDelete.map((row) => deleteProductImageFile(row.url)));
   }
 
   for (let i = 0; i < subImages.length; i++) {
@@ -132,7 +133,10 @@ export async function updateSellerProduct(
       const { error: insertError } = await supabaseAdmin
         .from('product_images')
         .insert({ product_id: input.productId, url, sort_order: sortOrder });
-      if (insertError) throw insertError;
+      if (insertError) {
+        await deleteProductImageFile(url);
+        throw insertError;
+      }
     }
   }
 
