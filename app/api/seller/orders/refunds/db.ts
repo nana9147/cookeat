@@ -221,17 +221,28 @@ export async function approveRefund(sellerId: number, refundId: number) {
   }
 
   const approvedStatus = refund.status === '취소요청' ? '취소' : '환불';
+  const originalStatus = refund.status;
+  const processedAt = new Date().toISOString();
 
+  // Step 1: refund_requests 상태 업데이트
   const { error: updateError } = await supabaseAdmin
     .from('refund_requests')
-    .update({ status: approvedStatus, processed_at: new Date().toISOString() })
+    .update({ status: approvedStatus, processed_at: processedAt })
     .eq('refund_id', refundId);
 
   if (updateError) throw updateError;
 
-  await logOrderItemStatusHistory(refund.item_id, approvedStatus);
-
-  await syncOrderStatusIfFullyRefunded(orderItem.order_id);
+  // Step 2~3: 이력 기록 + 주문 상태 동기화 — 실패 시 Step 1 롤백
+  try {
+    await logOrderItemStatusHistory(refund.item_id, approvedStatus);
+    await syncOrderStatusIfFullyRefunded(orderItem.order_id);
+  } catch (err) {
+    await supabaseAdmin
+      .from('refund_requests')
+      .update({ status: originalStatus, processed_at: null })
+      .eq('refund_id', refundId);
+    throw err;
+  }
 
   return { status: approvedStatus };
 }
