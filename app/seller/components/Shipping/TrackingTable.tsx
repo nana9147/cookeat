@@ -64,6 +64,7 @@ export default function TrackingTable({
   onPageChange,
   onUpdate,
 }: TrackingTableProps) {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [inputs, setInputs] = useState<Record<number, ShippingInputState>>({});
   const [defaultCourier, setDefaultCourier] = useState<CourierCode | ''>('');
   const isEditable = status === '배송준비' && !isAdmin;
@@ -195,7 +196,6 @@ export default function TrackingTable({
     }
   };
 
-  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const isCompletable = status === '배송중' && !isAdmin;

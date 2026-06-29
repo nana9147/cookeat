@@ -269,43 +269,67 @@ export async function ensureSettlements(sellerId: number) {
   }
 }
 
+type DbSettlement = {
+  settlement_id: number;
+  seller_id: number;
+  period_start: string;
+  period_end: string;
+  amount: number;
+  fee: number;
+  status: string;
+  settled_at: string | null;
+};
+
 export async function getSellerSettlements(
   sellerId: number,
   options: { page: number; limit: number; status?: string; keyword?: string }
 ) {
-
   const { page, limit, status, keyword } = options;
+  const rangeFrom = (page - 1) * limit;
 
   let query = supabaseAdmin.from('settlements').select('*').eq('seller_id', sellerId);
-
   if (status && status !== '전체') {
     query = query.eq('status', status);
   }
 
-  const { data: allSettlements, error } = await query.order('period_start', {
-    ascending: false,
-  });
+  let settlements: DbSettlement[];
+  let total: number;
 
-  if (error) throw error;
-  if (!allSettlements || allSettlements.length === 0) {
-    return { settlements: [], total: 0 };
-  }
-  let filteredSettlements = allSettlements;
   if (keyword) {
-    const normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, '');
-    filteredSettlements = allSettlements.filter((s) => {
+    // getWeekOfMonthLabel은 JS 함수이므로 DB 레벨 필터 불가 — 인메모리 필터 사용
+    // 정산 레코드는 주당 1건으로 수가 제한되므로 전체 조회 부담 없음
+    const { data: all, error } = await query.order('period_start', { ascending: false });
+    if (error) throw error;
+    if (!all || all.length === 0) return { settlements: [], total: 0 };
+
+    const norm = keyword.toLowerCase().replace(/\s+/g, '');
+    const filtered = (all as DbSettlement[]).filter((s) => {
       const label = getWeekOfMonthLabel(s.period_start).toLowerCase().replace(/\s+/g, '');
       return (
-        label.includes(normalizedKeyword) ||
-        s.period_start.includes(keyword) ||
-        s.period_end.includes(keyword)
+        label.includes(norm) || s.period_start.includes(keyword) || s.period_end.includes(keyword)
       );
     });
-  }
 
-  const total = filteredSettlements.length;
-  const from = (page - 1) * limit;
-  const settlements = filteredSettlements.slice(from, from + limit);
+    total = filtered.length;
+    settlements = filtered.slice(rangeFrom, rangeFrom + limit);
+  } else {
+    let countQ = supabaseAdmin
+      .from('settlements')
+      .select('*', { count: 'exact', head: true })
+      .eq('seller_id', sellerId);
+    if (status && status !== '전체') countQ = countQ.eq('status', status);
+
+    const { count, error: countError } = await countQ;
+    if (countError) throw countError;
+
+    const { data, error } = await query
+      .order('period_start', { ascending: false })
+      .range(rangeFrom, rangeFrom + limit - 1);
+    if (error) throw error;
+
+    total = count ?? 0;
+    settlements = (data ?? []) as DbSettlement[];
+  }
 
   if (settlements.length === 0) {
     return { settlements: [], total };
@@ -339,7 +363,6 @@ export async function getSellerSettlements(
   const cancelledAmountBySettlement = new Map<number, number>();
 
   if (settlements.length > 0) {
-    // Batch fetch all history across all settlements — avoids N+1 query per settlement
     const minPeriodStart = settlements.reduce(
       (min, s) => (s.period_start < min ? s.period_start : min),
       settlements[0].period_start
@@ -411,7 +434,6 @@ export async function getSellerSettlements(
 }
 
 export async function getSellerSettlementSummary(sellerId: number) {
-
   const { data: settlements, error } = await supabaseAdmin
     .from('settlements')
     .select('amount, status, period_end')
