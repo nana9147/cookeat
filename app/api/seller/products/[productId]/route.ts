@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
 import { getSellerProductById, updateSellerProduct, deleteSellerProduct } from './db';
 import { resolveDiscountValue } from '@/lib/productPricing';
+import { validateProductFields, validateImageFile } from '@/lib/validators';
 
 interface RouteParams {
   params: Promise<{ productId: string }>;
@@ -82,6 +83,30 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       { success: false, error: '배송 템플릿과 반품정책을 선택해주세요.' },
       { status: 400 }
     );
+  }
+
+  const fieldError = validateProductFields({
+    status,
+    price: Number(price),
+    stock: Number(stock),
+    discountType,
+    discountValue,
+  });
+  if (fieldError) {
+    return NextResponse.json({ success: false, error: fieldError }, { status: 400 });
+  }
+
+  if (representativeImage) {
+    const repImageError = validateImageFile(representativeImage);
+    if (repImageError) {
+      return NextResponse.json({ success: false, error: repImageError }, { status: 400 });
+    }
+  }
+  for (const file of subImagesFiles) {
+    const subImageError = validateImageFile(file);
+    if (subImageError) {
+      return NextResponse.json({ success: false, error: subImageError }, { status: 400 });
+    }
   }
 
   let subImages: { imageId?: number; file?: File }[] = [];
