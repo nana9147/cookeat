@@ -71,17 +71,25 @@ export default function ProductEditPage() {
   }, [productId]);
 
   if (error) {
-    return <div className="p-6 text-red-500">{error}</div>;
+    return (
+      <div className="bg-background p-8">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
   }
 
   if (!initialData) {
-    return <div className="p-6">불러오는 중...</div>;
+    return (
+      <div className="bg-background p-8">
+        <p className="text-sm text-gray-400">불러오는 중...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="p-6 max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
-        <h1>상품 수정</h1>
+    <div className="bg-background p-8">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-h2 font-bold text-dark-text">상품 수정</h1>
       </div>
       <ProductForm mode="edit" initialData={initialData} />
     </div>

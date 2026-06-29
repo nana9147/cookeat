@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Filter, Plus } from 'lucide-react';
+import { Filter, Plus, Search } from 'lucide-react';
 import ProductTable from '@/app/seller/components/ProductTable';
 import FilterTabs from '@/app/seller/components/FilterTabs';
 import Pagination from '@/components/ui/Pagination';
@@ -24,7 +24,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [isLodding, setIsLodding] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
@@ -44,7 +44,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     async function load() {
-      setIsLodding(true);
+      setIsLoading(true);
       try {
         const params: Record<string, string | number> = { page, limit: LIMIT };
         if (keyword) params.keyword = keyword;
@@ -60,7 +60,7 @@ export default function ProductsPage() {
       } catch (e) {
         toast.error(e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.');
       } finally {
-        setIsLodding(false);
+        setIsLoading(false);
       }
     }
     load();
@@ -106,6 +106,14 @@ export default function ProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(search)}
           />
+          <Button
+            onClick={() => handleSearchSubmit(search)}
+            variant="outline"
+            className="flex items-center gap-1.5 px-4 shrink-0 py-5 bg-card"
+          >
+            <Search />
+            검색
+          </Button>
           <Button
             onClick={() => setIsFilterOpen((prev) => !prev)}
             variant="outline"
@@ -189,18 +197,14 @@ export default function ProductsPage() {
           전체 상품 수 <span className="font-semibold text-gray-800">{total}</span>개
         </p>
 
-        {isLodding ? (
-          <p className="text-center py-16 text-gray-400 text-sm">불러오는 중...</p>
-        ) : (
-          <>
-            <ProductTable products={products} />
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              getPageNumbers={() => getPageNumbers(page, totalPages)}
-            />
-          </>
+        <ProductTable products={products} isLoading={isLoading} />
+        {!isLoading && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            getPageNumbers={() => getPageNumbers(page, totalPages)}
+          />
         )}
       </div>
     </div>

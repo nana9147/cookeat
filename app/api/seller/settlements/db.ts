@@ -561,12 +561,6 @@ export async function getSellerSettlementDetail(sellerId: number, settlementId: 
     (a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime()
   );
 
-  const STATUS_LABEL: Record<string, string> = {
-    대기: '정산대기',
-    예정: '정산예정',
-    완료: '정산완료',
-  };
-
   return {
     id: String(settlement.settlement_id),
     period: getWeekOfMonthLabel(settlement.period_start),

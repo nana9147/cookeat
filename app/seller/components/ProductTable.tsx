@@ -20,10 +20,11 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface ProductTableProps {
   products: Product[];
+  isLoading?: boolean;
   pageSize?: number;
 }
 
-export default function ProductTable({ products, pageSize = 10 }: ProductTableProps) {
+export default function ProductTable({ products, isLoading = false, pageSize = 10 }: ProductTableProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [previewId, setPreviewId] = useState<number | null>(null);
 
@@ -60,7 +61,23 @@ export default function ProductTable({ products, pageSize = 10 }: ProductTablePr
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.length === 0 ? (
+          {isLoading ? (
+            Array.from({ length: pageSize }).map((_, i) => (
+              <TableRow key={i} className="border-b border-gray-50">
+                <TableCell className="px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 animate-pulse" />
+                    <div className="h-4 w-32 rounded bg-gray-100 animate-pulse" />
+                  </div>
+                </TableCell>
+                {Array.from({ length: 6 }).map((_, j) => (
+                  <TableCell key={j} className="text-center">
+                    <div className="h-4 w-16 rounded bg-gray-100 animate-pulse mx-auto" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : products.length === 0 ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
                 등록된 상품이 존재하지 않습니다.

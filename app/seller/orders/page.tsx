@@ -16,6 +16,7 @@ import type {
 } from '@/types/seller/order';
 import { ORDER_STATUS_LABEL, PAYMENT_LABEL } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
+import { toDateStr, getDateRange } from '@/lib/dateRange';
 import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
 import OrderTable from '../components/OrderList/OrderTable';
 import StatusCards from '@/components/ui/StatusCards';
@@ -35,22 +36,6 @@ const ORDER_COLOR_MAP = {
 
 const LIMIT = 10;
 
-const toDateStr = (d: Date) => d.toISOString().split('T')[0];
-
-const getDateRange = (preset: DateRangePreset): { startDate: string; endDate: string } => {
-  const today = new Date();
-  const end = toDateStr(today);
-
-  if (preset === '전체') return { startDate: '', endDate: '' };
-  if (preset === '오늘') return { startDate: end, endDate: end };
-
-  const start = new Date(today);
-  if (preset === '1주일') start.setDate(today.getDate() - 7);
-  if (preset === '1개월') start.setMonth(today.getMonth() - 1);
-  if (preset === '3개월') start.setMonth(today.getMonth() - 3);
-
-  return { startDate: toDateStr(start), endDate: end };
-};
 
 const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
   { key: 'id', label: '주문번호' },
@@ -119,8 +104,6 @@ export default function OrdersPage() {
     fileNamePrefix: '주문내역',
     countBy: 'id',
   });
-
-  const uniqueOrderCount = new Set(orders.map((o) => o.orderId)).size;
 
   useEffect(() => {
     const params = new URLSearchParams();
