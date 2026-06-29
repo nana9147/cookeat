@@ -23,6 +23,7 @@ recipe_categories (레시피 카테고리, 예: 한식, 양식)
        ├── recipe_steps
        ├── recipe_ingredients ── ingredients (대카테고리 참조)
        ├── reviews (recipe_id) ── review_images
+       │         └── review_reports (review_id, reporter_id → users)
        ├── likes
        └── bookmarks
 
@@ -34,6 +35,7 @@ users ──────────────┬── sellers (위 참조)
   │         │                             (seller_id)
   │         └── shippings (seller_id 포함 — 셀러별 배송 단위)
   │         └── reviews (product_id / recipe_id) ── review_images
+  │                   └── review_reports
   ├── point_history
   ├── coupons
   └── inquiries ──── inquiry_images
@@ -248,19 +250,36 @@ faqs (자주 묻는 질문, 셀러/사용자 도메인과 직접 연결 없음)
 > `recipe_id`와 `product_id` 중 하나만 NOT NULL이어야 합니다.
 > CHECK: `(recipe_id IS NOT NULL) XOR (product_id IS NOT NULL)`
 
-| 컬럼            | 타입          | 제약                   | 설명                                      |
-| --------------- | ------------- | ---------------------- | ----------------------------------------- |
-| `review_id`     | `INT`         | PK, AI                 | 리뷰 고유 ID                              |
-| `recipe_id`     | `INT`         | FK → recipes, NULL     | 레시피 ID (레시피 리뷰일 때)              |
-| `product_id`    | `INT`         | FK → products, NULL    | 상품 ID (상품 리뷰일 때)                  |
-| `order_item_id` | `INT`         | FK → order_items, NULL | 구매 확인용 (상품 리뷰만 사용, 중복 방지) |
-| `user_id`       | `INT`         | FK → users, NOT NULL   | 작성자 ID                                 |
-| `rating`        | `INT2`        | NOT NULL               | 평점 (1~5)                                |
-| `content`       | `TEXT`        | NOT NULL               | 리뷰 내용                                 |
-| `created_at`    | `TIMESTAMPTZ` | NULL                   | 작성일시                                  |
-| `updated_at`    | `TIMESTAMPTZ` | NULL                   | 수정일시                                  |
+| 컬럼            | 타입                    | 제약                   | 설명                                         |
+| --------------- | ----------------------- | ---------------------- | -------------------------------------------- |
+| `review_id`     | `INT`                   | PK, AI                 | 리뷰 고유 ID                                 |
+| `recipe_id`     | `INT`                   | FK → recipes, NULL     | 레시피 ID (레시피 리뷰일 때)                 |
+| `product_id`    | `INT`                   | FK → products, NULL    | 상품 ID (상품 리뷰일 때)                     |
+| `order_item_id` | `INT`                   | FK → order_items, NULL | 구매 확인용 (상품 리뷰만 사용, 중복 방지)    |
+| `user_id`       | `INT`                   | FK → users, NOT NULL   | 작성자 ID                                    |
+| `rating`        | `INT2`                  | NOT NULL               | 평점 (1~5)                                   |
+| `content`       | `TEXT`                  | NOT NULL               | 리뷰 내용                                    |
+| `status`        | `ENUM(review_status)`   | DEFAULT '정상', NOT NULL | 신고 처리 상태 (`정상` / `신고` / `처리완료`) |
+| `created_at`    | `TIMESTAMPTZ`           | NULL                   | 작성일시                                     |
+| `updated_at`    | `TIMESTAMPTZ`           | NULL                   | 수정일시                                     |
 
 > UNIQUE KEY `uq_product_review` (`order_item_id`, `user_id`) — 상품 리뷰 중복 방지
+> `status`는 `review_reports` INSERT 트리거(`trg_flag_review`)에 의해 `정상` → `신고`로 자동 전환됩니다.
+
+### review_reports
+
+> 사용자가 리뷰를 신고할 때 기록되는 테이블. 신고 등록 시 트리거로 `reviews.status`가 `신고`로 변경됩니다.
+
+| 컬럼          | 타입           | 제약                       | 설명                            |
+| ------------- | -------------- | -------------------------- | ------------------------------- |
+| `report_id`   | `INT`          | PK, AI                     | 신고 고유 ID                    |
+| `review_id`   | `INT`          | FK → reviews, NOT NULL     | 신고 대상 리뷰 ID               |
+| `reporter_id` | `INT`          | FK → users, NOT NULL       | 신고자 ID                       |
+| `reason`      | `VARCHAR(200)` | NOT NULL                   | 신고 사유                       |
+| `created_at`  | `TIMESTAMPTZ`  | DEFAULT NOW(), NOT NULL    | 신고 일시                       |
+
+> UNIQUE 제약 `uq_review_report` (`review_id`, `reporter_id`) — 동일 유저의 중복 신고 방지
+> `ON DELETE CASCADE` — 리뷰 삭제 시 관련 신고 내역 자동 삭제
 
 ### review_images
 
