@@ -24,3 +24,35 @@ export type Pagination = {
   total: number;
   hasNext: boolean;
 };
+
+export type OrderDetail = {
+  orderId: string;
+  status: string;
+  createdAt: string;
+  totalAmount: number;
+  shippingFee: number;
+  usedPoint: number;
+  couponDiscount: number;
+  finalAmount: number;
+  paymentMethod: string;
+  shipping: {
+    recipient: string;
+    phone: string;
+    address: string;
+    addressDetail: string | null;
+    request: string | null;
+  };
+  items: {
+    itemId: number;
+    name: string;
+    image: string | null;
+    quantity: number;
+    unitPrice: number;
+  }[];
+  trackings: {
+    carrier: string | null;
+    trackingNumber: string | null;
+    shippedAt: string | null;
+    deliveredAt: string | null;
+  }[];
+};

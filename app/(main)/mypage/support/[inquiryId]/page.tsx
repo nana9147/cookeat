@@ -24,8 +24,15 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ inquir
   }, [inquiryId]);
 
   if (loading) return (
-    <div className="flex flex-col gap-4">
-      {[1,2].map((i) => <div key={i} className="h-24 rounded-xl bg-beige animate-pulse" />)}
+    <div className="flex flex-col gap-4 px-1">
+      <div className="h-6 w-24 rounded-lg bg-beige animate-pulse" />
+      <div className="h-14 rounded-2xl bg-beige animate-pulse" />
+      <div className="flex justify-end">
+        <div className="h-20 w-3/4 rounded-2xl bg-beige animate-pulse" />
+      </div>
+      <div className="flex justify-start">
+        <div className="h-20 w-3/4 rounded-2xl bg-beige animate-pulse" />
+      </div>
     </div>
   );
 
@@ -37,13 +44,14 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ inquir
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
+      {/* 헤더 */}
       <div className="flex items-center gap-2">
         <Link href="/mypage/support" className="text-xs text-gray-text hover:text-dark-text">← 목록</Link>
-        <span className="text-xs text-muted">/</span>
-        <span className="text-xs text-dark-text">문의 상세</span>
       </div>
-      <div className="flex flex-col gap-3 rounded-2xl border border-border p-5">
+
+      {/* 제목 & 태그 */}
+      <div className="flex flex-col gap-2 px-1">
         <div className="flex items-center gap-2">
           <span className="text-xs bg-beige text-gray-text px-2 py-0.5 rounded-full">{inquiry.category}</span>
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${inquiry.isAnswered ? 'bg-primary/10 text-primary' : 'bg-muted/20 text-muted'}`}>
@@ -51,20 +59,37 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ inquir
           </span>
         </div>
         <h3 className="font-semibold text-dark-text">{inquiry.title}</h3>
-        <p className="text-xs text-gray-text">{formatDate(inquiry.createdAt)}</p>
-        <hr className="border-border" />
-        <p className="text-sm text-dark-text whitespace-pre-wrap">{inquiry.content}</p>
       </div>
 
-      {inquiry.reply && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-primary">Cookeat 답변</span>
-            <span className="text-xs text-gray-text">{formatDate(inquiry.reply.createdAt)}</span>
+      {/* 채팅 영역 */}
+      <div className="flex flex-col gap-4 pt-2">
+
+        {/* 사용자 메시지 — 오른쪽 */}
+        <div className="flex flex-col items-end gap-1">
+          <div className="max-w-[80%] bg-primary text-white rounded-2xl rounded-tr-sm px-4 py-3">
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">{inquiry.content}</p>
           </div>
-          <p className="text-sm text-dark-text whitespace-pre-wrap">{inquiry.reply.content}</p>
+          <span className="text-[11px] text-muted pr-1">{formatDate(inquiry.createdAt)}</span>
         </div>
-      )}
+
+        {/* Cookeat 답변 — 왼쪽 */}
+        {inquiry.reply ? (
+          <div className="flex flex-col items-start gap-1">
+            <span className="text-xs font-semibold text-primary pl-1">Cookeat</span>
+            <div className="max-w-[80%] bg-beige border border-border rounded-2xl rounded-tl-sm px-4 py-3">
+              <p className="text-sm text-dark-text whitespace-pre-wrap leading-relaxed">{inquiry.reply.content}</p>
+            </div>
+            <span className="text-[11px] text-muted pl-1">{formatDate(inquiry.reply.createdAt)}</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-start gap-1">
+            <span className="text-xs font-semibold text-muted pl-1">Cookeat</span>
+            <div className="max-w-[80%] bg-beige border border-border border-dashed rounded-2xl rounded-tl-sm px-4 py-3">
+              <p className="text-sm text-muted">답변을 준비 중입니다. 잠시만 기다려 주세요.</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -3,6 +3,8 @@ import type { Order } from './types';
 import OrderCardActions from './OrderCardActions';
 import { formatDate, formatWon } from '@/lib/format';
 
+type Props = { order: Order; onDetailClick: () => void };
+
 const STATUS_STYLE: Record<string, string> = {
   결제전: 'bg-muted/30 text-gray-text',
   결제완료: 'bg-primary/10 text-primary',
@@ -13,7 +15,7 @@ const STATUS_STYLE: Record<string, string> = {
   취소: 'bg-red/10 text-red',
 };
 
-export default function OrderCard({ order }: { order: Order }) {
+export default function OrderCard({ order, onDetailClick }: Props) {
   const statusStyle = STATUS_STYLE[order.status] ?? 'bg-muted/30 text-gray-text';
   const extraCount = order.itemCount - order.previewItems.length;
 
@@ -64,7 +66,7 @@ export default function OrderCard({ order }: { order: Order }) {
             <span className="text-base font-bold text-primary">{formatWon(order.finalAmount)}</span>
           </div>
         </div>
-        <OrderCardActions order={order} />
+        <OrderCardActions order={order} onDetailClick={onDetailClick} />
       </div>
     </div>
   );

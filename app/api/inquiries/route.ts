@@ -10,18 +10,20 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from('inquiries')
-    .select(`inquiry_id, category, title, created_at, inquiry_replies(id)`)
+    .select(`inquiry_id, category, title, created_at, inquiry_replies(reply_id)`)
     .eq('user_id', authed.userId)
     .order('created_at', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  type Row = { inquiry_id: number; category: string; title: string; created_at: string; inquiry_replies: { id: number }[] | null };
+  type ReplyRow = { reply_id: number };
+  type Row = { inquiry_id: number; category: string; title: string; created_at: string; inquiry_replies: ReplyRow[] | ReplyRow | null };
 
-  const inquiries = ((data as unknown as Row[]) ?? []).map((r) => ({
-    inquiryId: r.inquiry_id, category: r.category, title: r.title,
-    isAnswered: (r.inquiry_replies?.length ?? 0) > 0, createdAt: r.created_at,
-  }));
+  const inquiries = ((data as unknown as Row[]) ?? []).map((r) => {
+    const raw = r.inquiry_replies;
+    const isAnswered = raw !== null && raw !== undefined && (Array.isArray(raw) ? raw.length > 0 : true);
+    return { inquiryId: r.inquiry_id, category: r.category, title: r.title, isAnswered, createdAt: r.created_at };
+  });
 
   return NextResponse.json({ inquiries });
 }

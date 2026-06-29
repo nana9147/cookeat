@@ -25,7 +25,7 @@ export default function PhoneInput({ value, onChange, className, placeholder = '
       value={value}
       onChange={handleChange}
       placeholder={placeholder}
-      className={className}
+      className={`rounded-lg border w-full ${className ?? ''}`}
       maxLength={13}
     />
   );
