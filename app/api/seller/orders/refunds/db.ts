@@ -208,6 +208,18 @@ export async function approveRefund(sellerId: number, refundId: number) {
     throw new Error('처리 대기 중인 요청이 아닙니다.');
   }
 
+  const { data: confirmed, error: confirmedError } = await supabaseAdmin
+    .from('order_item_status_history')
+    .select('order_item_id')
+    .eq('order_item_id', refund.item_id)
+    .eq('status', '구매확정')
+    .limit(1);
+
+  if (confirmedError) throw confirmedError;
+  if (confirmed && confirmed.length > 0) {
+    throw new Error('구매확정된 항목은 환불 처리할 수 없습니다.');
+  }
+
   const approvedStatus = refund.status === '취소요청' ? '취소' : '환불';
 
   const { error: updateError } = await supabaseAdmin
