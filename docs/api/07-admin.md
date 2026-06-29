@@ -22,15 +22,9 @@
 | DELETE | `/admin/products/:productId`        | 상품 삭제                  | ✓    |
 | GET    | `/admin/orders`                     | 전체 주문 목록             | ✓    |
 | PATCH  | `/admin/orders/:orderId/status`     | 주문 상태 변경             | ✓    |
-| GET    | `/admin/reviews`                    | 리뷰 목록 조회             | ✓    |
+| GET    | `/admin/reviews`                    | 리뷰 목록 조회 + 신고 통계 | ✓    |
+| PATCH  | `/admin/reviews/:reviewId`          | 리뷰 상태 변경 (처리완료)  | ✓    |
 | DELETE | `/admin/reviews/:reviewId`          | 리뷰 삭제 (어뷰징)         | ✓    |
-| GET    | `/admin/categories`                 | 카테고리 목록              | ✓    |
-| POST   | `/admin/categories`                 | 카테고리 추가              | ✓    |
-| PATCH  | `/admin/categories/:categoryId`     | 카테고리 수정              | ✓    |
-| DELETE | `/admin/categories/:categoryId`     | 카테고리 삭제              | ✓    |
-| GET    | `/admin/coupons`                    | 프로모 코드 목록           | ✓    |
-| POST   | `/admin/coupons`                    | 프로모 코드 생성           | ✓    |
-| DELETE | `/admin/coupons/:couponId`          | 프로모 코드 삭제           | ✓    |
 | GET    | `/admin/settlements`                | 정산 목록                  | ✓    |
 | PATCH  | `/admin/settlements/:settlementId`  | 정산 처리                  | ✓    |
 | GET    | `/admin/inquiries`                  | 전체 문의 목록             | ✓    |
@@ -192,45 +186,88 @@
 
 ---
 
-### POST `/admin/categories`
+### GET `/admin/reviews`
 
-`Request Body`
+`Query Parameters`
 
-| 필드        | 타입         | 필수 | 설명                             |
-| ----------- | ------------ | ---- | -------------------------------- |
-| `name`      | `string`     | ✓    | 카테고리명                       |
-| `parentId`  | `int / null` | ✗    | 상위 카테고리 ID (최상위면 null) |
-| `sortOrder` | `int`        | ✗    | 노출 순서                        |
+| 파라미터  | 타입     | 필수 | 설명              |
+| --------- | -------- | ---- | ----------------- |
+| `keyword` | `string` | ✗    | 리뷰 내용 키워드  |
+| `page`    | `int`    | ✗    | 페이지 번호       |
+| `limit`   | `int`    | ✗    | 페이지당 항목 수  |
+
+`Response 200`
+
+| 필드                    | 타입     | 설명                               |
+| ----------------------- | -------- | ---------------------------------- |
+| `stats.total`           | `int`    | 전체 리뷰 수                       |
+| `stats.pendingReports`  | `int`    | 신고 대기 리뷰 수 (`status=신고`)  |
+| `stats.resolved`        | `int`    | 처리 완료 리뷰 수                  |
+| `reviews[].reviewId`    | `int`    | 리뷰 ID                            |
+| `reviews[].author`      | `string` | 작성자 닉네임                      |
+| `reviews[].authorEmail` | `string` | 작성자 이메일                      |
+| `reviews[].targetName`  | `string` | 대상 상품명 또는 레시피 제목       |
+| `reviews[].rating`      | `int`    | 평점 (1~5)                         |
+| `reviews[].content`     | `string` | 리뷰 내용                          |
+| `reviews[].state`       | `string` | 상태 (`정상` \| `신고` \| `처리완료`) |
+| `reviews[].reportCount` | `int`    | 신고 수                            |
+| `reviews[].reports`     | `array`  | 신고 내역 목록                     |
+| `reviews[].createdAt`   | `string` | 작성일시 (ISO 8601)                |
 
 ```json
-{ "name": "다이어트", "parentId": null, "sortOrder": 5 }
+{
+  "stats": { "total": 3456, "pendingReports": 5, "resolved": 12 },
+  "reviews": [
+    {
+      "reviewId": 1,
+      "author": "홍길동",
+      "authorEmail": "hong@example.com",
+      "targetName": "제주 감귤 5kg",
+      "rating": 1,
+      "content": "이 제품 광고입니다",
+      "state": "신고",
+      "reportCount": 3,
+      "reports": [
+        { "reporter": "김철수", "date": "2026.06.01", "reason": "광고성 리뷰" }
+      ],
+      "createdAt": "2026-05-30T00:00:00Z"
+    }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 3456, "hasNext": true }
+}
 ```
 
 ---
 
-### POST `/admin/coupons`
+### PATCH `/admin/reviews/:reviewId`
 
 `Request Body`
 
-| 필드             | 타입         | 필수 | 설명                             |
-| ---------------- | ------------ | ---- | -------------------------------- |
-| `code`           | `string`     | ✓    | 쿠폰 코드                        |
-| `discountType`   | `string`     | ✓    | 할인 유형 (`rate`, `fixed`)      |
-| `discountValue`  | `int`        | ✓    | 할인 값 (% 또는 원)              |
-| `minOrderAmount` | `int`        | ✗    | 최소 주문 금액 (원)              |
-| `maxUsageCount`  | `int / null` | ✗    | 최대 사용 횟수 (null이면 무제한) |
-| `expiredAt`      | `string`     | ✓    | 만료일 (ISO 8601)                |
+| 필드     | 타입     | 필수 | 설명                                  |
+| -------- | -------- | ---- | ------------------------------------- |
+| `status` | `string` | ✓    | `정상` \| `신고` \| `처리완료`        |
 
 ```json
-{
-  "code": "SUMMER2026",
-  "discountType": "rate",
-  "discountValue": 10,
-  "minOrderAmount": 20000,
-  "maxUsageCount": 1000,
-  "expiredAt": "2026-08-31T23:59:59Z"
-}
+{ "status": "처리완료" }
 ```
+
+`Response 200`
+
+```json
+{ "success": true }
+```
+
+---
+
+### DELETE `/admin/reviews/:reviewId`
+
+`Response 200`
+
+```json
+{ "success": true }
+```
+
+> `review_reports` 테이블의 관련 신고 내역은 `ON DELETE CASCADE`로 자동 삭제됩니다.
 
 ---
 

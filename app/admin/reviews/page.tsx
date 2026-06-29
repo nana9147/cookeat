@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, MessageCircle, CheckCircle2, Eye, Trash2, Star } from 'lucide-react';
+import { AlertCircle, MessageCircle, Eye, Trash2, Star } from 'lucide-react';
 import api from '@/lib/api';
 import {
   Table,
@@ -28,30 +28,6 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-const statCards = [
-  {
-    label: '신고 대기',
-    value: '12건',
-    icon: AlertCircle,
-    iconColor: 'text-red',
-    valueColor: 'text-red',
-  },
-  {
-    label: '악성 리뷰',
-    value: '8건',
-    icon: MessageCircle,
-    iconColor: 'text-yellow',
-    valueColor: 'text-yellow',
-  },
-  {
-    label: '처리 완료',
-    value: '156건',
-    icon: CheckCircle2,
-    iconColor: 'text-primary',
-    valueColor: 'text-primary',
-  },
-];
-
 interface Report {
   reporter: string;
   date: string;
@@ -66,13 +42,19 @@ interface Review {
   rating: number;
   date: string;
   reportCount: number;
-  state: '정상' | '신고' | '처리완료';
+  state: '정상' | '신고';
   content: string;
   reports: Report[];
 }
 
+interface Stats {
+  total: number;
+  pendingReports: number;
+}
+
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [stats, setStats] = useState<Stats>({ total: 0, pendingReports: 0 });
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -99,6 +81,8 @@ export default function ReviewsPage() {
       try {
         const { data } = await api.get(`/admin/reviews?page=${page}&limit=${PAGE_SIZE}`);
         if (cancelled) return;
+
+        setStats(data.stats ?? { total: 0, pendingReports: 0, resolved: 0 });
         const mapped: Review[] = (data.reviews ?? []).map(
           (r: {
             reviewId: number;
@@ -108,6 +92,9 @@ export default function ReviewsPage() {
             rating: number;
             content: string;
             createdAt: string;
+            state: '정상' | '신고';
+            reportCount: number;
+            reports: Report[];
           }) => ({
             id: r.reviewId,
             productName: r.targetName,
@@ -115,10 +102,10 @@ export default function ReviewsPage() {
             email: r.authorEmail,
             rating: r.rating,
             date: new Date(r.createdAt).toLocaleString('ko-KR'),
-            reportCount: 0,
-            state: '정상' as const,
+            state: r.state,
+            reportCount: r.reportCount,
             content: r.content,
-            reports: [],
+            reports: r.reports,
           })
         );
         setReviews(mapped);
@@ -138,12 +125,35 @@ export default function ReviewsPage() {
   }, [page]);
 
   async function handleDelete(id: number) {
+    const target = reviews.find((r) => r.id === id) ?? null;
     try {
       await api.delete(`/admin/reviews/${id}`);
       setReviews((prev) => prev.filter((r) => r.id !== id));
+      setTotal((prev) => prev - 1);
+      setStats((prev) => ({
+        ...prev,
+        total: prev.total - 1,
+        pendingReports: target?.state === '신고' ? prev.pendingReports - 1 : prev.pendingReports,
+      }));
       setSelectedId(null);
     } catch (err) {
       alert(err instanceof Error ? err.message : '삭제에 실패했습니다.');
+    }
+  }
+
+  async function handleResolve(id: number) {
+    try {
+      await api.patch(`/admin/reviews/${id}`, { status: '정상' });
+      setReviews((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, state: '정상' } : r))
+      );
+      setStats((prev) => ({
+        ...prev,
+        pendingReports: prev.pendingReports - 1,
+      }));
+      setSelectedId(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '처리에 실패했습니다.');
     }
   }
 
@@ -154,21 +164,30 @@ export default function ReviewsPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">리뷰/신고 관리</h1>
-        <p className="text-sm text-muted-foreground">전체 리뷰: 3,456개 (신고: 12개)</p>
+        <p className="text-sm text-muted-foreground">
+          전체 리뷰: {stats.total.toLocaleString()}개 (신고 대기: {stats.pendingReports}개)
+        </p>
       </div>
 
       <div className="grid grid-cols-1 tablet:grid-cols-3 gap-4">
-        {statCards.map(({ label, value, icon: Icon, iconColor, valueColor }) => (
-          <Card key={label}>
-            <CardContent className="pt-5">
-              <div className="flex items-center gap-2">
-                <Icon size={18} className={iconColor} />
-                <p className="text-sm text-muted-foreground">{label}</p>
-              </div>
-              <p className={`text-3xl font-bold mt-2 ${valueColor}`}>{value}</p>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={18} className="text-red" />
+              <p className="text-sm text-muted-foreground">신고 대기</p>
+            </div>
+            <p className="text-3xl font-bold mt-2 text-red">{stats.pendingReports}건</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-2">
+              <MessageCircle size={18} className="text-yellow" />
+              <p className="text-sm text-muted-foreground">전체 리뷰</p>
+            </div>
+            <p className="text-3xl font-bold mt-2 text-yellow">{stats.total.toLocaleString()}건</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="overflow-x-auto rounded-md border bg-white">
@@ -188,7 +207,7 @@ export default function ReviewsPage() {
             {reviews.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
-                  신고된 리뷰가 없습니다.
+                  리뷰가 없습니다.
                 </TableCell>
               </TableRow>
             )}
@@ -205,7 +224,7 @@ export default function ReviewsPage() {
                   {r.date}
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-red font-medium">
-                  {r.reportCount}건
+                  {r.reportCount > 0 ? `${r.reportCount}건` : '-'}
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={r.state} />
@@ -324,14 +343,24 @@ export default function ReviewsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1"
+                  className="flex-1 hover:bg-transparent hover:text-inherit"
                   onClick={() => setSelectedId(null)}
                 >
                   목록
                 </Button>
+                {selected.state === '신고' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 hover:bg-transparent hover:text-inherit"
+                    onClick={() => handleResolve(selected.id)}
+                  >
+                    신고 기각
+                  </Button>
+                )}
                 <Button
                   size="sm"
-                  className="flex-1 bg-red text-white"
+                  className="flex-1 bg-red text-white hover:bg-red hover:text-white"
                   onClick={() => handleDelete(selected.id)}
                 >
                   삭제
