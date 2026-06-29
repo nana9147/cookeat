@@ -8,8 +8,10 @@ import SellerBusinessInfo from '../components/Info/SellerBusinessInfo';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export default function SellerInfoPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [localData, setLocalData] = useState<SellerApplication | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -84,18 +86,20 @@ export default function SellerInfoPage() {
     <div className="bg-background p-8 flex flex-col gap-4">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-h2 font-bold text-dark-text">판매자 정보</h1>
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <Button variant="outline" onClick={handleCancel}>
-                취소
-              </Button>
-              <Button onClick={handleSave}>저장</Button>
-            </>
-          ) : (
-            <Button onClick={() => setIsEditing(true)}>수정</Button>
-          )}
-        </div>
+        {!isAdmin && (
+          <div className="flex gap-2">
+            {isEditing ? (
+              <>
+                <Button variant="outline" onClick={handleCancel}>
+                  취소
+                </Button>
+                <Button onClick={handleSave}>저장</Button>
+              </>
+            ) : (
+              <Button onClick={() => setIsEditing(true)}>수정</Button>
+            )}
+          </div>
+        )}
       </div>
       <SellerBasicInfo data={localData} isEditing={isEditing} onChange={handleChange} />
       <SellerBusinessInfo data={localData} isEditing={isEditing} onChange={handleChange} />

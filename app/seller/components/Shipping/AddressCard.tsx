@@ -16,8 +16,10 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { useState } from 'react';
+import { useAuthStore } from '@/store/authStore';
 
 export default function AddressCard({ address, onEdit, onDelete }: AddressCardProps) {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   return (
@@ -37,14 +39,16 @@ export default function AddressCard({ address, onEdit, onDelete }: AddressCardPr
                 ({address.zipCode}) {address.baseAddress}, {address.detailAddress}
               </div>
             </div>
-            <div className="flex">
-              <Button variant="ghost" onClick={onEdit}>
-                <Pencil />
-              </Button>
-              <Button variant="ghost" onClick={() => setIsDeleteOpen(true)}>
-                <Trash2 />
-              </Button>
-            </div>
+            {!isAdmin && (
+              <div className="flex">
+                <Button variant="ghost" onClick={onEdit}>
+                  <Pencil />
+                </Button>
+                <Button variant="ghost" onClick={() => setIsDeleteOpen(true)}>
+                  <Trash2 />
+                </Button>
+              </div>
+            )}
           </CardContent>
         </div>
       </Card>

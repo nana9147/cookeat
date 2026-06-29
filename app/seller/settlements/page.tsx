@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
@@ -38,6 +39,7 @@ const STATUS_OPTIONS: { label: string; value: SettlementDbStatus | '전체' }[] 
 ];
 
 export default function SettlementsPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [status, setStatus] = useState<SettlementDbStatus | '전체'>('전체');
   const [search, setSearch] = useState('');
   const [settlements, setSettlements] = useState<SettlementRow[]>([]);
@@ -219,10 +221,12 @@ export default function SettlementsPage() {
               <span className="font-semibold text-gray-800">{summary.nextSettlementDate}</span>
             </p>
           )}
-          <Button onClick={handleExcelDownload} disabled={isExporting}>
-            <Download />
-            {isExporting ? '다운로드 중...' : '엑셀 다운로드'}
-          </Button>
+          {!isAdmin && (
+            <Button onClick={handleExcelDownload} disabled={isExporting}>
+              <Download />
+              {isExporting ? '다운로드 중...' : '엑셀 다운로드'}
+            </Button>
+          )}
         </div>
       </div>
 

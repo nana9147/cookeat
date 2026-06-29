@@ -23,6 +23,7 @@ import StatusCards from '@/components/ui/StatusCards';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
+import { useAuthStore } from '@/store/authStore';
 
 const statuses: (OrderStatus | '전체')[] = ['전체', '결제완료', '배송준비', '배송중', '배송완료'];
 
@@ -59,6 +60,7 @@ const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
 ];
 
 export default function OrdersPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -264,10 +266,12 @@ export default function OrdersPage() {
     <div className="bg-background p-8">
       <div className="flex flex-row justify-between items-center mb-8">
         <h1 className="text-h2 font-bold text-dark-text">주문 관리</h1>
-        <Button onClick={handleExcelDownload} disabled={isExporting}>
-          <Download />
-          {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
-        </Button>
+        {!isAdmin && (
+          <Button onClick={handleExcelDownload} disabled={isExporting}>
+            <Download />
+            {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+          </Button>
+        )}
       </div>
       <StatusCards
         cards={statusCardData}

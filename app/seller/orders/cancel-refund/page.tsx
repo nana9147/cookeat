@@ -22,6 +22,7 @@ import { toDateStr, getDateRange } from '@/lib/dateRange';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Download } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
 
 const LIMIT = 10;
 
@@ -52,6 +53,7 @@ const EXPORT_COLUMNS: ExportColumn<RefundExportRow>[] = [
 ];
 
 export default function CancelRefundPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [tab, setTab] = useState<'전체' | '취소요청' | '환불요청' | '처리완료'>('전체');
   const [search, setSearch] = useState('');
   const [orders, setOrders] = useState<OrderWithRefunds[]>([]);
@@ -220,10 +222,12 @@ export default function CancelRefundPage() {
           <span className="text-light-gray font-normal mx-2">/</span>
           <span className="text-h4 font-medium">취소·환불 관리</span>
         </h1>
-        <Button onClick={handleExcelDownload} disabled={isExporting}>
-          <Download />
-          {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
-        </Button>
+        {!isAdmin && (
+          <Button onClick={handleExcelDownload} disabled={isExporting}>
+            <Download />
+            {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+          </Button>
+        )}
       </div>
 
       <StatusCards

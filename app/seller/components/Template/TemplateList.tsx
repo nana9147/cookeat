@@ -11,6 +11,7 @@ import ReturnPolicyTable from './ReturnPolicyTable';
 import ReturnPolicyForm from './ReturnPolicyForm';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 
 function mapReturnPolicyResponse(t: {
   templateId: number;
@@ -34,6 +35,7 @@ function mapReturnPolicyResponse(t: {
 }
 
 export default function TemplateList() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [activeTab, setActiveTab] = useState<'shipping' | 'return'>('shipping');
   const [isShippingFormOpen, setIsShippingFormOpen] = useState(false);
   const [isReturnFormOpen, setIsReturnFormOpen] = useState(false);
@@ -220,21 +222,23 @@ export default function TemplateList() {
             자주 쓰는 배송 정보를 저장해두고 상품 등록 시 바로 불러오세요.
           </span>
         </div>
-        <Button
-          onClick={() => {
-            setFormMode('등록');
-            if (activeTab === 'shipping') {
-              setSelectedShipping(undefined);
-              setIsShippingFormOpen(true);
-            } else {
-              setSelectedReturn(undefined);
-              setIsReturnFormOpen(true);
-            }
-          }}
-        >
-          <Plus />
-          {activeTab === 'shipping' ? '배송 템플릿 추가' : '반품규정 템플릿 추가'}
-        </Button>
+        {!isAdmin && (
+          <Button
+            onClick={() => {
+              setFormMode('등록');
+              if (activeTab === 'shipping') {
+                setSelectedShipping(undefined);
+                setIsShippingFormOpen(true);
+              } else {
+                setSelectedReturn(undefined);
+                setIsReturnFormOpen(true);
+              }
+            }}
+          >
+            <Plus />
+            {activeTab === 'shipping' ? '배송 템플릿 추가' : '반품규정 템플릿 추가'}
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="shipping" onValueChange={(v) => setActiveTab(v as 'shipping' | 'return')}>
