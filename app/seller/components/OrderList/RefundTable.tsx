@@ -82,7 +82,7 @@ export default function RefundTable({
                   const isPending =
                     (item.itemStatus === '환불요청' || item.itemStatus === '취소요청') &&
                     !isRejected;
-                  const rejectedLabel = item.itemStatus === '취소요청' ? '취소반려' : '환불반려';
+                  const rejectedLabel = item.itemStatus === '취소요청' ? '취소거부' : '환불거부';
 
                   return (
                     <TableRow key={item.refundId} className={isPending ? 'bg-amber-50' : undefined}>
