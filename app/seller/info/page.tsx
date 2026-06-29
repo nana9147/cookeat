@@ -28,7 +28,8 @@ export default function SellerInfoPage() {
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '판매자 정보를 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '판매자 정보를 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -61,7 +62,8 @@ export default function SellerInfoPage() {
       setIsEditing(false);
       toast.success('판매자 정보가 저장되었습니다.');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '저장에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '저장에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 

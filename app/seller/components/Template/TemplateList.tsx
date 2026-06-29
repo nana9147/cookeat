@@ -52,9 +52,10 @@ export default function TemplateList() {
     api
       .get('/seller/shipping/templates')
       .then(({ data }) => setShippingTemplate(data.data))
-      .catch((e) =>
-        toast.error(e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.')
-      );
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.';
+        toast.error(msg, { id: msg });
+      });
   };
 
   useEffect(() => {
@@ -68,7 +69,8 @@ export default function TemplateList() {
       })
       .catch((e) => {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       })
       .finally(() => {
@@ -86,7 +88,8 @@ export default function TemplateList() {
       toast.success('기본 템플릿이 변경되었습니다.');
       fetchShippingTemplates();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '기본 템플릿 설정에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '기본 템플릿 설정에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -102,7 +105,8 @@ export default function TemplateList() {
       setIsShippingFormOpen(false);
       fetchShippingTemplates();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '배송 템플릿 처리에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '배송 템플릿 처리에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -116,7 +120,8 @@ export default function TemplateList() {
       }
       fetchShippingTemplates();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '배송 템플릿 삭제에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '배송 템플릿 삭제에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -125,9 +130,10 @@ export default function TemplateList() {
     api
       .get('/seller/return-policy/templates')
       .then(({ data }) => setReturnTemplate(data.data.map(mapReturnPolicyResponse)))
-      .catch((e) =>
-        toast.error(e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.')
-      );
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.';
+        toast.error(msg, { id: msg });
+      });
   };
 
   useEffect(() => {
@@ -141,7 +147,8 @@ export default function TemplateList() {
       })
       .catch((e) => {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       })
       .finally(() => {
@@ -159,7 +166,8 @@ export default function TemplateList() {
       toast.success('기본 템플릿이 변경되었습니다.');
       fetchReturnPolicies();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '기본 템플릿 설정에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '기본 템플릿 설정에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -183,7 +191,8 @@ export default function TemplateList() {
       setIsReturnFormOpen(false);
       fetchReturnPolicies();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '반품정책 템플릿 처리에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '반품정책 템플릿 처리에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -197,7 +206,8 @@ export default function TemplateList() {
       }
       fetchReturnPolicies();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '반품정책 템플릿 삭제에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '반품정책 템플릿 삭제에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 

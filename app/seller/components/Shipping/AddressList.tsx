@@ -35,7 +35,8 @@ export default function AddressList() {
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '목록을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       } finally {
         if (!cancelled) {
@@ -68,7 +69,8 @@ export default function AddressList() {
         toast.success('주소가 등록되었습니다.');
         setIsOpen(false);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '주소 등록에 실패했습니다.');
+        const msg = e instanceof Error ? e.message : '주소 등록에 실패했습니다.';
+        toast.error(msg, { id: msg });
       }
     } else {
       try {
@@ -89,7 +91,8 @@ export default function AddressList() {
         toast.success('주소가 수정되었습니다.');
         setIsOpen(false);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '주소 수정에 실패했습니다.');
+        const msg = e instanceof Error ? e.message : '주소 수정에 실패했습니다.';
+        toast.error(msg, { id: msg });
       }
     }
   };
@@ -107,7 +110,8 @@ export default function AddressList() {
 
       toast.success('주소가 삭제되었습니다.');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '주소 삭제에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '주소 삭제에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 

@@ -75,7 +75,8 @@ export default function ShippingPage() {
       });
       setCounts(res.data.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -120,7 +121,8 @@ export default function ShippingPage() {
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       } finally {
         if (!cancelled) {
@@ -233,7 +235,8 @@ export default function ShippingPage() {
         setOrders(res.data.data.orders);
         setTotal(res.data.data.pagination.total);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
+        const msg = e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.';
+        toast.error(msg, { id: msg });
       } finally {
         setIsLoading(false);
       }

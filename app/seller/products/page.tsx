@@ -59,7 +59,8 @@ export default function ProductsPage() {
           setTotal(data.data.pagination.total);
         }
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.');
+        const msg = e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.';
+        toast.error(msg, { id: msg });
       } finally {
         setIsLoading(false);
       }

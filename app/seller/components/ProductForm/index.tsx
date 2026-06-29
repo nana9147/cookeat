@@ -114,7 +114,8 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         router.push('/seller/products');
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '처리에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '처리에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 

@@ -38,7 +38,8 @@ export default function ProductTable({ products, isLoading = false, pageSize = 1
       toast.success('상품이 삭제되었습니다.');
       window.location.reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '상품 삭제에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '상품 삭제에 실패했습니다.';
+      toast.error(msg, { id: msg });
     } finally {
       setDeletingId(null);
     }

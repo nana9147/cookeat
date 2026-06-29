@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import SellerAuthGuard from './components/SellerAuthGuard';
 import Header from './components/Header/Header';
@@ -9,9 +8,7 @@ import SellerAdminViewInitializer from './components/SellerAdminViewInitializer'
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   return (
     <SellerAuthGuard>
-      <Suspense>
-        <SellerAdminViewInitializer />
-      </Suspense>
+      <SellerAdminViewInitializer />
       <Header />
       <div className="flex flex-1">
         <SidebarProvider style={{ minHeight: '6.25rem' }}>

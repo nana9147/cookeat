@@ -151,7 +151,8 @@ export default function SettlementsPage() {
       const res = await api.get('/seller/settlements/summary');
       setSummary(res.data.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '정산 요약을 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '정산 요약을 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -177,7 +178,8 @@ export default function SettlementsPage() {
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '정산 내역을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '정산 내역을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       } finally {
         if (!cancelled) {

@@ -94,7 +94,8 @@ export default function CancelRefundPage() {
       const res = await api.get('/seller/orders/refunds/counts');
       setCounts(res.data.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '건수를 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '건수를 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     }
   }, []);
 
@@ -118,7 +119,8 @@ export default function CancelRefundPage() {
       setOrders(res.data.data.orders);
       setTotal(res.data.data.pagination.total);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '목록을 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     } finally {
       setIsLoading(false);
     }

@@ -136,7 +136,8 @@ export default function OrdersPage() {
       });
       setCounts(res.data.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -168,7 +169,8 @@ export default function OrdersPage() {
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       } finally {
         if (!cancelled) {
