@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/authStore';
 import {
   Table,
   TableBody,
@@ -31,6 +32,7 @@ export default function RefundTable({
   onPageChange,
 }: RefundTableProps) {
   const [viewingReasonItem, setViewingReasonItem] = useState<RefundItem | null>(null);
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
 
   const rows = orders.flatMap((order) => order.refundItems.map((item) => ({ order, item })));
 
@@ -139,7 +141,7 @@ export default function RefundTable({
                         )}
                       </TableCell>
                       <TableCell className="text-center whitespace-nowrap">
-                        {isPending ? (
+                        {isPending && !isAdmin ? (
                           <div className="flex gap-1.5 justify-center">
                             <Button size="sm" onClick={() => onApprove(item.refundId)}>
                               승인
@@ -152,6 +154,8 @@ export default function RefundTable({
                               거부
                             </Button>
                           </div>
+                        ) : isPending ? (
+                          <StatusBadge status={item.itemStatus} />
                         ) : isRejected ? (
                           <StatusBadge status={rejectedLabel} />
                         ) : (

@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useAuthStore } from '@/store/authStore';
 
 interface ProductTableProps {
   products: Product[];
@@ -27,6 +28,7 @@ interface ProductTableProps {
 export default function ProductTable({ products, isLoading = false, pageSize = 10 }: ProductTableProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [previewId, setPreviewId] = useState<number | null>(null);
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
 
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`[${name}] \n\n해당 상품을 정말 삭제하시겠습니까?`)) return;
@@ -123,22 +125,26 @@ export default function ProductTable({ products, isLoading = false, pageSize = 1
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-2 text-gray-400">
-                      <Link href={`/seller/products/${product.productId}/edit`}>
-                        <SquarePen className="text-dark-text/70" />
-                      </Link>
+                      {!isAdmin && (
+                        <Link href={`/seller/products/${product.productId}/edit`}>
+                          <SquarePen className="text-dark-text/70" />
+                        </Link>
+                      )}
                       <button onClick={() => setPreviewId(product.productId)}>
                         <Eye />
                       </button>
-                      <button
-                        onClick={() => handleDelete(product.productId, product.name)}
-                        disabled={deletingId === product.productId}
-                      >
-                        <Trash2
-                          className={
-                            deletingId === product.productId ? 'text-gray-300' : 'text-red-400'
-                          }
-                        />
-                      </button>
+                      {!isAdmin && (
+                        <button
+                          onClick={() => handleDelete(product.productId, product.name)}
+                          disabled={deletingId === product.productId}
+                        >
+                          <Trash2
+                            className={
+                              deletingId === product.productId ? 'text-gray-300' : 'text-red-400'
+                            }
+                          />
+                        </button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

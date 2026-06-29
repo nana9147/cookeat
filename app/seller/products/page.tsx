@@ -12,11 +12,13 @@ import type { ProductStatus, Product, CategoryNode } from '@/types/seller/produc
 import Link from 'next/link';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 
 const statuses: (ProductStatus | '전체')[] = ['전체', '판매중', '품절', '판매종료', '숨김'];
 const LIMIT = 10;
 
 export default function ProductsPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [status, setStatus] = useState<ProductStatus | '전체'>('전체');
   const [search, setSearch] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -84,11 +86,13 @@ export default function ProductsPage() {
     <div className="bg-background p-8">
       <div className="mb-8 pr-5 flex items-center justify-between">
         <h1 className="text-h2 font-bold text-dark-text">상품 관리</h1>
-        <Link href="/seller/products/new">
-          <Button className="p-5">
-            <Plus /> 상품 등록
-          </Button>
-        </Link>
+        {!isAdmin && (
+          <Link href="/seller/products/new">
+            <Button className="p-5">
+              <Plus /> 상품 등록
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">

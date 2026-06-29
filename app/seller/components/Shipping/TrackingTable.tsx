@@ -24,6 +24,7 @@ import {
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
+import { useAuthStore } from '@/store/authStore';
 import {
   Table,
   TableBody,
@@ -65,7 +66,7 @@ export default function TrackingTable({
 }: TrackingTableProps) {
   const [inputs, setInputs] = useState<Record<number, ShippingInputState>>({});
   const [defaultCourier, setDefaultCourier] = useState<CourierCode | ''>('');
-  const isEditable = status === '배송준비';
+  const isEditable = status === '배송준비' && !isAdmin;
   const isShipping = status === '배송중';
   const hasActionColumn = isEditable || isShipping;
 
@@ -194,9 +195,10 @@ export default function TrackingTable({
     }
   };
 
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
-  const isCompletable = status === '배송중';
+  const isCompletable = status === '배송중' && !isAdmin;
 
   useEffect(() => {
     setSelectedItemIds([]);

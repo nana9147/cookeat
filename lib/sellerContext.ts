@@ -15,6 +15,10 @@ export async function requireSellerContext(
   if (authed instanceof NextResponse) return authed;
 
   if (authed.role === 'admin') {
+    if (req.method !== 'GET') {
+      return NextResponse.json({ error: '관리자는 조회만 가능합니다.' }, { status: 403 });
+    }
+
     const sellerIdParam = req.nextUrl.searchParams.get('sellerId');
     if (!sellerIdParam) {
       return NextResponse.json({ error: 'sellerId 파라미터가 필요합니다.' }, { status: 400 });
