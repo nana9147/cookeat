@@ -20,7 +20,16 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  const { items, paymentMethod, recipient = '', phone = '', address = '' } = await req.json();
+  const {
+    items,
+    paymentMethod,
+    recipient = '',
+    phone = '',
+    address = '',
+    addressDetail = '',
+    usePoint = 0,
+    couponCode,
+  } = await req.json();
 
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: '주문 상품이 없습니다.' }, { status: 400 });
@@ -83,7 +92,59 @@ export async function POST(req: NextRequest) {
   }
 
   const shippingFee = calcShipping(totalAmount);
-  const finalAmount = totalAmount + shippingFee;
+
+  // 포인트 검증
+  const usedPoint = Math.floor(Number(usePoint) || 0);
+  if (usedPoint < 0) {
+    return NextResponse.json({ error: '포인트는 0 이상이어야 합니다.' }, { status: 400 });
+  }
+  if (usedPoint > 0) {
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('point')
+      .eq('user_id', authed.userId)
+      .single();
+    if (userError || !userData) {
+      return NextResponse.json({ error: '사용자 정보를 불러올 수 없습니다.' }, { status: 500 });
+    }
+    if (userData.point < usedPoint) {
+      return NextResponse.json({ error: '보유 포인트가 부족합니다.' }, { status: 400 });
+    }
+  }
+
+  // 쿠폰 검증
+  let couponId: number | null = null;
+  let couponDiscount = 0;
+  if (couponCode) {
+    const { data: coupon, error: couponError } = await supabaseAdmin
+      .from('coupons')
+      .select('coupon_id, discount_type, discount_value, min_order_amount, max_usage_count, current_usage_count, expired_at')
+      .eq('code', String(couponCode).trim())
+      .single();
+
+    if (couponError || !coupon) {
+      return NextResponse.json({ error: '존재하지 않는 쿠폰 코드입니다.' }, { status: 400 });
+    }
+    if (new Date(coupon.expired_at) < new Date()) {
+      return NextResponse.json({ error: '만료된 쿠폰입니다.' }, { status: 400 });
+    }
+    if (coupon.max_usage_count !== null && coupon.current_usage_count >= coupon.max_usage_count) {
+      return NextResponse.json({ error: '사용 가능 횟수를 초과한 쿠폰입니다.' }, { status: 400 });
+    }
+    if (coupon.min_order_amount !== null && totalAmount < coupon.min_order_amount) {
+      return NextResponse.json(
+        { error: `최소 주문 금액 ${coupon.min_order_amount.toLocaleString()}원 이상 시 사용 가능한 쿠폰입니다.` },
+        { status: 400 }
+      );
+    }
+    couponId = coupon.coupon_id;
+    couponDiscount =
+      coupon.discount_type === '%'
+        ? Math.floor(totalAmount * coupon.discount_value / 100)
+        : coupon.discount_value;
+  }
+
+  const finalAmount = Math.max(0, totalAmount + shippingFee - usedPoint - couponDiscount);
 
   const now = new Date();
   const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
@@ -98,22 +159,26 @@ export async function POST(req: NextRequest) {
     p_items: validatedItems,
     p_total_amount: totalAmount,
     p_shipping_fee: shippingFee,
-    p_coupon_discount: 0,
+    p_coupon_discount: couponDiscount,
     p_final_amount: finalAmount,
     p_payment_method: PAYMENT_METHOD_MAP[paymentMethod] ?? paymentMethod,
     p_recipient: recipient,
     p_phone: phone,
     p_address: address,
+    p_address_detail: addressDetail ?? '',
+    p_used_point: usedPoint,
+    p_coupon_id: couponId,
   });
 
   if (rpcError) {
-    // errcode P0001 = 재고 부족으로 함수 내부에서 raise exception
-    const isStockError =
-      rpcError.code === 'P0001' || (rpcError.message ?? '').includes('재고 부족');
-    return NextResponse.json(
-      { error: isStockError ? '재고가 부족합니다. 다시 시도해주세요.' : '주문 생성 실패' },
-      { status: isStockError ? 409 : 500 }
-    );
+    const msg = rpcError.message ?? '';
+    if (rpcError.code === 'P0001' || msg.includes('재고 부족')) {
+      return NextResponse.json({ error: '재고가 부족합니다. 다시 시도해주세요.' }, { status: 409 });
+    }
+    if (rpcError.code === 'P0002' || msg.includes('보유 포인트')) {
+      return NextResponse.json({ error: '보유 포인트가 부족합니다.' }, { status: 400 });
+    }
+    return NextResponse.json({ error: '주문 생성 실패' }, { status: 500 });
   }
 
   return NextResponse.json({ orderId, finalAmount });

@@ -12,6 +12,7 @@ interface PaymentSummaryProps {
   productTotal?: number;
   productDiscount?: number;
   couponDiscount?: number;
+  usedPoint?: number;
   shippingFee?: number;
   pointRate?: number;
 }
@@ -26,15 +27,23 @@ export default function PaymentSummary({
   productTotal = 0,
   productDiscount = 0,
   couponDiscount = 0,
+  usedPoint = 0,
   shippingFee = 0,
   pointRate = 0.01,
 }: PaymentSummaryProps) {
-  const finalAmount = productTotal - productDiscount - couponDiscount + shippingFee;
+  const finalAmount = Math.max(0, productTotal - productDiscount - couponDiscount - usedPoint + shippingFee);
   const earnPoints = Math.floor(finalAmount * pointRate);
   const rows = [
     { label: '상품 금액', value: `${productTotal.toLocaleString()}원`, red: false },
-    { label: '상품 할인', value: `-${productDiscount.toLocaleString()}원`, red: true },
-    { label: '쿠폰 할인', value: `-${couponDiscount.toLocaleString()}원`, red: true },
+    ...(productDiscount > 0
+      ? [{ label: '상품 할인', value: `-${productDiscount.toLocaleString()}원`, red: true }]
+      : []),
+    ...(couponDiscount > 0
+      ? [{ label: '쿠폰 할인', value: `-${couponDiscount.toLocaleString()}원`, red: true }]
+      : []),
+    ...(usedPoint > 0
+      ? [{ label: '포인트 사용', value: `-${usedPoint.toLocaleString()}원`, red: true }]
+      : []),
     { label: '배송비', value: shippingFee === 0 ? '무료' : `${shippingFee.toLocaleString()}원`, red: false },
   ];
 
