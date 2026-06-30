@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, ShoppingCart, Truck, RefreshCw } from 'lucide-react';
-import type { Order, OrderStatus } from '@/types/seller/order';
+import type { Order } from '@/types/seller/order';
+import StatusBadge from '@/app/seller/components/StatusBadge';
 import type { SettlementInfo } from '@/types/seller/settlement';
 import type { StateCard } from '@/types/seller/seller';
 
@@ -15,40 +16,45 @@ const stateCards: StateCard[] = [
 const latestOrders: Order[] = [
   {
     id: 'ORD-2024-001',
-    customer: '김**',
+    customer: '김가을',
+    recipient: '김가을',
+    phone: '010-1111-2222',
     product: '유기농 토마토 500g',
-    price: '15,900원',
-    status: '배송준비중',
+    price: 15900,
+    status: '배송준비',
+    orderDate: '2024-06-09 14:16:22',
   },
   {
     id: 'ORD-2024-002',
-    customer: '이**',
+    customer: '이여름',
+    recipient: '이여름',
+    phone: '010-2222-3333',
     product: '무농약 상추 300g',
-    price: '8,500원',
+    price: 8500,
     status: '결제완료',
+    orderDate: '2024-06-09 14:16:22',
   },
   {
     id: 'ORD-2024-003',
-    customer: '박**',
+    customer: '박겨울',
+    recipient: '박겨울',
+    phone: '010-3333-4444',
     product: '국내산 달걀 30구',
-    price: '12,000원',
+    price: 12000,
     status: '배송중',
+    orderDate: '2024-06-09 14:16:22',
   },
   {
     id: 'ORD-2024-004',
-    customer: '최**',
+    customer: '최봄',
+    recipient: '최봄',
+    phone: '010-4444-5555',
     product: '유기농 감자 1kg',
-    price: '9,800원',
+    price: 9800,
     status: '배송완료',
+    orderDate: '2024-06-09 14:16:22',
   },
 ];
-
-const statusStyles: Record<OrderStatus, string> = {
-  배송준비중: 'bg-amber-50 text-yellow border border-amber-200',
-  결제완료: 'bg-emerald-50 text-primary border border-emerald-200',
-  배송중: 'bg-blue-50 text-blue-600 border border-blue-200',
-  배송완료: 'bg-beige text-muted border border-border',
-};
 
 const settlementInfo: SettlementInfo = {
   amount: '45,280,000원',
@@ -57,7 +63,7 @@ const settlementInfo: SettlementInfo = {
 
 export default function SellerPage() {
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="bg-background p-8">
       {/* 헤더 */}
       <div className="mb-8">
         <h1 className="text-h2 font-bold text-dark-text">판매 현황</h1>
@@ -144,11 +150,7 @@ export default function SellerPage() {
                       {order.price}
                     </td>
                     <td className="px-5 py-3.5 text-center">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[order.status]}`}
-                      >
-                        {order.status}
-                      </span>
+                      <StatusBadge status={order.status} />
                     </td>
                   </tr>
                 ))}

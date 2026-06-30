@@ -22,19 +22,17 @@
 | DELETE | `/admin/products/:productId`        | 상품 삭제                  | ✓    |
 | GET    | `/admin/orders`                     | 전체 주문 목록             | ✓    |
 | PATCH  | `/admin/orders/:orderId/status`     | 주문 상태 변경             | ✓    |
-| GET    | `/admin/reviews`                    | 리뷰 목록 조회             | ✓    |
+| GET    | `/admin/reviews`                    | 리뷰 목록 조회 + 신고 통계 | ✓    |
+| PATCH  | `/admin/reviews/:reviewId`          | 리뷰 상태 변경 (처리완료)  | ✓    |
 | DELETE | `/admin/reviews/:reviewId`          | 리뷰 삭제 (어뷰징)         | ✓    |
-| GET    | `/admin/categories`                 | 카테고리 목록              | ✓    |
-| POST   | `/admin/categories`                 | 카테고리 추가              | ✓    |
-| PATCH  | `/admin/categories/:categoryId`     | 카테고리 수정              | ✓    |
-| DELETE | `/admin/categories/:categoryId`     | 카테고리 삭제              | ✓    |
-| GET    | `/admin/coupons`                    | 프로모 코드 목록           | ✓    |
-| POST   | `/admin/coupons`                    | 프로모 코드 생성           | ✓    |
-| DELETE | `/admin/coupons/:couponId`          | 프로모 코드 삭제           | ✓    |
 | GET    | `/admin/settlements`                | 정산 목록                  | ✓    |
 | PATCH  | `/admin/settlements/:settlementId`  | 정산 처리                  | ✓    |
 | GET    | `/admin/inquiries`                  | 전체 문의 목록             | ✓    |
 | POST   | `/admin/inquiries/:inquiryId/reply` | 문의 답변                  | ✓    |
+| GET    | `/admin/faqs`                       | FAQ 목록 조회              | ✓    |
+| POST   | `/admin/faqs`                       | FAQ 등록                   | ✓    |
+| PATCH  | `/admin/faqs/:faqId`                | FAQ 수정                   | ✓    |
+| DELETE | `/admin/faqs/:faqId`                | FAQ 삭제                   | ✓    |
 
 ---
 
@@ -143,16 +141,15 @@
 
 `Response 200`
 
-| 필드             | 타입      | 설명                          |
-| ---------------- | --------- | ----------------------------- |
-| `sellerId`       | `int`     | 판매자 ID                     |
-| `storeName`      | `string`  | 상호명                        |
-| `email`          | `string`  | 이메일                        |
-| `businessNumber` | `string`  | 사업자 번호                   |
-| `isApproved`     | `boolean` | 승인 여부                     |
-| `status`         | `string`  | 상태 (`승인`, `대기`, `거절`) |
-| `productCount`   | `int`     | 등록 상품 수                  |
-| `createdAt`      | `string`  | 신청일 (ISO 8601)             |
+| 필드             | 타입     | 설명                                          |
+| ---------------- | -------- | --------------------------------------------- |
+| `sellerId`       | `int`    | 판매자 ID                                     |
+| `storeName`      | `string` | 상호명                                        |
+| `email`          | `string` | 이메일                                        |
+| `businessNumber` | `string` | 사업자 번호                                   |
+| `approveStatus`  | `string` | 승인 상태 (`pending`, `approved`, `rejected`) |
+| `productCount`   | `int`    | 등록 상품 수                                  |
+| `createdAt`      | `string` | 신청일 (ISO 8601)                             |
 
 ```json
 {
@@ -164,8 +161,7 @@
         "storeName": "건강한 농장",
         "email": "seller@example.com",
         "businessNumber": "000-00-00000",
-        "isApproved": false,
-        "status": "대기",
+        "approveStatus": "pending",
         "productCount": 0,
         "createdAt": "2026-05-30T00:00:00Z"
       }
@@ -179,56 +175,99 @@
 
 `Request Body`
 
-| 필드       | 타입      | 필수 | 설명                       |
-| ---------- | --------- | ---- | -------------------------- |
-| `approved` | `boolean` | ✓    | `true` 승인 / `false` 거절 |
-| `reason`   | `string`  | ✗    | 거절 사유                  |
+| 필드     | 타입     | 필수 | 설명                              |
+| -------- | -------- | ---- | --------------------------------- |
+| `status` | `string` | ✓    | `approved` 또는 `rejected`        |
+| `reason` | `string` | ✗    | 거절 사유 (`rejected` 시 권장)    |
 
 ```json
-{ "approved": true, "reason": null }
+{ "status": "rejected", "reason": "서류 미비" }
 ```
 
 ---
 
-### POST `/admin/categories`
+### GET `/admin/reviews`
 
-`Request Body`
+`Query Parameters`
 
-| 필드        | 타입         | 필수 | 설명                             |
-| ----------- | ------------ | ---- | -------------------------------- |
-| `name`      | `string`     | ✓    | 카테고리명                       |
-| `parentId`  | `int / null` | ✗    | 상위 카테고리 ID (최상위면 null) |
-| `sortOrder` | `int`        | ✗    | 노출 순서                        |
+| 파라미터  | 타입     | 필수 | 설명              |
+| --------- | -------- | ---- | ----------------- |
+| `keyword` | `string` | ✗    | 리뷰 내용 키워드  |
+| `page`    | `int`    | ✗    | 페이지 번호       |
+| `limit`   | `int`    | ✗    | 페이지당 항목 수  |
 
-```json
-{ "name": "다이어트", "parentId": null, "sortOrder": 5 }
-```
+`Response 200`
 
----
-
-### POST `/admin/coupons`
-
-`Request Body`
-
-| 필드             | 타입         | 필수 | 설명                             |
-| ---------------- | ------------ | ---- | -------------------------------- |
-| `code`           | `string`     | ✓    | 쿠폰 코드                        |
-| `discountType`   | `string`     | ✓    | 할인 유형 (`rate`, `fixed`)      |
-| `discountValue`  | `int`        | ✓    | 할인 값 (% 또는 원)              |
-| `minOrderAmount` | `int`        | ✗    | 최소 주문 금액 (원)              |
-| `maxUsageCount`  | `int / null` | ✗    | 최대 사용 횟수 (null이면 무제한) |
-| `expiredAt`      | `string`     | ✓    | 만료일 (ISO 8601)                |
+| 필드                    | 타입     | 설명                               |
+| ----------------------- | -------- | ---------------------------------- |
+| `stats.total`           | `int`    | 전체 리뷰 수                       |
+| `stats.pendingReports`  | `int`    | 신고 대기 리뷰 수 (`status=신고`)  |
+| `stats.resolved`        | `int`    | 처리 완료 리뷰 수                  |
+| `reviews[].reviewId`    | `int`    | 리뷰 ID                            |
+| `reviews[].author`      | `string` | 작성자 닉네임                      |
+| `reviews[].authorEmail` | `string` | 작성자 이메일                      |
+| `reviews[].targetName`  | `string` | 대상 상품명 또는 레시피 제목       |
+| `reviews[].rating`      | `int`    | 평점 (1~5)                         |
+| `reviews[].content`     | `string` | 리뷰 내용                          |
+| `reviews[].state`       | `string` | 상태 (`정상` \| `신고` \| `처리완료`) |
+| `reviews[].reportCount` | `int`    | 신고 수                            |
+| `reviews[].reports`     | `array`  | 신고 내역 목록                     |
+| `reviews[].createdAt`   | `string` | 작성일시 (ISO 8601)                |
 
 ```json
 {
-  "code": "SUMMER2026",
-  "discountType": "rate",
-  "discountValue": 10,
-  "minOrderAmount": 20000,
-  "maxUsageCount": 1000,
-  "expiredAt": "2026-08-31T23:59:59Z"
+  "stats": { "total": 3456, "pendingReports": 5, "resolved": 12 },
+  "reviews": [
+    {
+      "reviewId": 1,
+      "author": "홍길동",
+      "authorEmail": "hong@example.com",
+      "targetName": "제주 감귤 5kg",
+      "rating": 1,
+      "content": "이 제품 광고입니다",
+      "state": "신고",
+      "reportCount": 3,
+      "reports": [
+        { "reporter": "김철수", "date": "2026.06.01", "reason": "광고성 리뷰" }
+      ],
+      "createdAt": "2026-05-30T00:00:00Z"
+    }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 3456, "hasNext": true }
 }
 ```
+
+---
+
+### PATCH `/admin/reviews/:reviewId`
+
+`Request Body`
+
+| 필드     | 타입     | 필수 | 설명                                  |
+| -------- | -------- | ---- | ------------------------------------- |
+| `status` | `string` | ✓    | `정상` \| `신고` \| `처리완료`        |
+
+```json
+{ "status": "처리완료" }
+```
+
+`Response 200`
+
+```json
+{ "success": true }
+```
+
+---
+
+### DELETE `/admin/reviews/:reviewId`
+
+`Response 200`
+
+```json
+{ "success": true }
+```
+
+> `review_reports` 테이블의 관련 신고 내역은 `ON DELETE CASCADE`로 자동 삭제됩니다.
 
 ---
 
@@ -297,4 +336,100 @@
 
 ```json
 { "content": "안녕하세요. 문의해주신 내용에 대해 답변 드립니다..." }
+```
+
+---
+
+### GET `/admin/faqs`
+
+`Query Parameters`
+
+| 파라미터   | 타입     | 필수 | 설명                                        |
+| ---------- | -------- | ---- | ------------------------------------------- |
+| `category` | `string` | ✗    | 카테고리 (`배송`, `환불`, `상품`, `회원`, `결제`) |
+| `keyword`  | `string` | ✗    | 제목 키워드 검색                            |
+
+`Response 200`
+
+| 필드        | 타입      | 설명                        |
+| ----------- | --------- | --------------------------- |
+| `faq_id`    | `int`     | FAQ ID                      |
+| `category`  | `string`  | 카테고리                    |
+| `title`     | `string`  | 질문                        |
+| `content`   | `string`  | 답변                        |
+| `views`     | `int`     | 조회수                      |
+| `is_public` | `boolean` | 공개 여부                   |
+| `created_at`| `string`  | 등록일 (ISO 8601)           |
+
+```json
+{
+  "faqs": [
+    {
+      "faq_id": 1,
+      "category": "배송",
+      "title": "배송은 얼마나 걸리나요?",
+      "content": "평균 2~3 영업일 소요됩니다.",
+      "views": 120,
+      "is_public": true,
+      "created_at": "2026-06-01T00:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+### POST `/admin/faqs`
+
+`Request Body`
+
+| 필드        | 타입      | 필수 | 설명                                        |
+| ----------- | --------- | ---- | ------------------------------------------- |
+| `category`  | `string`  | ✓    | 카테고리 (`배송`, `환불`, `상품`, `회원`, `결제`) |
+| `title`     | `string`  | ✓    | 질문                                        |
+| `content`   | `string`  | ✓    | 답변                                        |
+| `is_public` | `boolean` | ✗    | 공개 여부 (기본값 `true`)                   |
+
+```json
+{ "category": "배송", "title": "배송은 얼마나 걸리나요?", "content": "평균 2~3 영업일 소요됩니다.", "is_public": true }
+```
+
+`Response 201`
+
+```json
+{ "faq": { "faq_id": 1, "category": "배송", "title": "...", "content": "...", "views": 0, "is_public": true, "created_at": "..." } }
+```
+
+---
+
+### PATCH `/admin/faqs/:faqId`
+
+`Request Body`
+
+| 필드        | 타입      | 필수 | 설명                                        |
+| ----------- | --------- | ---- | ------------------------------------------- |
+| `category`  | `string`  | ✗    | 카테고리 (`배송`, `환불`, `상품`, `회원`, `결제`) |
+| `title`     | `string`  | ✗    | 질문                                        |
+| `content`   | `string`  | ✗    | 답변                                        |
+| `is_public` | `boolean` | ✗    | 공개 여부                                   |
+
+```json
+{ "is_public": false }
+```
+
+`Response 200`
+
+```json
+{ "faq": { "faq_id": 1, "category": "배송", "title": "...", "content": "...", "views": 120, "is_public": false, "created_at": "..." } }
+```
+
+---
+
+### DELETE `/admin/faqs/:faqId`
+
+`Response 200`
+
+```json
+{ "success": true }
 ```

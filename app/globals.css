@@ -1,6 +1,6 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import '../node_modules/tw-animate-css/dist/tw-animate.css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -28,6 +28,11 @@
   /* Accent */
   --yellow: #e8a33d;
   --red: #e0463b;
+
+  /* Footer */
+  --footer-bg: #2a3d2f;
+  --footer-text: #dce7da;
+  --footer-sub: #b7c7b5;
   --background: #fbf7ee;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -61,8 +66,8 @@
 
 @theme {
   --breakpoint-mobile: 24.375rem; /* 390px */
-  --breakpoint-tablet: 48rem;     /* 768px */
-  --breakpoint-desktop: 90rem;    /* 1440px */
+  --breakpoint-tablet: 48rem; /* 768px */
+  --breakpoint-desktop: 90rem; /* 1440px */
 }
 
 @theme inline {
@@ -86,6 +91,11 @@
   /* Accent */
   --color-yellow: var(--yellow);
   --color-red: var(--red);
+
+  /* Footer */
+  --color-footer-bg: var(--footer-bg);
+  --color-footer-text: var(--footer-text);
+  --color-footer-sub: var(--footer-sub);
 
   /* Font */
   --font-sans: var(--font-sans);

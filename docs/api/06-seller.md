@@ -2,28 +2,65 @@
 
 [← 목차로 돌아가기](../api.md)
 
-> **인증** : 판매자 계정 JWT 필요 (`role: seller`)
+> **인증** : 대부분 판매자 계정 JWT 필요 (`role: seller`). 신청 엔드포인트는 일반 회원(`role: user`)으로 요청.
 
 ---
 
 ## 엔드포인트 목록
 
-| Method | Endpoint                           | 설명                      | 인증 |
-| ------ | ---------------------------------- | ------------------------- | ---- |
-| GET    | `/seller/me`                       | 판매자 정보 조회          | ✓    |
-| PATCH  | `/seller/me`                       | 판매자 정보 수정          | ✓    |
-| GET    | `/seller/dashboard`                | 대시보드 (매출/주문 요약) | ✓    |
-| GET    | `/seller/products`                 | 내 상품 목록              | ✓    |
-| POST   | `/seller/products`                 | 상품 등록                 | ✓    |
-| PATCH  | `/seller/products/:productId`      | 상품 수정                 | ✓    |
-| DELETE | `/seller/products/:productId`      | 상품 삭제                 | ✓    |
-| GET    | `/seller/orders`                   | 주문 관리 목록            | ✓    |
-| PATCH  | `/seller/orders/:orderId/status`   | 주문 상태 변경            | ✓    |
-| GET    | `/seller/orders/:orderId/shipping` | 배송 정보 조회            | ✓    |
-| PATCH  | `/seller/orders/:orderId/shipping` | 운송장 업데이트           | ✓    |
-| GET    | `/seller/inventory`                | 재고 현황                 | ✓    |
-| PATCH  | `/seller/inventory/:productId`     | 재고 수량 수정            | ✓    |
-| GET    | `/seller/sales`                    | 판매 내역 / 정산 관리     | ✓    |
+| Method | Endpoint                           | 설명                      | 인증         |
+| ------ | ---------------------------------- | ------------------------- | ------------ |
+| POST   | `/seller/apply`                    | 판매자 신청               | ✓ (user)     |
+| GET    | `/seller/me`                       | 판매자 정보 조회          | ✓ (seller)   |
+| PATCH  | `/seller/me`                       | 판매자 정보 수정          | ✓ (seller)   |
+| GET    | `/seller/dashboard`                | 대시보드 (매출/주문 요약) | ✓ (seller)   |
+| GET    | `/seller/products`                 | 내 상품 목록              | ✓ (seller)   |
+| POST   | `/seller/products`                 | 상품 등록                 | ✓ (seller)   |
+| PATCH  | `/seller/products/:productId`      | 상품 수정                 | ✓ (seller)   |
+| DELETE | `/seller/products/:productId`      | 상품 삭제                 | ✓ (seller)   |
+| GET    | `/seller/orders`                   | 주문 관리 목록            | ✓ (seller)   |
+| PATCH  | `/seller/orders/:orderId/status`   | 주문 상태 변경            | ✓ (seller)   |
+| GET    | `/seller/orders/:orderId/shipping` | 배송 정보 조회            | ✓ (seller)   |
+| PATCH  | `/seller/orders/:orderId/shipping` | 운송장 업데이트           | ✓ (seller)   |
+| GET    | `/seller/inventory`                | 재고 현황                 | ✓ (seller)   |
+| PATCH  | `/seller/inventory/:productId`     | 재고 수량 수정            | ✓ (seller)   |
+| GET    | `/seller/sales`                    | 판매 내역 / 정산 관리     | ✓ (seller)   |
+
+---
+
+### POST `/seller/apply`
+
+> 인증: `role: user` (일반 회원이 판매자 신청)
+
+`Request Body`
+
+| 필드             | 타입     | 필수 | 설명          |
+| ---------------- | -------- | ---- | ------------- |
+| `storeName`      | `string` | ✓    | 상호명        |
+| `businessNumber` | `string` | ✓    | 사업자 번호   |
+| `bankName`       | `string` | ✓    | 정산 은행     |
+| `bankAccount`    | `string` | ✓    | 정산 계좌번호 |
+
+```json
+{
+  "storeName": "건강한 농장",
+  "businessNumber": "000-00-00000",
+  "bankName": "국민은행",
+  "bankAccount": "123456-78-901234"
+}
+```
+
+`Response 201`
+
+```json
+{
+  "success": true,
+  "data": {
+    "sellerId": 5,
+    "approveStatus": "pending"
+  }
+}
+```
 
 ---
 
@@ -31,17 +68,18 @@
 
 `Response 200`
 
-| 필드             | 타입      | 설명              |
-| ---------------- | --------- | ----------------- |
-| `sellerId`       | `int`     | 판매자 고유 ID    |
-| `storeName`      | `string`  | 상호명            |
-| `email`          | `string`  | 이메일            |
-| `phone`          | `string`  | 연락처            |
-| `businessNumber` | `string`  | 사업자 번호       |
-| `bankName`       | `string`  | 정산 은행         |
-| `bankAccount`    | `string`  | 정산 계좌번호     |
-| `isApproved`     | `boolean` | 승인 여부         |
-| `createdAt`      | `string`  | 가입일 (ISO 8601) |
+| 필드             | 타입            | 설명                                            |
+| ---------------- | --------------- | ----------------------------------------------- |
+| `sellerId`       | `int`           | 판매자 고유 ID                                  |
+| `storeName`      | `string`        | 상호명                                          |
+| `email`          | `string`        | 이메일                                          |
+| `phone`          | `string`        | 연락처                                          |
+| `businessNumber` | `string`        | 사업자 번호                                     |
+| `bankName`       | `string`        | 정산 은행                                       |
+| `bankAccount`    | `string`        | 정산 계좌번호                                   |
+| `approveStatus`  | `string`        | 승인 상태 (`pending`, `approved`, `rejected`)   |
+| `rejectedReason` | `string / null` | 거절 사유 (`rejected` 상태일 때만 값이 존재)    |
+| `createdAt`      | `string`        | 신청일 (ISO 8601)                               |
 
 ```json
 {
@@ -54,7 +92,8 @@
     "businessNumber": "000-00-00000",
     "bankName": "국민은행",
     "bankAccount": "123456-78-901234",
-    "isApproved": true,
+    "approveStatus": "approved",
+    "rejectedReason": null,
     "createdAt": "2026-01-01T00:00:00Z"
   }
 }

@@ -4,6 +4,66 @@
 
 ---
 
+## Category · 재료 쇼핑 카테고리
+
+> 재료 쇼핑 **대카테고리** 목록. 소카테고리(ingredients)는 `GET /ingredients`로 조회.
+
+| Method | Endpoint      | 설명                    | 인증 |
+| ------ | ------------- | ----------------------- | ---- |
+| GET    | `/categories` | 재료 쇼핑 대카테고리 목록 | ✗    |
+
+### GET `/categories`
+
+`Response 200`
+
+| 필드         | 타입     | 설명        |
+| ------------ | -------- | ----------- |
+| `categoryId` | `int`    | 대카테고리 ID |
+| `name`       | `string` | 카테고리명  |
+| `sortOrder`  | `int`    | 노출 순서   |
+
+```json
+{
+  "success": true,
+  "data": [
+    { "categoryId": 1, "name": "채소", "sortOrder": 1 },
+    { "categoryId": 2, "name": "육류", "sortOrder": 2 },
+    { "categoryId": 3, "name": "해산물", "sortOrder": 3 }
+  ]
+}
+```
+
+---
+
+## Recipe Category · 레시피 카테고리
+
+| Method | Endpoint            | 설명                  | 인증 |
+| ------ | ------------------- | --------------------- | ---- |
+| GET    | `/recipe-categories` | 레시피 카테고리 목록  | ✗    |
+
+### GET `/recipe-categories`
+
+`Response 200`
+
+| 필드               | 타입     | 설명              |
+| ------------------ | -------- | ----------------- |
+| `recipeCategoryId` | `int`    | 레시피 카테고리 ID |
+| `name`             | `string` | 카테고리명        |
+| `sortOrder`        | `int`    | 노출 순서         |
+
+```json
+{
+  "success": true,
+  "data": [
+    { "recipeCategoryId": 1, "name": "한식", "sortOrder": 1 },
+    { "recipeCategoryId": 2, "name": "양식", "sortOrder": 2 },
+    { "recipeCategoryId": 3, "name": "다이어트", "sortOrder": 3 }
+  ]
+}
+```
+
+---
+
 ## Recipe · 레시피
 
 | Method | Endpoint             | 설명                                      | 인증 |
@@ -18,13 +78,13 @@
 
 `Query Parameters`
 
-| 파라미터      | 타입       | 필수 | 설명                         | 예시                                 |
-| ------------- | ---------- | ---- | ---------------------------- | ------------------------------------ |
-| `ingredients` | `string[]` | ✗    | 보유 식재료 태그 (AND 조건)  | `?ingredients=대파&ingredients=계란` |
-| `category`    | `string`   | ✗    | 카테고리                     | `한식`, `양식`, `다이어트`           |
-| `sort`        | `string`   | ✗    | 정렬 기준                    | `popular`, `latest`, `scrap`         |
-| `page`        | `int`      | ✗    | 페이지 번호 (기본값 1)       | `?page=1`                            |
-| `limit`       | `int`      | ✗    | 페이지당 항목 수 (기본값 12) | `?limit=12`                          |
+| 파라미터      | 타입       | 필수 | 설명                              | 예시                                 |
+| ------------- | ---------- | ---- | --------------------------------- | ------------------------------------ |
+| `ingredients`      | `string[]` | ✗    | 보유 식재료 태그 (AND 조건)                       | `?ingredients=대파&ingredients=계란` |
+| `recipeCategoryId` | `int`      | ✗    | 레시피 카테고리 ID (`recipe_categories` 참조)     | `?recipeCategoryId=1`                |
+| `sort`        | `string`   | ✗    | 정렬 기준                         | `popular`, `latest`, `scrap`         |
+| `page`        | `int`      | ✗    | 페이지 번호 (기본값 1)            | `?page=1`                            |
+| `limit`       | `int`      | ✗    | 페이지당 항목 수 (기본값 12)      | `?limit=12`                          |
 
 `Response 200`
 
@@ -33,7 +93,8 @@
 | `recipeId`         | `int`      | 레시피 고유 ID              |
 | `title`            | `string`   | 레시피 제목                 |
 | `thumbnail`        | `string`   | 썸네일 이미지 URL           |
-| `category`         | `string`   | 카테고리 (한식, 양식 등)    |
+| `recipeCategoryId`   | `int`      | 레시피 카테고리 ID          |
+| `recipeCategoryName` | `string`   | 카테고리명 (한식, 양식 등)  |
 | `difficulty`       | `string`   | 난이도 (쉬움, 보통, 어려움) |
 | `cookingTime`      | `int`      | 조리 시간 (분)              |
 | `servings`         | `int`      | 인분 수                     |
@@ -53,7 +114,8 @@
         "recipeId": 1,
         "title": "계란볶음밥",
         "thumbnail": "string",
-        "category": "한식",
+        "recipeCategoryId": 1,
+        "recipeCategoryName": "한식",
         "difficulty": "쉬움",
         "cookingTime": 15,
         "servings": 2,
@@ -86,7 +148,8 @@
 | `recipeId`                              | `int`           | 레시피 고유 ID       |
 | `title`                                 | `string`        | 레시피 제목          |
 | `thumbnail`                             | `string`        | 썸네일 이미지 URL    |
-| `category`                              | `string`        | 카테고리             |
+| `categoryId`                            | `int`           | 카테고리 ID          |
+| `categoryName`                          | `string`        | 카테고리명           |
 | `difficulty`                            | `string`        | 난이도               |
 | `cookingTime`                           | `int`           | 조리 시간 (분)       |
 | `servings`                              | `int`           | 인분 수              |
@@ -112,7 +175,8 @@
     "recipeId": 1,
     "title": "계란볶음밥",
     "thumbnail": "string",
-    "category": "한식",
+    "recipeCategoryId": 1,
+    "recipeCategoryName": "한식",
     "difficulty": "쉬움",
     "cookingTime": 15,
     "servings": 2,
@@ -158,7 +222,7 @@
 | ---------------------------------- | --------------- | ---- | ----------------- |
 | `title`                            | `string`        | ✓    | 레시피 제목       |
 | `thumbnail`                        | `string`        | ✓    | 썸네일 이미지 URL |
-| `category`                         | `string`        | ✓    | 카테고리          |
+| `recipeCategoryId`                 | `int`           | ✓    | 레시피 카테고리 ID |
 | `difficulty`                       | `string`        | ✓    | 난이도            |
 | `cookingTime`                      | `int`           | ✓    | 조리 시간 (분)    |
 | `servings`                         | `int`           | ✓    | 인분 수           |
@@ -174,7 +238,7 @@
 {
   "title": "string",
   "thumbnail": "string",
-  "category": "한식",
+  "recipeCategoryId": 1,
   "difficulty": "쉬움",
   "cookingTime": 15,
   "servings": 2,
@@ -203,18 +267,19 @@
 
 `Response 200`
 
-| 필드           | 타입     | 설명            |
-| -------------- | -------- | --------------- |
-| `ingredientId` | `int`    | 식재료 고유 ID  |
-| `name`         | `string` | 식재료명        |
-| `category`     | `string` | 식재료 카테고리 |
+| 필드           | 타입     | 설명                |
+| -------------- | -------- | ------------------- |
+| `ingredientId` | `int`    | 식재료 고유 ID      |
+| `name`         | `string` | 식재료명            |
+| `categoryId`   | `int`    | 카테고리 ID         |
+| `categoryName` | `string` | 카테고리명          |
 
 ```json
 {
   "success": true,
   "data": [
-    { "ingredientId": 10, "name": "계란", "category": "단백질" },
-    { "ingredientId": 11, "name": "계피", "category": "향신료" }
+    { "ingredientId": 10, "name": "계란", "categoryId": 20, "categoryName": "단백질" },
+    { "ingredientId": 11, "name": "계피", "categoryId": 21, "categoryName": "향신료" }
   ]
 }
 ```

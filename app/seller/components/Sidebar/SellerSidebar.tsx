@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
   Sidebar,
   SidebarContent,
@@ -8,19 +9,37 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { CircleUser } from 'lucide-react';
 import type { User } from '@/types/seller/user';
 
 const menuItems = [
-  '대시보드',
-  '상품관리',
-  '주문관리',
-  '배송관리',
-  '리뷰관리',
-  '정산관리',
-  '판매자정보',
+  { label: '대시보드', href: '/seller' },
+  { label: '상품관리', href: '/seller/products' },
+  {
+    label: '주문관리',
+    href: '/seller/orders',
+    subItems: [
+      { label: '주문 내역', href: '/seller/orders' },
+      { label: '취소·환불 관리', href: '/seller/orders/cancel-refund' },
+    ],
+  },
+  {
+    label: '배송관리',
+    href: '/seller/shipping',
+    subItems: [
+      { label: '배송 처리', href: '/seller/shipping' },
+      { label: '주소 관리', href: '/seller/shipping/address' },
+      { label: '템플릿 관리', href: '/seller/shipping/templates' },
+    ],
+  },
+  { label: '리뷰관리', href: '/seller/reviews' },
+  { label: '정산관리', href: '/seller/settlements' },
+  { label: '판매자정보', href: '/seller/info' },
 ];
 
 const userInfo: User = {
@@ -29,27 +48,50 @@ const userInfo: User = {
 };
 
 export default function SellerSidebar() {
-  const [active, setActive] = useState('대시보드');
+  const pathname = usePathname();
 
   return (
     <Sidebar collapsible="none" className="hidden md:flex bg-primary text-white">
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item}>
-                <SidebarMenuButton
-                  className={`mb-1 mt-1 h-11 ${active === item ? 'bg-white text-gray-text font-semibold' : ''}`}
-                  onClick={() => setActive(item)}
-                >
-                  {item}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {menuItems.map((item) => {
+              const isActive =
+                item.href === '/seller' ? pathname === '/seller' : pathname.startsWith(item.href);
+
+              return (
+                <SidebarMenuItem key={item.label}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive}
+                    className={`mb-1 mt-1 h-11 ${isActive ? 'bg-white text-gray-text font-semibold' : ''}`}
+                  >
+                    <Link href={item.href}>{item.label}</Link>
+                  </SidebarMenuButton>
+
+                  {/* 서브메뉴 */}
+                  {item.subItems && isActive && (
+                    <SidebarMenuSub>
+                      {item.subItems.map((sub) => (
+                        <SidebarMenuSubItem key={sub.label}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === sub.href}
+                            className={`text-white hover:bg-white hover:text-gray-text ${pathname === sub.href ? 'bg-white text-gray-text font-semibold' : ''}`}
+                          >
+                            <Link href={sub.href}>{sub.label}</Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  )}
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t-2 p-4 ">
+      <SidebarFooter className="border-t-2 p-4">
         <div className="flex items-center gap-4">
           <div>
             <CircleUser size={36} className="text-white opacity-70" />
