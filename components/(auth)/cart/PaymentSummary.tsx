@@ -7,6 +7,7 @@ interface PaymentSummaryProps {
   noCard?: boolean;
   paymentMethodLabel?: string;
   allAgreed?: boolean;
+  paying?: boolean;
   onPay?: () => void;
   productTotal?: number;
   productDiscount?: number;
@@ -20,6 +21,7 @@ export default function PaymentSummary({
   noCard = false,
   paymentMethodLabel,
   allAgreed = false,
+  paying = false,
   onPay,
   productTotal = 0,
   productDiscount = 0,
@@ -85,10 +87,10 @@ export default function PaymentSummary({
         <button
           type="button"
           onClick={onPay}
-          disabled={!allAgreed}
+          disabled={!allAgreed || paying}
           className="w-full font-semibold text-base py-4 rounded-xl flex items-center justify-center gap-1 transition-colors disabled:cursor-not-allowed bg-primary hover:bg-primary-hover text-white disabled:bg-muted"
         >
-          {finalAmount.toLocaleString()}원 결제하기 &gt;
+          {paying ? '처리 중...' : `${finalAmount.toLocaleString()}원 결제하기 >`}
         </button>
       )}
       <div className="flex items-start gap-2 border border-primary/30 bg-primary/5 rounded-xl px-3 py-3">

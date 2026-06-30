@@ -32,6 +32,7 @@ interface DeliveryInfo {
   recipient: string;
   phone: string;
   address: string;
+  addressDetail: string | null;
 }
 
 export function useCheckoutPayment(
@@ -51,6 +52,7 @@ export function useCheckoutPayment(
         recipient: deliveryInfo?.recipient ?? '',
         phone: deliveryInfo?.phone ?? '',
         address: deliveryInfo?.address ?? '',
+        addressDetail: deliveryInfo?.addressDetail ?? null,
       });
       const { orderId, finalAmount } = order;
 

@@ -46,6 +46,10 @@ export function validateSignup(input: {
   return null; // null이면 통과
 }
 
+export function validatePhone(phone: string): boolean {
+  return PHONE_RE.test(phone);
+}
+
 export function validateLogin(input: { email?: string; password?: string }): string | null {
   if (!input.email || !EMAIL_RE.test(input.email)) return '이메일 형식이 올바르지 않습니다.';
   if (!input.password) return '비밀번호를 입력해주세요.';
