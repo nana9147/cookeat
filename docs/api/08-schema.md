@@ -193,6 +193,27 @@ faqs (자주 묻는 질문, 셀러/사용자 도메인과 직접 연결 없음)
 | `amount`        | `FLOAT8`      | NOT NULL                   | 수량                  |
 | `unit`          | `VARCHAR(20)` | NOT NULL                   | 단위 (개, g, ml 등)   |
 
+### user_shipping_addresses
+
+> 유저의 배송지 주소록. 주문/결제 페이지에서 등록하고 선택해 사용. 기본 배송지는 유저당 1개만 허용.
+
+| 컬럼             | 타입           | 제약                   | 설명                          |
+| ---------------- | -------------- | ---------------------- | ----------------------------- |
+| `address_id`     | `INT`          | PK, AI                 | 배송지 고유 ID                |
+| `user_id`        | `INT`          | FK → users, NOT NULL   | 유저 ID                       |
+| `label`          | `VARCHAR(50)`  | NOT NULL               | 배송지 이름 (예: 집, 회사)    |
+| `recipient`      | `VARCHAR(50)`  | NOT NULL               | 수령인 이름                   |
+| `phone`          | `VARCHAR(20)`  | NOT NULL               | 연락처 (010-XXXX-XXXX 형식)   |
+| `zip_code`       | `VARCHAR(10)`  | NOT NULL               | 우편번호                      |
+| `base_address`   | `VARCHAR(300)` | NOT NULL               | 기본 주소 (다음 우편번호 검색 결과) |
+| `address_detail` | `VARCHAR(100)` | NULL                   | 상세 주소 (동/호수 등)        |
+| `is_default`     | `BOOLEAN`      | DEFAULT false NOT NULL | 기본 배송지 여부              |
+| `created_at`     | `TIMESTAMPTZ`  | DEFAULT NOW()          | 등록일시                      |
+| `updated_at`     | `TIMESTAMPTZ`  | DEFAULT NOW()          | 수정일시                      |
+
+> UNIQUE 제약(partial index): `user_id`당 `is_default = true`인 row는 최대 1개.
+> 기본 배송지 삭제 시 가장 오래된 다른 배송지가 자동으로 기본 배송지로 승격됩니다.
+
 ### orders
 
 | 컬럼               | 타입                 | 제약                 | 설명                          |
