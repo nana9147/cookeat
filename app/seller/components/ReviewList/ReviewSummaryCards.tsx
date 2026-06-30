@@ -1,12 +1,25 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+'use client'
+
+import { Card, CardContent } from '@/components/ui/card';
 import type { ReviewSummaryCardsProps } from '@/types/seller/review';
 import { MessageCircleMore, Star } from 'lucide-react';
 
-export default function ReviewSummaryCards({ summary }: ReviewSummaryCardsProps) {
+export default function ReviewSummaryCards({
+  summary,
+  filter,
+  sortOrder,
+  onResetFilter,
+  onPendingReplyClick,
+  onSortToggle,
+}: ReviewSummaryCardsProps) {
   return (
     <div className="grid grid-cols-3 gap-4 mb-6">
-      {/* 전체 리뷰 */}
-      <Card className="border-border shadow-sm">
+      <Card
+        className={`border-border shadow-sm cursor-pointer transition-colors ${
+          filter === '전체' && !sortOrder ? 'ring-2 ring-primary' : 'hover:bg-beige/30'
+        }`}
+        onClick={onResetFilter}
+      >
         <CardContent className="pt-5 pb-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-gray-text">전체 리뷰</p>
@@ -18,11 +31,22 @@ export default function ReviewSummaryCards({ summary }: ReviewSummaryCardsProps)
         </CardContent>
       </Card>
 
-      {/* 평균 평점 */}
-      <Card className="border-border shadow-sm">
+      <Card
+        className={`border-border shadow-sm cursor-pointer transition-colors ${
+          sortOrder ? 'ring-2 ring-primary' : 'hover:bg-beige/30'
+        }`}
+        onClick={onSortToggle}
+      >
         <CardContent className="pt-5 pb-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-gray-text">평균 평점</p>
+            <p className="text-sm text-gray-text">
+              평균 평점
+              {sortOrder && (
+                <span className="ml-1 text-xs text-primary">
+                  {sortOrder === 'rating_desc' ? '↓ 높은순' : '↑ 낮은순'}
+                </span>
+              )}
+            </p>
             <div className="w-8 h-8 rounded-lg bg-beige flex items-center justify-center">
               <Star size={15} className="text-primary" />
             </div>
@@ -37,8 +61,12 @@ export default function ReviewSummaryCards({ summary }: ReviewSummaryCardsProps)
         </CardContent>
       </Card>
 
-      {/* 답변 대기 */}
-      <Card className="border-border shadow-sm">
+      <Card
+        className={`border-border shadow-sm cursor-pointer transition-colors ${
+          filter === '답변 대기' ? 'ring-2 ring-primary' : 'hover:bg-beige/30'
+        }`}
+        onClick={onPendingReplyClick}
+      >
         <CardContent className="pt-5 pb-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-gray-text">답변 대기</p>

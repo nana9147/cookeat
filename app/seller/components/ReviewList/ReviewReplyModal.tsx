@@ -21,12 +21,12 @@ export default function ReviewReplyModal({
   const [reply, setReply] = useState('');
 
   useEffect(() => {
-    if (open) setReply(review?.reply ?? '');
+    if (open) setReply(review?.reply?.content ?? '');
   }, [open, review]);
 
   const handleSubmit = () => {
     if (!review || !reply.trim()) return;
-    onSubmit(review.id, reply);
+    onSubmit(review.reviewId, reply);
     onClose();
   };
 
@@ -39,7 +39,7 @@ export default function ReviewReplyModal({
         <div className="flex flex-col gap-3">
           <div className="bg-beige rounded-lg p-3">
             <p className="text-xs text-light-gray mb-1">
-              {review?.name} · {review?.product}
+              {review?.userName} · {review?.productName}
             </p>
             <p className="text-sm text-gray-text">{review?.content}</p>
           </div>

@@ -35,7 +35,7 @@ export default function ReviewReportModal({
   const handleSubmit = () => {
     if (!review || !reason) return;
     const finalReason = reason === '기타' ? detail : reason;
-    onSubmit(review.id, finalReason);
+    onSubmit(review.reviewId, finalReason);
     onClose();
   };
 

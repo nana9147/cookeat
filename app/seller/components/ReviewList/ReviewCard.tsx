@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import StatusBadge from '@/app/seller/components/StatusBadge';
 import type { ReviewCardProps } from '@/types/seller/review';
 
 export default function ReviewCard({
@@ -15,39 +16,40 @@ export default function ReviewCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
-            {/* 구매자명 + 별점 + 날짜 */}
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-dark-text">{review.name}</span>
+              <span className="text-sm font-semibold text-dark-text">{review.userName}</span>
               <span className="text-yellow text-sm tracking-tight">
                 {'★'.repeat(review.rating)}
                 {'☆'.repeat(5 - review.rating)}
               </span>
               <span className="text-xs text-light-gray">{review.createdAt}</span>
             </div>
-            {/* 상품명 */}
-            <span className="text-xs text-light-gray">{review.product}</span>
+            <span className="text-xs text-light-gray">{review.productName}</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onReportClick(review)}
-            className="text-red border-red hover:bg-red/10 hover:text-red text-xs"
-          >
-            신고
-          </Button>
+
+          {review.status === '정상' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onReportClick(review)}
+              className="text-red border-red hover:bg-red/10 hover:text-red text-xs"
+            >
+              신고
+            </Button>
+          ) : (
+            <StatusBadge status={review.status} />
+          )}
         </div>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
-        {/* 리뷰 내용 */}
         <p className="text-sm text-gray-text leading-relaxed">{review.content}</p>
 
-        {/* 이미지 썸네일 */}
         {review.images && review.images.length > 0 && (
           <div className="flex gap-2">
-            {review.images.map((url) => (
+            {review.images.map((url, index) => (
               <button
-                key={url}
+                key={`${url}-${index}`}
                 onClick={() => onImageClick(url)}
                 className="w-20 h-20 rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
               >
@@ -57,7 +59,6 @@ export default function ReviewCard({
           </div>
         )}
 
-        {/* 답변 영역 */}
         {review.reply ? (
           <div className="bg-beige rounded-lg p-4 flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -71,7 +72,7 @@ export default function ReviewCard({
                 수정
               </Button>
             </div>
-            <p className="text-sm text-gray-text">{review.reply}</p>
+            <p className="text-sm text-gray-text">{review.reply.content}</p>
           </div>
         ) : (
           <div className="flex justify-end">
