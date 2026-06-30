@@ -34,12 +34,18 @@ export default function StatusBadge({ status }: { status: BadgeStatus }) {
     pending: 'bg-amber-50 text-amber-600 border border-amber-200',
     approved: 'bg-green-100 text-green-700',
     rejected: 'bg-red-50 text-red-600 border border-red-200',
+
+    정상: 'bg-emerald-50 text-primary border border-emerald-200',
+    신고: 'bg-red-50 text-red border border-red-200',
+    처리완료: 'bg-gray-50 text-light-gray border border-border',
   };
 
   const labels: Partial<Record<BadgeStatus, string>> = {
     pending: '승인 대기',
     approved: '승인 완료',
     rejected: '승인 거절',
+    신고: '신고 접수됨',
+    처리완료: '처리 완료',
   };
 
   return (

@@ -3,6 +3,7 @@ import { ProductStatus } from './product';
 import { SettlementStatus } from './settlement';
 import { AddressBadgeType, ShippingFeeType } from './shipping';
 import { ApproveStatus } from './seller';
+import type { ReviewStatus } from './review';
 
 export type RefundDisplayStatus = '환불요청' | '환불거부' | '취소요청' | '취소거부';
 
@@ -13,4 +14,5 @@ export type BadgeStatus =
   | ShippingFeeType
   | SettlementStatus
   | ApproveStatus
-  | RefundDisplayStatus;
+  | RefundDisplayStatus
+  | ReviewStatus;

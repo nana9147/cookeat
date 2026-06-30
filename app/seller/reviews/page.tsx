@@ -1,140 +1,94 @@
 'use client';
 
-import { useState } from 'react';
-import type { Review, ReviewTabFilter } from '@/types/seller/review';
+import { useState, useEffect } from 'react';
+import api from '@/lib/api';
+import { getPageNumbers } from '@/lib/utils';
+import type { Review, ReviewSummary, ReviewTabFilter } from '@/types/seller/review';
 import ReviewSummaryCards from '@/app/seller/components/ReviewList/ReviewSummaryCards';
 import ReviewFilterTabs from '@/app/seller/components/ReviewList/ReviewFilterTabs';
 import ReviewList from '@/app/seller/components/ReviewList/ReviewList';
 import ReviewReplyModal from '@/app/seller/components/ReviewList/ReviewReplyModal';
 import ReviewReportModal from '@/app/seller/components/ReviewList/ReviewReportModal';
 import ReviewImageModal from '@/app/seller/components/ReviewList/ReviewImageModal';
-import type { ReviewSummary } from '@/types/seller/review';
+import Pagination from '@/components/ui/Pagination';
+import { toast } from 'sonner';
 
-const MOCK_SUMMARY: ReviewSummary = {
-  totalCount: 148,
-  averageRating: 4.6,
-  pendingReplyCount: 12,
-};
+const EMPTY_SUMMARY: ReviewSummary = { totalCount: 0, averageRating: 0, pendingReplyCount: 0 };
+const LIMIT = 10;
 
-const MOCK_REVIEWS: Review[] = [
-  {
-    id: 'REV-001',
-    name: '김봄',
-    rating: 5,
-    createdAt: '2026-06-16',
-    product: '청송 사과 1kg',
-    content: '최근 사먹은 사과중에 제일 달고 맛있어요!',
-    reply: '항상 좋은 품질의 사과를 제공할 수 있도록 노력하겠습니다.',
-  },
-  {
-    id: 'REV-002',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-  {
-    id: 'REV-003',
-    name: '최가을',
-    rating: 5,
-    createdAt: '2026-06-16',
-    product: '청송 사과 1kg',
-    content: '최근 사먹은 사과중에 제일 달고 맛있어요!',
-    images: [
-      'https://image.8dogam.com/resized/product/asset/v1/upload/e017527565474808a79b88adc5b6a4f0.jpeg?type=big&res=3x&ext=jpg',
-      'https://www.korea.kr/newsWeb/resources/temp/images/000052/%EC%82%AC%EA%B3%BC_%EB%B3%B8%EB%AC%B8.jpg',
-    ],
-    reply: '항상 좋은 품질의 사과를 제공할 수 있도록 노력하겠습니다.',
-  },
-  {
-    id: 'REV-004',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-  {
-    id: 'REV-005',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-  {
-    id: 'REV-006',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-  {
-    id: 'REV-007',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-  {
-    id: 'REV-008',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-  {
-    id: 'REV-009',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-  {
-    id: 'REV-0010',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-  {
-    id: 'REV-011',
-    name: '이여름',
-    rating: 2,
-    createdAt: '2026-06-16',
-    product: '호박고구마 3kg',
-    content: '맛은 괜찮은데.. 너무 바람들어왔네요..;;',
-  },
-];
+export default function ReviewsPage() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [summary, setSummary] = useState<ReviewSummary>(EMPTY_SUMMARY);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default function ReviewPage() {
-  const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS);
   const [filter, setFilter] = useState<ReviewTabFilter>('전체');
-  const [ratingFilter, setRatingFilter] = useState(0);
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
+
   const [replyModalOpen, setReplyModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // 필터링 로직
-  const filteredReviews = reviews
-    .filter((r) => {
-      if (filter === '답변 대기') return !r.reply;
-      if (filter === '사진 리뷰') return r.images && r.images.length > 0;
-      return true;
-    })
-    .filter((r) => (ratingFilter === 0 ? true : r.rating === ratingFilter))
-    .sort((a, b) => {
-      if (filter === '별점 높은 순') return b.rating - a.rating;
-      return 0;
+  const [sortOrder, setSortOrder] = useState<'rating_desc' | 'rating_asc' | undefined>(undefined);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const totalPages = Math.ceil(total / LIMIT);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setIsLoading(true);
+      try {
+        const { data } = await api.get('/seller/reviews', {
+          params: { filter, rating: ratingFilter, sort: sortOrder, page: currentPage, limit: LIMIT },
+        });
+        if (!cancelled) {
+          setReviews(data.data.reviews);
+          setTotal(data.data.pagination.total);
+          setSummary(data.data.summary);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : '리뷰 목록을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [filter, ratingFilter, sortOrder, currentPage, refreshKey]);
+
+  const handleSortToggle = () => {
+    setSortOrder((prev) => {
+      if (prev === 'rating_desc') return 'rating_asc';
+      if (prev === 'rating_asc') return undefined;
+      return 'rating_desc';
     });
+    setCurrentPage(1);
+  };
+
+  const handleResetFilter = () => {
+    setFilter('전체');
+    setRatingFilter(undefined);
+    setSortOrder(undefined);
+    setCurrentPage(1);
+  };
+
+  const handlePendingReplyClick = () => {
+    setFilter('답변 대기');
+    setRatingFilter(undefined);
+    setSortOrder(undefined);
+    setCurrentPage(1);
+  };
 
   const handleReplyClick = (review: Review) => {
     setSelectedReview(review);
@@ -151,30 +105,61 @@ export default function ReviewPage() {
     setImageModalOpen(true);
   };
 
-  const handleReplySubmit = (reviewId: string, reply: string) => {
-    setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, reply } : r)));
+  const handleReplySubmit = async (reviewId: number, content: string) => {
+    try {
+      await api.post(`/seller/reviews/${reviewId}/reply`, { content });
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '답글 등록에 실패했습니다.';
+      toast.error(msg, { id: msg });
+    }
   };
 
-  const handleReportSubmit = (reviewId: string, reason: string) => {
-    console.log('신고 접수:', reviewId, reason);
+  const handleReportSubmit = async (reviewId: number, reason: string) => {
+    try {
+      await api.post(`/seller/reviews/${reviewId}/report`, { reason });
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '신고 접수에 실패했습니다.';
+      toast.error(msg, { id: msg });
+    }
   };
 
   return (
-    <div className="p-6">
+    <div className="bg-background p-8">
       <h1 className="text-h2 font-bold text-dark-text mb-6">리뷰 관리</h1>
-      <ReviewSummaryCards summary={MOCK_SUMMARY} />
+      <ReviewSummaryCards
+        summary={summary}
+        filter={filter}
+        sortOrder={sortOrder}
+        onResetFilter={handleResetFilter}
+        onPendingReplyClick={handlePendingReplyClick}
+        onSortToggle={handleSortToggle}
+      />
       <ReviewFilterTabs
         filter={filter}
-        onFilterChange={setFilter}
+        onFilterChange={(v) => { setFilter(v); setCurrentPage(1); }}
         ratingFilter={ratingFilter}
-        onRatingChange={setRatingFilter}
+        onRatingChange={(v) => { setRatingFilter(v); setCurrentPage(1); }}
       />
-      <ReviewList
-        reviews={filteredReviews}
-        onReplyClick={handleReplyClick}
-        onReportClick={handleReportClick}
-        onImageClick={handleImageClick}
-      />
+      {isLoading ? (
+        <p className="text-sm text-light-gray py-10 text-center">불러오는 중...</p>
+      ) : (
+        <>
+          <ReviewList
+            reviews={reviews}
+            onReplyClick={handleReplyClick}
+            onReportClick={handleReportClick}
+            onImageClick={handleImageClick}
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            getPageNumbers={() => getPageNumbers(currentPage, totalPages)}
+          />
+        </>
+      )}
       <ReviewReplyModal
         open={replyModalOpen}
         review={selectedReview}

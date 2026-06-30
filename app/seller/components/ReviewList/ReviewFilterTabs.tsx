@@ -35,7 +35,7 @@ export default function ReviewFilterTabs({
         {RATING_OPTIONS.map((rating) => (
           <button
             key={rating}
-            onClick={() => onRatingChange(ratingFilter === rating ? 0 : rating)}
+            onClick={() => onRatingChange(ratingFilter === rating ? undefined : rating)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
               ratingFilter === rating
                 ? 'bg-yellow-400 text-white border-yellow-400'
