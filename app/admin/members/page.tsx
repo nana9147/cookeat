@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Eye, Pencil, Filter, Search } from 'lucide-react';
 import {
   Table,
@@ -42,6 +42,7 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
+  const prevSearchRef = useRef(debouncedSearch);
   const [showFilter, setShowFilter] = useState(false);
   const [filterGrade, setFilterGrade] = useState<AdminMemberGrade | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<AdminMemberStatus | 'all'>('all');
@@ -51,8 +52,14 @@ export default function MembersPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const isNewSearch = prevSearchRef.current !== debouncedSearch;
+    prevSearchRef.current = debouncedSearch;
 
     async function load() {
+      if (isNewSearch && page !== 1) {
+        setPage(1);
+        return;
+      }
       setLoading(true);
       try {
         const params = new URLSearchParams();
@@ -174,7 +181,7 @@ export default function MembersPage() {
           className="pl-9"
           placeholder="회원명, 이메일로 검색"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 

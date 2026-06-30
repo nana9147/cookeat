@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -49,6 +49,7 @@ const STATUSES: AdminProductStatus[] = ['판매중', '품절', '숨김'];
 export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
+  const prevSearchRef = useRef(debouncedSearch);
   const [productList, setProductList] = useState<AdminProduct[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -62,8 +63,14 @@ export default function ProductsPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const isNewSearch = prevSearchRef.current !== debouncedSearch;
+    prevSearchRef.current = debouncedSearch;
 
     const load = async () => {
+      if (isNewSearch && page !== 1) {
+        setPage(1);
+        return;
+      }
       setLoading(true);
       try {
         const params: Record<string, string> = {
@@ -178,7 +185,7 @@ export default function ProductsPage() {
           className="pl-9"
           placeholder="판매자명, 상품명으로 검색"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
