@@ -42,7 +42,14 @@ export default function Checkout() {
   );
   const shippingFee = calcShipping(totalAmount);
 
-  const handlePay = useCheckoutPayment(paymentMethod, availableStoreItems, deliveryInfo);
+  const [paying, setPaying] = useState(false);
+  const doHandlePay = useCheckoutPayment(paymentMethod, availableStoreItems, deliveryInfo);
+  const handlePay = async () => {
+    if (paying) return;
+    setPaying(true);
+    try { await doHandlePay(); }
+    finally { setPaying(false); }
+  };
 
   return (
     <div className="max-w-300 mx-auto px-4 desktop:px-6 py-6 desktop:py-10">
@@ -64,6 +71,7 @@ export default function Checkout() {
           <PaymentSummary
             mode="checkout"
             allAgreed={allAgreed}
+            paying={paying}
             onPay={handlePay}
             productTotal={totalAmount}
             shippingFee={shippingFee}

@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
       { count: 'exact' }
     )
     .eq('user_id', authed.userId)
+    .neq('status', '결제전')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
