@@ -44,10 +44,6 @@ export default function OrdersPage() {
   const [filterStatus, setFilterStatus] = useState<AdminOrderStatus | 'all'>('all');
 
   useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
@@ -138,7 +134,7 @@ export default function OrdersPage() {
           className="pl-9"
           placeholder="주문자명, 주문 번호로 검색"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         />
       </div>
 

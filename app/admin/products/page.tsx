@@ -61,10 +61,6 @@ export default function ProductsPage() {
   const [filterStatus, setFilterStatus] = useState<AdminProductStatus | 'all'>('all');
 
   useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
@@ -182,7 +178,7 @@ export default function ProductsPage() {
           className="pl-9"
           placeholder="판매자명, 상품명으로 검색"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         />
       </div>
 

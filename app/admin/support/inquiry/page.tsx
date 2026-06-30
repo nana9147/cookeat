@@ -57,7 +57,22 @@ export default function InquiryPage() {
   };
 
   useEffect(() => {
-    fetchInquiries();
+    let cancelled = false;
+    async function load() {
+      try {
+        const { data } = await api.get('/admin/inquiries', { params: { limit: 100 } });
+        if (!cancelled) setInquiries(data.inquiries ?? []);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const filtered = inquiries.filter((i) => i.title.includes(search) || i.author.includes(search));
