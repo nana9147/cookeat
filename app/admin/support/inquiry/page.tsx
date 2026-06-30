@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/format';
 
 interface Reply {
   content: string;
@@ -43,35 +44,31 @@ export default function InquiryPage() {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const cancelledRef = useRef(false);
 
   const fetchInquiries = async () => {
     try {
       const { data } = await api.get('/admin/inquiries', { params: { limit: 100 } });
-      setInquiries(data.inquiries ?? []);
+      if (!cancelledRef.current) {
+        setInquiries(data.inquiries ?? []);
+        setError(false);
+      }
     } catch (err) {
-      console.error(err);
-      setError(true);
+      if (!cancelledRef.current) {
+        console.error(err);
+        setError(true);
+      }
     } finally {
-      setLoading(false);
+      if (!cancelledRef.current) setLoading(false);
     }
   };
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const { data } = await api.get('/admin/inquiries', { params: { limit: 100 } });
-        if (!cancelled) setInquiries(data.inquiries ?? []);
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) setError(true);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
+    cancelledRef.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchInquiries();
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, []);
 
@@ -108,11 +105,6 @@ export default function InquiryPage() {
       setSending(false);
     }
   }
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-  };
 
   const formatTime = (iso: string) => {
     const d = new Date(iso);
