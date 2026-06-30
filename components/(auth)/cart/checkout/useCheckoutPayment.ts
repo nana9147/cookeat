@@ -26,7 +26,17 @@ async function loadTossV1() {
   return (window as TossWindow).TossPayments!(TOSS_CLIENT_KEY);
 }
 
-const ALLOWED_KAKAO_HOSTS = ['kauth.kakao.com', 'pg.pay.kakao.com', 'online-pay.kakao.com'];
+function isValidKakaoRedirectUrl(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return (
+      protocol === 'https:' &&
+      (hostname.endsWith('.kakao.com') || hostname.endsWith('.kakaopay.com'))
+    );
+  } catch {
+    return false;
+  }
+}
 
 interface DeliveryInfo {
   recipient: string;
@@ -38,7 +48,9 @@ interface DeliveryInfo {
 export function useCheckoutPayment(
   paymentMethod: string,
   cartItems: CartStoreItem[],
-  deliveryInfo: DeliveryInfo | null
+  deliveryInfo: DeliveryInfo | null,
+  usedPoint: number = 0,
+  couponCode: string | null = null
 ) {
   return async () => {
     if (cartItems.length === 0) {
@@ -53,6 +65,8 @@ export function useCheckoutPayment(
         phone: deliveryInfo?.phone ?? '',
         address: deliveryInfo?.address ?? '',
         addressDetail: deliveryInfo?.addressDetail ?? null,
+        usePoint: usedPoint,
+        ...(couponCode ? { couponCode } : {}),
       });
       const { orderId, finalAmount } = order;
 
@@ -61,14 +75,13 @@ export function useCheckoutPayment(
           '/payment/kakao/ready',
           { orderId, itemName: 'Cookeat 주문', quantity: 1, totalAmount: finalAmount }
         );
-        const redirectUrl = new URL(data.redirectUrl);
-        if (!ALLOWED_KAKAO_HOSTS.includes(redirectUrl.hostname)) {
+        if (!isValidKakaoRedirectUrl(data.redirectUrl)) {
           toast.error('유효하지 않은 결제 URL입니다.');
           return;
         }
         sessionStorage.setItem('kakaoTid', data.tid);
         sessionStorage.setItem('kakaoOrderId', orderId);
-        window.location.href = data.redirectUrl;
+        window.location.href = data.redirectUrl as string;
         return;
       }
 

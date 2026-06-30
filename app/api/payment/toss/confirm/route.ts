@@ -35,11 +35,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: tossError }, { status: res.status });
   }
 
-  await supabaseAdmin
+  const tossData = await res.json();
+
+  const { error: updateError } = await supabaseAdmin
     .from('orders')
     .update({ status: '결제완료', payment_method: '카드', payment_key: paymentKey, updated_at: new Date().toISOString() })
     .eq('order_id', orderId);
 
-  const data = await res.json();
-  return NextResponse.json(data);
+  if (updateError) {
+    console.error('[toss/confirm] 주문 상태 업데이트 실패:', updateError.message);
+    return NextResponse.json({ error: '주문 상태 업데이트 실패' }, { status: 500 });
+  }
+
+  return NextResponse.json(tossData);
 }
