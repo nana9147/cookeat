@@ -1,9 +1,13 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDown, Store, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import api from '@/lib/api';
+import { authService } from '@/services/auth/authService';
+import { useAuthStore } from '@/store/authStore';
 
 const menuItems = [
   { label: '대시보드', href: '/seller' },
@@ -30,13 +34,52 @@ const menuItems = [
   { label: '판매자정보', href: '/seller/info' },
 ];
 
+interface SellerMe {
+  storeName: string;
+  email: string;
+}
+
 export default function SellerMobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [sellerInfo, setSellerInfo] = useState<SellerMe | null>(null);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const activeItem = menuItems.find((item) =>
     item.href === '/seller' ? pathname === '/seller' : pathname.startsWith(item.href)
   );
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const { data } = await api.get('/seller/me');
+        setSellerInfo({ storeName: data.data.storeName, email: data.data.email });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '판매자 정보를 불러오지 못했습니다.';
+        toast.error(msg, { id: msg });
+      }
+    };
+    fetchMe();
+  }, []);
+
+  const handleGoToShop = () => {
+    window.open('/', '_blank');
+    setOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '로그아웃 처리 중 문제가 발생했습니다.';
+      toast.error(msg, { id: msg });
+    } finally {
+      clearAuth();
+      setOpen(false);
+      router.replace('/login');
+    }
+  };
 
   return (
     <div className="md:hidden w-full bg-white border-b">
@@ -68,7 +111,6 @@ export default function SellerMobileNav() {
                   {item.label}
                 </Link>
 
-                {/* 활성 메뉴의 서브메뉴 */}
                 {item.subItems && isActive && (
                   <div className="flex flex-col bg-primary/10">
                     {item.subItems.map((sub) => (
@@ -90,6 +132,29 @@ export default function SellerMobileNav() {
               </div>
             );
           })}
+
+          <div className="border-t mt-1 pt-2 pb-1 px-4">
+            <p className="text-sm font-medium text-dark-text truncate">
+              {sellerInfo?.storeName ?? '불러오는 중...'}
+            </p>
+            <p className="text-xs text-gray-500 truncate mb-2">{sellerInfo?.email ?? ''}</p>
+            <div className="flex flex-col">
+              <button
+                onClick={handleGoToShop}
+                className="flex items-center gap-2 py-2.5 text-sm text-gray-700 hover:text-primary transition-colors"
+              >
+                <Store size={16} />
+                쇼핑몰로 이동
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 py-2.5 text-sm text-red hover:text-red/80 transition-colors"
+              >
+                <LogOut size={16} />
+                로그아웃
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
