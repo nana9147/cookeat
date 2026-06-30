@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Pagination from '@/components/ui/Pagination';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -30,13 +30,20 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
   const search = useDebounce(searchInput, 300);
+  const prevSearchRef = useRef(search);
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    const isNewSearch = prevSearchRef.current !== search;
+    prevSearchRef.current = search;
 
     async function fetchRecipes() {
+      if (isNewSearch && page !== 1) {
+        setPage(1);
+        return;
+      }
       setLoading(true);
       try {
         const { data } = await api.get('/admin/recipes', {
@@ -148,10 +155,7 @@ export default function RecipesPage() {
           className="pl-4 bg-white"
           placeholder="레시피 제목 검색"
           value={searchInput}
-          onChange={(e) => {
-            setSearchInput(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
       </div>
 

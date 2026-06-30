@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
@@ -77,6 +77,7 @@ function StarRating({ rating }: { rating: number | null }) {
 export default function SellersPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
+  const prevSearchRef = useRef(debouncedSearch);
   const [sellerList, setSellerList] = useState<Seller[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -91,8 +92,14 @@ export default function SellersPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const isNewSearch = prevSearchRef.current !== debouncedSearch;
+    prevSearchRef.current = debouncedSearch;
 
     async function load() {
+      if (isNewSearch && page !== 1) {
+        setPage(1);
+        return;
+      }
       setLoading(true);
       try {
         const params = new URLSearchParams();
@@ -258,7 +265,7 @@ export default function SellersPage() {
           className="pl-9"
           placeholder="판매자명, 사업자 번호로 검색"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 

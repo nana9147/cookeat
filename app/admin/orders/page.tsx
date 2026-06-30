@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -34,6 +34,7 @@ const STATUSES: AdminOrderStatus[] = ['결제완료', '주문확인', '배송준
 export default function OrdersPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
+  const prevSearchRef = useRef(debouncedSearch);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [orderList, setOrderList] = useState<AdminOrder[]>([]);
   const [total, setTotal] = useState(0);
@@ -45,8 +46,14 @@ export default function OrdersPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const isNewSearch = prevSearchRef.current !== debouncedSearch;
+    prevSearchRef.current = debouncedSearch;
 
     const load = async () => {
+      if (isNewSearch && page !== 1) {
+        setPage(1);
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
@@ -134,7 +141,7 @@ export default function OrdersPage() {
           className="pl-9"
           placeholder="주문자명, 주문 번호로 검색"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
