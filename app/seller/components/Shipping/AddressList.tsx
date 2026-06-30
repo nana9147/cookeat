@@ -9,8 +9,10 @@ import AddressCard from './AddressCard';
 import AddressForm from './AddressForm';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 
 export default function AddressList() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [formMode, setFormMode] = useState<FormType>('등록');
@@ -35,7 +37,8 @@ export default function AddressList() {
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '목록을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       } finally {
         if (!cancelled) {
@@ -68,7 +71,8 @@ export default function AddressList() {
         toast.success('주소가 등록되었습니다.');
         setIsOpen(false);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '주소 등록에 실패했습니다.');
+        const msg = e instanceof Error ? e.message : '주소 등록에 실패했습니다.';
+        toast.error(msg, { id: msg });
       }
     } else {
       try {
@@ -89,7 +93,8 @@ export default function AddressList() {
         toast.success('주소가 수정되었습니다.');
         setIsOpen(false);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '주소 수정에 실패했습니다.');
+        const msg = e instanceof Error ? e.message : '주소 수정에 실패했습니다.';
+        toast.error(msg, { id: msg });
       }
     }
   };
@@ -107,7 +112,8 @@ export default function AddressList() {
 
       toast.success('주소가 삭제되었습니다.');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '주소 삭제에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '주소 삭제에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -120,18 +126,20 @@ export default function AddressList() {
             출고지/반품지로 사용할 주소를 등록하고 관리하세요.
           </span>
         </div>
-        <Button
-          variant="outline"
-          className="p-5"
-          onClick={() => {
-            setFormMode('등록');
-            setSelectedAddress(undefined);
-            setIsOpen(true);
-          }}
-        >
-          <Plus />
-          주소 등록
-        </Button>
+        {!isAdmin && (
+          <Button
+            variant="outline"
+            className="p-5"
+            onClick={() => {
+              setFormMode('등록');
+              setSelectedAddress(undefined);
+              setIsOpen(true);
+            }}
+          >
+            <Plus />
+            주소 등록
+          </Button>
+        )}
       </div>
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'origin' | 'return')}>
         <div className="flex items-center justify-between mb-4 border-b border-border">

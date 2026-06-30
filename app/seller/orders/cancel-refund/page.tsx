@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
 import type { RefundExportRow } from '@/types/seller/order';
 import { Button } from '@/components/ui/button';
@@ -18,9 +18,11 @@ import StatusCards from '@/components/ui/StatusCards';
 import DateRangeFilter from '../../components/DateRangeFilter';
 import type { OrderWithRefunds } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
+import { toDateStr, getDateRange } from '@/lib/dateRange';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Download } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
 
 const LIMIT = 10;
 
@@ -31,22 +33,6 @@ const REFUND_COLOR_MAP = {
   처리완료: 'text-emerald-500',
 };
 
-const toDateStr = (d: Date) => d.toISOString().split('T')[0];
-
-const getDateRange = (preset: DateRangePreset): { startDate: string; endDate: string } => {
-  const today = new Date();
-  const end = toDateStr(today);
-
-  if (preset === '전체') return { startDate: '', endDate: '' };
-  if (preset === '오늘') return { startDate: end, endDate: end };
-
-  const start = new Date(today);
-  if (preset === '1주일') start.setDate(today.getDate() - 7);
-  if (preset === '1개월') start.setMonth(today.getMonth() - 1);
-  if (preset === '3개월') start.setMonth(today.getMonth() - 3);
-
-  return { startDate: toDateStr(start), endDate: end };
-};
 
 const EXPORT_COLUMNS: ExportColumn<RefundExportRow>[] = [
   { key: 'orderId', label: '주문번호' },
@@ -67,6 +53,7 @@ const EXPORT_COLUMNS: ExportColumn<RefundExportRow>[] = [
 ];
 
 export default function CancelRefundPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [tab, setTab] = useState<'전체' | '취소요청' | '환불요청' | '처리완료'>('전체');
   const [search, setSearch] = useState('');
   const [orders, setOrders] = useState<OrderWithRefunds[]>([]);
@@ -104,18 +91,19 @@ export default function CancelRefundPage() {
     }
   };
 
-  const fetchCounts = async () => {
+  const fetchCounts = useCallback(async () => {
     try {
       const res = await api.get('/seller/orders/refunds/counts');
       setCounts(res.data.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '건수를 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '건수를 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCounts();
-  }, []);
+  }, [fetchCounts]);
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -133,7 +121,8 @@ export default function CancelRefundPage() {
       setOrders(res.data.data.orders);
       setTotal(res.data.data.pagination.total);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '목록을 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     } finally {
       setIsLoading(false);
     }
@@ -233,10 +222,12 @@ export default function CancelRefundPage() {
           <span className="text-light-gray font-normal mx-2">/</span>
           <span className="text-h4 font-medium">취소·환불 관리</span>
         </h1>
-        <Button onClick={handleExcelDownload} disabled={isExporting}>
-          <Download />
-          {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
-        </Button>
+        {!isAdmin && (
+          <Button onClick={handleExcelDownload} disabled={isExporting}>
+            <Download />
+            {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+          </Button>
+        )}
       </div>
 
       <StatusCards

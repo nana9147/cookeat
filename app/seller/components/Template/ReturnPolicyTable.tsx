@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ReturnPolicyTableProps } from '@/types/seller/shipping';
 import { Pencil, Trash2 } from 'lucide-react';
-
 import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/store/authStore';
 
 export default function ReturnPolicyTable({
   policies,
@@ -31,6 +31,7 @@ export default function ReturnPolicyTable({
   onDelete,
   onSetDefault,
 }: ReturnPolicyTableProps) {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const defaultId = policies.find((s) => s.isDefault)?.returnId ?? null;
   const [selectedId, setSelectedId] = useState<number | null>(defaultId);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
@@ -84,28 +85,32 @@ export default function ReturnPolicyTable({
                       {policy.content.refundPeriod}일
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(policy);
-                          }}
-                        >
-                          <Pencil size={15} className="text-gray-400" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteTarget(policy.returnId);
-                          }}
-                        >
-                          <Trash2 size={15} className="text-red-400" />
-                        </Button>
-                      </div>
+                      {!isAdmin ? (
+                        <div className="flex justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(policy);
+                            }}
+                          >
+                            <Pencil size={15} className="text-gray-400" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(policy.returnId);
+                            }}
+                          >
+                            <Trash2 size={15} className="text-red-400" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -113,9 +118,11 @@ export default function ReturnPolicyTable({
             </TableBody>
           </Table>
         </RadioGroup>
-        <div className="flex justify-end px-4 pt-3">
-          <Button onClick={() => setIsDefaultConfirmOpen(true)}>저장</Button>
-        </div>
+        {!isAdmin && (
+          <div className="flex justify-end px-4 pt-3">
+            <Button onClick={() => setIsDefaultConfirmOpen(true)}>저장</Button>
+          </div>
+        )}
       </div>
 
       <AlertDialog

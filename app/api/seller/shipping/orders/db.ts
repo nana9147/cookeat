@@ -32,86 +32,98 @@ export async function getSellerShippingOrders(
   }
 ) {
   const { page, limit, keyword, status, startDate, endDate } = options;
+  const rangeFrom = (page - 1) * limit;
+  const rangeTo = rangeFrom + limit - 1;
 
-  const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
+  // Keyword spans multiple tables — pre-fetch matching order IDs
+  let keywordOrderIds: string[] | null = null;
+  if (keyword) {
+    const { data: orderRows } = await supabaseAdmin
+      .from('orders')
+      .select('order_id')
+      .or(`order_id.ilike.%${keyword}%,recipient.ilike.%${keyword}%,phone.ilike.%${keyword}%`);
+
+    keywordOrderIds = (orderRows ?? []).map((o) => o.order_id);
+    if (keywordOrderIds.length === 0) {
+      return { orders: [], total: 0 };
+    }
+  }
+
+  let query = supabaseAdmin
     .from('order_items')
-    .select('item_id, order_id, shipping_status')
+    .select(
+      `item_id, order_id, quantity, unit_price, shipping_status,
+       products(name),
+       orders!inner(created_at, recipient, phone, address, address_detail, shipping_request, final_amount, users(nickname))`,
+      { count: 'exact' }
+    )
     .eq('seller_id', sellerId);
 
-  if (sellerItemsError) throw sellerItemsError;
-
-  const sellerOrderIds = [...new Set((sellerItemRows ?? []).map((r) => r.order_id))];
-  if (sellerOrderIds.length === 0) {
-    return { orders: [], total: 0 };
+  if (status && status !== '전체') {
+    query = query.eq('shipping_status', status);
+  } else {
+    query = query.in('shipping_status', ['결제완료', '배송준비', '배송중', '배송완료']);
   }
 
-  let orderQuery = supabaseAdmin
-    .from('orders')
-    .select(
-      'order_id, created_at, recipient, phone, address, address_detail, shipping_request, final_amount, users(nickname)'
-    )
-    .in('order_id', sellerOrderIds);
+  if (startDate) query = query.gte('orders.created_at', `${startDate}T00:00:00`);
+  if (endDate) query = query.lte('orders.created_at', `${endDate}T23:59:59`);
+  if (keywordOrderIds !== null) query = query.in('order_id', keywordOrderIds);
 
-  if (keyword) {
-    orderQuery = orderQuery.or(
-      `order_id.ilike.%${keyword}%,recipient.ilike.%${keyword}%,phone.ilike.%${keyword}%`
-    );
+  query = query.order('created_at', { referencedTable: 'orders', ascending: false });
+  query = query.range(rangeFrom, rangeTo);
+
+  const { data, count, error } = await query;
+  if (error) throw error;
+
+  // Fetch shippings only for this page's items
+  const itemIds = (data ?? []).map((row) => row.item_id);
+  const shippingByItemId = new Map<
+    number,
+    { carrier: string; tracking_number: string; shipped_at: string | null; delivered_at: string | null }
+  >();
+
+  if (itemIds.length > 0) {
+    const { data: shippings, error: shippingsError } = await supabaseAdmin
+      .from('shippings')
+      .select('item_id, carrier, tracking_number, shipped_at, delivered_at')
+      .eq('seller_id', sellerId)
+      .in('item_id', itemIds);
+
+    if (shippingsError) throw shippingsError;
+
+    for (const s of shippings ?? []) {
+      shippingByItemId.set(s.item_id, s);
+    }
   }
 
-  if (startDate) orderQuery = orderQuery.gte('created_at', `${startDate}T00:00:00`);
-  if (endDate) orderQuery = orderQuery.lte('created_at', `${endDate}T23:59:59`);
-
-  const { data: matchedOrders, error: matchedOrdersError } = await orderQuery.order('created_at', {
-    ascending: false,
-  });
-
-  if (matchedOrdersError) throw matchedOrdersError;
-
-  const matchedOrderIds = (matchedOrders ?? []).map((o) => o.order_id);
-  if (matchedOrderIds.length === 0) {
-    return { orders: [], total: 0 };
-  }
-
-  const { data: items, error: itemsError } = await supabaseAdmin
-    .from('order_items')
-    .select('item_id, order_id, quantity, unit_price, shipping_status, products(name)')
-    .eq('seller_id', sellerId)
-    .in('order_id', matchedOrderIds)
-    .in('shipping_status', ['결제완료', '배송준비', '배송중', '배송완료']);
-
-  if (itemsError) throw itemsError;
-
-  const { data: shippings, error: shippingsError } = await supabaseAdmin
-    .from('shippings')
-    .select('item_id, carrier, tracking_number, shipped_at, delivered_at')
-    .eq('seller_id', sellerId)
-    .in(
-      'item_id',
-      (items ?? []).map((i) => i.item_id)
-    );
-
-  if (shippingsError) throw shippingsError;
-
-  let rows = (items ?? []).map((item) => {
-    const order = (matchedOrders ?? []).find((o) => o.order_id === item.order_id);
-    const shipping = (shippings ?? []).find((s) => s.item_id === item.item_id);
-    const user = order?.users as unknown as { nickname: string } | null;
+  const orders = (data ?? []).map((item) => {
+    const order = item.orders as unknown as {
+      created_at: string;
+      recipient: string;
+      phone: string;
+      address: string;
+      address_detail: string;
+      shipping_request: string;
+      final_amount: number;
+      users: { nickname: string } | null;
+    };
     const product = item.products as unknown as { name: string } | null;
+    const shipping = shippingByItemId.get(item.item_id);
 
     return {
       orderId: item.order_id,
-      orderDate: order?.created_at ?? '',
-      customer: user?.nickname ?? '알 수 없음',
-      recipient: order?.recipient ?? '',
-      phone: order?.phone ?? '',
-      address: order?.address ?? '',
-      addressDetail: order?.address_detail ?? '',
-      shippingRequest: order?.shipping_request ?? '',
+      orderDate: order.created_at,
+      customer: order.users?.nickname ?? '알 수 없음',
+      recipient: order.recipient,
+      phone: order.phone,
+      address: order.address,
+      addressDetail: order.address_detail,
+      shippingRequest: order.shipping_request,
       itemId: item.item_id,
       productName: product?.name ?? '알 수 없음',
       quantity: item.quantity,
       unitPrice: item.unit_price,
-      finalAmount: order?.final_amount ?? 0,
+      finalAmount: order.final_amount,
       status: item.shipping_status,
       courier: shipping?.carrier ?? '',
       trackingNumber: shipping?.tracking_number ?? '',
@@ -120,15 +132,7 @@ export async function getSellerShippingOrders(
     };
   });
 
-  if (status && status !== '전체') {
-    rows = rows.filter((r) => r.status === status);
-  }
-
-  const total = rows.length;
-  const from = (page - 1) * limit;
-  const paged = rows.slice(from, from + limit);
-
-  return { orders: paged, total };
+  return { orders, total: count ?? 0 };
 }
 
 export async function getSellerShippingOrderCounts(
@@ -252,6 +256,8 @@ export async function updateShippingStatus(sellerId: number, itemId: number, new
 
     if (deliveredAtError) throw deliveredAtError;
   }
+
+  await syncOrderStatus(orderId);
 
   return { status: newStatus };
 }

@@ -16,9 +16,10 @@ export async function PATCH(req: NextRequest) {
   const results = await bulkUpdateShippingStatus(sellerCtx.sellerId, itemIds, status);
   const successCount = results.filter((r) => r.success).length;
   const failCount = results.length - successCount;
+  const failures = results.filter((r) => !r.success);
 
   return NextResponse.json({
     success: true,
-    data: { results, successCount, failCount },
+    data: { results, successCount, failCount, failures },
   });
 }

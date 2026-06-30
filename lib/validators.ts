@@ -2,6 +2,36 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^010-\d{4}-\d{4}$/;
 
+const ALLOWED_PRODUCT_STATUSES = ['판매중', '품절', '판매종료', '숨김'];
+const ALLOWED_DISCOUNT_TYPES = ['none', 'rate', 'amount'];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
+export function validateProductFields(input: {
+  status: string;
+  price: number;
+  stock: number;
+  discountType: string;
+  discountValue: number | null;
+}): string | null {
+  if (!ALLOWED_PRODUCT_STATUSES.includes(input.status)) return '유효하지 않은 상태값입니다.';
+  if (input.price <= 0) return '가격은 0보다 커야 합니다.';
+  if (input.stock < 0) return '재고는 0 이상이어야 합니다.';
+  if (!ALLOWED_DISCOUNT_TYPES.includes(input.discountType)) return '유효하지 않은 할인 유형입니다.';
+  if (input.discountType === 'rate') {
+    if (input.discountValue === null || input.discountValue < 0 || input.discountValue > 100) {
+      return '할인율은 0~100 사이여야 합니다.';
+    }
+  }
+  return null;
+}
+
+export function validateImageFile(file: File): string | null {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return '이미지는 JPG, PNG, WEBP 형식만 허용됩니다.';
+  if (file.size > MAX_IMAGE_SIZE) return '이미지 크기는 5MB를 초과할 수 없습니다.';
+  return null;
+}
+
 export function validateSignup(input: {
   email?: string;
   password?: string;

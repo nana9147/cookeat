@@ -17,15 +17,18 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useAuthStore } from '@/store/authStore';
 
 interface ProductTableProps {
   products: Product[];
+  isLoading?: boolean;
   pageSize?: number;
 }
 
-export default function ProductTable({ products, pageSize = 10 }: ProductTableProps) {
+export default function ProductTable({ products, isLoading = false, pageSize = 10 }: ProductTableProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [previewId, setPreviewId] = useState<number | null>(null);
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
 
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`[${name}] \n\n해당 상품을 정말 삭제하시겠습니까?`)) return;
@@ -35,7 +38,8 @@ export default function ProductTable({ products, pageSize = 10 }: ProductTablePr
       toast.success('상품이 삭제되었습니다.');
       window.location.reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '상품 삭제에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '상품 삭제에 실패했습니다.';
+      toast.error(msg, { id: msg });
     } finally {
       setDeletingId(null);
     }
@@ -60,7 +64,23 @@ export default function ProductTable({ products, pageSize = 10 }: ProductTablePr
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.length === 0 ? (
+          {isLoading ? (
+            Array.from({ length: pageSize }).map((_, i) => (
+              <TableRow key={i} className="border-b border-gray-50">
+                <TableCell className="px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 animate-pulse" />
+                    <div className="h-4 w-32 rounded bg-gray-100 animate-pulse" />
+                  </div>
+                </TableCell>
+                {Array.from({ length: 6 }).map((_, j) => (
+                  <TableCell key={j} className="text-center">
+                    <div className="h-4 w-16 rounded bg-gray-100 animate-pulse mx-auto" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : products.length === 0 ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
                 등록된 상품이 존재하지 않습니다.
@@ -106,22 +126,26 @@ export default function ProductTable({ products, pageSize = 10 }: ProductTablePr
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-2 text-gray-400">
-                      <Link href={`/seller/products/${product.productId}/edit`}>
-                        <SquarePen className="text-dark-text/70" />
-                      </Link>
+                      {!isAdmin && (
+                        <Link href={`/seller/products/${product.productId}/edit`}>
+                          <SquarePen className="text-dark-text/70" />
+                        </Link>
+                      )}
                       <button onClick={() => setPreviewId(product.productId)}>
                         <Eye />
                       </button>
-                      <button
-                        onClick={() => handleDelete(product.productId, product.name)}
-                        disabled={deletingId === product.productId}
-                      >
-                        <Trash2
-                          className={
-                            deletingId === product.productId ? 'text-gray-300' : 'text-red-400'
-                          }
-                        />
-                      </button>
+                      {!isAdmin && (
+                        <button
+                          onClick={() => handleDelete(product.productId, product.name)}
+                          disabled={deletingId === product.productId}
+                        >
+                          <Trash2
+                            className={
+                              deletingId === product.productId ? 'text-gray-300' : 'text-red-400'
+                            }
+                          />
+                        </button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

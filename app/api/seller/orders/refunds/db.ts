@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { logOrderItemStatusHistory } from '@/lib/orderItemStatusHistory';
+import { cancelPayment } from '@/lib/pgCancel';
 
 export async function getOrdersWithRefundRequests(
   sellerId: number,
@@ -14,24 +15,12 @@ export async function getOrdersWithRefundRequests(
 ) {
   const { page, limit, tab, keyword, startDate, endDate } = options;
 
-  const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
-    .from('order_items')
-    .select('item_id, order_id')
-    .eq('seller_id', sellerId);
-
-  if (sellerItemsError) throw sellerItemsError;
-
-  const sellerItemIds = (sellerItemRows ?? []).map((r) => r.item_id);
-  if (sellerItemIds.length === 0) {
-    return { orders: [], total: 0 };
-  }
-
   let refundQuery = supabaseAdmin
     .from('refund_requests')
     .select(
-      'refund_id, item_id, status, request_reason, reject_reason, requested_at, processed_at, order_items(order_id, product_id, quantity, unit_price, products(name))'
+      'refund_id, item_id, status, request_reason, reject_reason, requested_at, processed_at, order_items!inner(order_id, product_id, quantity, unit_price, seller_id, products(name))'
     )
-    .in('item_id', sellerItemIds);
+    .eq('order_items.seller_id', sellerId);
 
   if (startDate) refundQuery = refundQuery.gte('requested_at', `${startDate}T00:00:00`);
   if (endDate) refundQuery = refundQuery.lte('requested_at', `${endDate}T23:59:59`);
@@ -203,7 +192,9 @@ export async function getRefundCounts(sellerId: number) {
 export async function approveRefund(sellerId: number, refundId: number) {
   const { data: refund, error: refundError } = await supabaseAdmin
     .from('refund_requests')
-    .select('status, item_id, order_items(seller_id, order_id)')
+    .select(
+      'status, item_id, order_items!inner(seller_id, order_id, unit_price, quantity, orders!inner(payment_method, payment_key))'
+    )
     .eq('refund_id', refundId)
     .maybeSingle();
 
@@ -212,7 +203,13 @@ export async function approveRefund(sellerId: number, refundId: number) {
     throw new Error('환불 요청을 찾을 수 없습니다.');
   }
 
-  const orderItem = refund.order_items as unknown as { seller_id: number; order_id: string };
+  const orderItem = refund.order_items as unknown as {
+    seller_id: number;
+    order_id: string;
+    unit_price: number;
+    quantity: number;
+    orders: { payment_method: string; payment_key: string | null };
+  };
   if (orderItem.seller_id !== sellerId) {
     throw new Error('환불 요청을 찾을 수 없습니다.');
   }
@@ -220,18 +217,46 @@ export async function approveRefund(sellerId: number, refundId: number) {
     throw new Error('처리 대기 중인 요청이 아닙니다.');
   }
 
+  const { data: confirmed, error: confirmedError } = await supabaseAdmin
+    .from('order_item_status_history')
+    .select('order_item_id')
+    .eq('order_item_id', refund.item_id)
+    .eq('status', '구매확정')
+    .limit(1);
+
+  if (confirmedError) throw confirmedError;
+  if (confirmed && confirmed.length > 0) {
+    throw new Error('구매확정된 항목은 환불 처리할 수 없습니다.');
+  }
+
   const approvedStatus = refund.status === '취소요청' ? '취소' : '환불';
+  const originalStatus = refund.status;
+  const processedAt = new Date().toISOString();
+
+  // PG 결제 취소 (payment_key가 있는 경우만 — 없으면 수동 처리 필요)
+  const { payment_method, payment_key } = orderItem.orders;
+  if (payment_key) {
+    const cancelAmount = orderItem.unit_price * orderItem.quantity;
+    await cancelPayment(payment_method, payment_key, cancelAmount);
+  }
 
   const { error: updateError } = await supabaseAdmin
     .from('refund_requests')
-    .update({ status: approvedStatus, processed_at: new Date().toISOString() })
+    .update({ status: approvedStatus, processed_at: processedAt })
     .eq('refund_id', refundId);
 
   if (updateError) throw updateError;
 
-  await logOrderItemStatusHistory(refund.item_id, approvedStatus);
-
-  await syncOrderStatusIfFullyRefunded(orderItem.order_id);
+  try {
+    await logOrderItemStatusHistory(refund.item_id, approvedStatus);
+    await syncOrderStatusIfFullyRefunded(orderItem.order_id);
+  } catch (err) {
+    await supabaseAdmin
+      .from('refund_requests')
+      .update({ status: originalStatus, processed_at: null })
+      .eq('refund_id', refundId);
+    throw err;
+  }
 
   return { status: approvedStatus };
 }
@@ -297,14 +322,19 @@ export async function rejectRefund(sellerId: number, refundId: number, reason: s
     throw new Error('처리 대기 중인 요청이 아닙니다.');
   }
 
+  const rejectedStatus = refund.status === '취소요청' ? '취소거부' : '환불거부';
   const { error: updateError } = await supabaseAdmin
     .from('refund_requests')
-    .update({ reject_reason: reason, processed_at: new Date().toISOString() })
+    .update({
+      status: rejectedStatus,
+      reject_reason: reason,
+      processed_at: new Date().toISOString(),
+    })
     .eq('refund_id', refundId);
 
   if (updateError) throw updateError;
 
-  await logOrderItemStatusHistory(refund.item_id, `${refund.status}_거부`, reason);
+  await logOrderItemStatusHistory(refund.item_id, rejectedStatus, reason);
 
-  return { status: refund.status };
+  return { status: rejectedStatus };
 }

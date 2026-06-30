@@ -8,6 +8,7 @@ import { PaymentInfoTableProps, ShippingStatus } from '@/types/seller/shipping';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ export default function PaymentInfoTable({
   totalPages,
   onPageChange,
 }: PaymentInfoTableProps) {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const actionLabel = '발주확인';
   const nextStatus: ShippingStatus = '배송준비';
 
@@ -91,13 +93,15 @@ export default function PaymentInfoTable({
         <p className="text-sm text-gray-500">
   상품 <span className="font-semibold text-gray-800">{total}</span>개
 </p>
-        <Button
-          size="sm"
-          disabled={selectedOrderIds.length === 0 || isBulkProcessing}
-          onClick={handleBulkConfirm}
-        >
-          일괄 발주확인 {selectedItemCount > 0 && `(${selectedItemCount})`}
-        </Button>
+        {!isAdmin && (
+          <Button
+            size="sm"
+            disabled={selectedOrderIds.length === 0 || isBulkProcessing}
+            onClick={handleBulkConfirm}
+          >
+            일괄 발주확인 {selectedItemCount > 0 && `(${selectedItemCount})`}
+          </Button>
+        )}
       </div>
 
       <div className="overflow-x-auto">
@@ -192,9 +196,13 @@ export default function PaymentInfoTable({
                       </span>
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      <Button size="sm" onClick={() => onStatusChange(order.orderId, nextStatus)}>
-                        {actionLabel}
-                      </Button>
+                      {!isAdmin ? (
+                        <Button size="sm" onClick={() => onStatusChange(order.orderId, nextStatus)}>
+                          {actionLabel}
+                        </Button>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

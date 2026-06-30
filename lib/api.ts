@@ -1,6 +1,7 @@
 // 모든 API 호출의 베이스 인스턴스. 인증이 필요한 엔드포인트에 Bearer 토큰을 자동으로 첨부한다.
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
+import { useSellerViewStore } from '@/store/sellerViewStore'
 import type { AuthUser } from '@/services/auth/authTypes'
 
 const api = axios.create({
@@ -9,8 +10,21 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  const { accessToken, user } = useAuthStore.getState()
+  if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`
+
+  if (user?.role === 'admin' && typeof config.url === 'string' && config.url.startsWith('/seller/')) {
+    const { viewAsSellerId } = useSellerViewStore.getState()
+    const sellerId =
+      viewAsSellerId ??
+      (typeof window !== 'undefined'
+        ? Number(new URLSearchParams(window.location.search).get('sellerId')) || null
+        : null)
+    if (sellerId) {
+      config.params = { ...config.params, sellerId }
+    }
+  }
+
   return config
 })
 

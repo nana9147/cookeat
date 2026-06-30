@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
 import { getSellerProducts, createSellerProduct } from './db';
 import { resolveDiscountValue } from '@/lib/productPricing';
+import { validateProductFields, validateImageFile } from '@/lib/validators';
 
 export async function GET(req: NextRequest) {
   const sellerCtx = await requireSellerContext(req);
@@ -73,6 +74,28 @@ export async function POST(req: NextRequest) {
       { success: false, error: '대표 이미지가 필요합니다.' },
       { status: 400 }
     );
+  }
+
+  const fieldError = validateProductFields({
+    status,
+    price: Number(price),
+    stock: Number(stock),
+    discountType,
+    discountValue,
+  });
+  if (fieldError) {
+    return NextResponse.json({ success: false, error: fieldError }, { status: 400 });
+  }
+
+  const repImageError = validateImageFile(representativeImage);
+  if (repImageError) {
+    return NextResponse.json({ success: false, error: repImageError }, { status: 400 });
+  }
+  for (const file of subImages) {
+    const subImageError = validateImageFile(file);
+    if (subImageError) {
+      return NextResponse.json({ success: false, error: subImageError }, { status: 400 });
+    }
   }
 
   try {

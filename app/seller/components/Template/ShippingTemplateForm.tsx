@@ -103,7 +103,8 @@ export default function ShippingTemplateForm({
       setIsAddressFormOpen(false);
       setOpenAddressModal(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '주소 등록에 실패했습니다.');
+      const msg = e instanceof Error ? e.message : '주소 등록에 실패했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 

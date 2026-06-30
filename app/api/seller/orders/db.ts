@@ -13,145 +13,116 @@ export async function getSellerOrders(
     sortOrder?: 'asc' | 'desc';
   }
 ) {
-  const { page, limit, keyword, status, startDate, endDate, sortBy, sortOrder } = options;
+  const { page, limit, keyword, status, startDate, endDate, sortBy, sortOrder = 'desc' } = options;
+  const rangeFrom = (page - 1) * limit;
+  const rangeTo = rangeFrom + limit - 1;
 
-  const { data: sellerItemRows, error: sellerItemsError } = await supabaseAdmin
-    .from('order_items')
-    .select('item_id, order_id')
-    .eq('seller_id', sellerId);
-
-  if (sellerItemsError) throw sellerItemsError;
-
-  const sellerItemIds = (sellerItemRows ?? []).map((r) => r.item_id);
-  const sellerOrderIds = [...new Set((sellerItemRows ?? []).map((r) => r.order_id))];
-
-  if (sellerItemIds.length === 0) {
-    return { orders: [], total: 0 };
-  }
-
-  let matchedUserIds: number[] = [];
+  // Keyword spans multiple tables — pre-fetch matching order IDs
+  let keywordOrderIds: string[] | null = null;
   if (keyword) {
     const { data: userRows } = await supabaseAdmin
       .from('users')
       .select('user_id')
       .ilike('nickname', `%${keyword}%`);
-    matchedUserIds = (userRows ?? []).map((u) => u.user_id);
-  }
+    const matchedUserIds = (userRows ?? []).map((u) => u.user_id);
 
-  let orderQuery = supabaseAdmin
-    .from('orders')
-    .select('order_id, created_at, status, recipient, phone, user_id, users(nickname)')
-    .in('order_id', sellerOrderIds);
-
-  if (status && status !== '전체') {
-    orderQuery = orderQuery.eq('status', status);
-  }
-
-  if (keyword) {
-    const orConditions = [
+    const orParts = [
       `order_id.ilike.%${keyword}%`,
       `recipient.ilike.%${keyword}%`,
       `phone.ilike.%${keyword}%`,
     ];
     if (matchedUserIds.length > 0) {
-      orConditions.push(`user_id.in.(${matchedUserIds.join(',')})`);
+      orParts.push(`user_id.in.(${matchedUserIds.join(',')})`);
     }
-    orderQuery = orderQuery.or(orConditions.join(','));
+
+    const { data: orderRows } = await supabaseAdmin
+      .from('orders')
+      .select('order_id')
+      .or(orParts.join(','));
+
+    keywordOrderIds = (orderRows ?? []).map((o) => o.order_id);
+    if (keywordOrderIds.length === 0) {
+      return { orders: [], total: 0 };
+    }
   }
-  if (startDate) orderQuery = orderQuery.gte('created_at', `${startDate}T00:00:00`);
-  if (endDate) orderQuery = orderQuery.lte('created_at', `${endDate}T23:59:59`);
 
-  const { data: matchedOrders, error: matchedOrdersError } = await orderQuery;
-  if (matchedOrdersError) throw matchedOrdersError;
-
-  const matchedOrderIds = (matchedOrders ?? []).map((o) => o.order_id);
-  if (matchedOrderIds.length === 0) {
-    return { orders: [], total: 0 };
-  }
-
-  const { data: items, error: itemsError } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('order_items')
-    .select('item_id, order_id, quantity, unit_price, products(name)')
-    .eq('seller_id', sellerId)
-    .in('order_id', matchedOrderIds);
+    .select(
+      `item_id, order_id, quantity, unit_price,
+       products(name),
+       orders!inner(created_at, status, recipient, phone, users(nickname))`,
+      { count: 'exact' }
+    )
+    .eq('seller_id', sellerId);
 
-  if (itemsError) throw itemsError;
+  if (status && status !== '전체') query = query.eq('orders.status', status);
+  if (startDate) query = query.gte('orders.created_at', `${startDate}T00:00:00`);
+  if (endDate) query = query.lte('orders.created_at', `${endDate}T23:59:59`);
+  if (keywordOrderIds !== null) query = query.in('order_id', keywordOrderIds);
 
-  const itemIdsInScope = (items ?? []).map((i) => i.item_id);
-  const { data: refunds, error: refundsError } = await supabaseAdmin
-    .from('refund_requests')
-    .select('item_id, status, reject_reason')
-    .in('item_id', itemIdsInScope)
-    .order('requested_at', { ascending: false });
+  if (sortBy === 'orderId') {
+    query = query.order('order_id', { ascending: sortOrder === 'asc' });
+  } else {
+    query = query.order('created_at', {
+      referencedTable: 'orders',
+      ascending: sortOrder === 'asc',
+    });
+  }
+  query = query.range(rangeFrom, rangeTo);
 
-  if (refundsError) throw refundsError;
+  const { data, count, error } = await query;
+  if (error) throw error;
 
+  // Fetch refunds only for this page's items
+  const itemIds = (data ?? []).map((row) => row.item_id);
   const latestRefundByItem = new Map<number, { status: string; rejectReason: string | null }>();
-  for (const r of refunds ?? []) {
-    if (!latestRefundByItem.has(r.item_id)) {
-      latestRefundByItem.set(r.item_id, { status: r.status, rejectReason: r.reject_reason });
+
+  if (itemIds.length > 0) {
+    const { data: refunds, error: refundsError } = await supabaseAdmin
+      .from('refund_requests')
+      .select('item_id, status, reject_reason')
+      .in('item_id', itemIds)
+      .order('requested_at', { ascending: false });
+
+    if (refundsError) throw refundsError;
+
+    for (const r of refunds ?? []) {
+      if (!latestRefundByItem.has(r.item_id)) {
+        latestRefundByItem.set(r.item_id, { status: r.status, rejectReason: r.reject_reason });
+      }
     }
   }
 
-  let rows = (items ?? []).map((item) => {
-    const order = (matchedOrders ?? []).find((o) => o.order_id === item.order_id);
-    const user = order?.users as unknown as { nickname: string } | null;
+  const orders = (data ?? []).map((item) => {
+    const order = item.orders as unknown as {
+      created_at: string;
+      status: string;
+      recipient: string;
+      phone: string;
+      users: { nickname: string } | null;
+    };
     const product = item.products as unknown as { name: string } | null;
     const refund = latestRefundByItem.get(item.item_id);
     const hasActiveClaim = Boolean(refund && !refund.rejectReason);
 
     return {
       orderId: item.order_id,
-      orderDate: order?.created_at ?? '',
-      customer: user?.nickname ?? '알 수 없음',
-      recipient: order?.recipient ?? '',
-      phone: order?.phone ?? '',
+      orderDate: order.created_at,
+      customer: order.users?.nickname ?? '알 수 없음',
+      recipient: order.recipient,
+      phone: order.phone,
       itemId: item.item_id,
       productName: product?.name ?? '알 수 없음',
       quantity: item.quantity,
       unitPrice: item.unit_price,
       itemTotalPrice: item.quantity * item.unit_price,
-      status: order?.status ?? '결제완료',
+      status: order.status,
       hasActiveClaim,
     };
   });
 
-  if (sortBy === 'orderDate') {
-    const orderDateMap = new Map<string, string>();
-
-    for (const row of rows) {
-      if (!orderDateMap.has(row.orderId)) {
-        orderDateMap.set(row.orderId, row.orderDate);
-      }
-    }
-
-    const sortedOrderIds = [...orderDateMap.keys()].sort((a, b) => {
-      const aTime = new Date(orderDateMap.get(a)!).getTime();
-      const bTime = new Date(orderDateMap.get(b)!).getTime();
-
-      return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
-    });
-
-    const orderIndexMap = new Map(sortedOrderIds.map((id, index) => [id, index]));
-
-    rows.sort((a, b) => orderIndexMap.get(a.orderId)! - orderIndexMap.get(b.orderId)!);
-  }
-
-  if (sortBy === 'orderId') {
-    const sortedOrderIds = [...new Set(rows.map((r) => r.orderId))].sort((a, b) =>
-      sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
-    );
-
-    const orderIndexMap = new Map(sortedOrderIds.map((id, index) => [id, index]));
-
-    rows.sort((a, b) => orderIndexMap.get(a.orderId)! - orderIndexMap.get(b.orderId)!);
-  }
-
-  const total = rows.length;
-  const from = (page - 1) * limit;
-  const paged = rows.slice(from, from + limit);
-
-  return { orders: paged, total };
+  return { orders, total: count ?? 0 };
 }
 
 export async function getSellerOrderCounts(

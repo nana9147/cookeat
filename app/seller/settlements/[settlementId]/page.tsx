@@ -25,7 +25,8 @@ export default function SettlementDetailPage() {
         const res = await api.get(`/seller/settlements/${settlementId}`);
         setDetail(res.data.data);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '정산 상세를 불러오지 못했습니다.');
+        const msg = e instanceof Error ? e.message : '정산 상세를 불러오지 못했습니다.';
+        toast.error(msg, { id: msg });
       } finally {
         setIsLoading(false);
       }

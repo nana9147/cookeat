@@ -12,19 +12,20 @@ import type { ProductStatus, Product, CategoryNode } from '@/types/seller/produc
 import Link from 'next/link';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 
 const statuses: (ProductStatus | '전체')[] = ['전체', '판매중', '품절', '판매종료', '숨김'];
 const LIMIT = 10;
 
 export default function ProductsPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [status, setStatus] = useState<ProductStatus | '전체'>('전체');
   const [search, setSearch] = useState('');
-  const [keyword, setKeyword] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [isLodding, setIsLodding] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
@@ -44,10 +45,10 @@ export default function ProductsPage() {
 
   useEffect(() => {
     async function load() {
-      setIsLodding(true);
+      setIsLoading(true);
       try {
         const params: Record<string, string | number> = { page, limit: LIMIT };
-        if (keyword) params.keyword = keyword;
+        if (search) params.keyword = search;
         if (status !== '전체') params.status = status;
         if (selectedCategoryId) params.categoryId = selectedCategoryId;
         else if (selectedParentId) params.parentId = selectedParentId;
@@ -58,20 +59,16 @@ export default function ProductsPage() {
           setTotal(data.data.pagination.total);
         }
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.');
+        const msg = e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.';
+        toast.error(msg, { id: msg });
       } finally {
-        setIsLodding(false);
+        setIsLoading(false);
       }
     }
     load();
-  }, [page, keyword, status, selectedParentId, selectedCategoryId]);
+  }, [page, search, status, selectedParentId, selectedCategoryId]);
 
   const totalPages = Math.ceil(total / LIMIT);
-
-  const handleSearchSubmit = (value: string) => {
-    setKeyword(value);
-    setPage(1);
-  };
 
   const handleSelectParent = (parentId: number | null) => {
     setSelectedParentId(parentId);
@@ -90,11 +87,13 @@ export default function ProductsPage() {
     <div className="bg-background p-8">
       <div className="mb-8 pr-5 flex items-center justify-between">
         <h1 className="text-h2 font-bold text-dark-text">상품 관리</h1>
-        <Link href="/seller/products/new">
-          <Button className="p-5">
-            <Plus /> 상품 등록
-          </Button>
-        </Link>
+        {!isAdmin && (
+          <Link href="/seller/products/new">
+            <Button className="p-5">
+              <Plus /> 상품 등록
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
@@ -103,8 +102,10 @@ export default function ProductsPage() {
             placeholder="상품명으로 검색"
             className="py-5 bg-card"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(search)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
           <Button
             onClick={() => setIsFilterOpen((prev) => !prev)}
@@ -189,18 +190,14 @@ export default function ProductsPage() {
           전체 상품 수 <span className="font-semibold text-gray-800">{total}</span>개
         </p>
 
-        {isLodding ? (
-          <p className="text-center py-16 text-gray-400 text-sm">불러오는 중...</p>
-        ) : (
-          <>
-            <ProductTable products={products} />
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              getPageNumbers={() => getPageNumbers(page, totalPages)}
-            />
-          </>
+        <ProductTable products={products} isLoading={isLoading} />
+        {!isLoading && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            getPageNumbers={() => getPageNumbers(page, totalPages)}
+          />
         )}
       </div>
     </div>

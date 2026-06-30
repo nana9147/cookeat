@@ -16,12 +16,14 @@ import type {
 } from '@/types/seller/order';
 import { ORDER_STATUS_LABEL, PAYMENT_LABEL } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
+import { toDateStr, getDateRange } from '@/lib/dateRange';
 import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
 import OrderTable from '../components/OrderList/OrderTable';
 import StatusCards from '@/components/ui/StatusCards';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
+import { useAuthStore } from '@/store/authStore';
 
 const statuses: (OrderStatus | '전체')[] = ['전체', '결제완료', '배송준비', '배송중', '배송완료'];
 
@@ -35,22 +37,6 @@ const ORDER_COLOR_MAP = {
 
 const LIMIT = 10;
 
-const toDateStr = (d: Date) => d.toISOString().split('T')[0];
-
-const getDateRange = (preset: DateRangePreset): { startDate: string; endDate: string } => {
-  const today = new Date();
-  const end = toDateStr(today);
-
-  if (preset === '전체') return { startDate: '', endDate: '' };
-  if (preset === '오늘') return { startDate: end, endDate: end };
-
-  const start = new Date(today);
-  if (preset === '1주일') start.setDate(today.getDate() - 7);
-  if (preset === '1개월') start.setMonth(today.getMonth() - 1);
-  if (preset === '3개월') start.setMonth(today.getMonth() - 3);
-
-  return { startDate: toDateStr(start), endDate: end };
-};
 
 const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
   { key: 'id', label: '주문번호' },
@@ -74,6 +60,7 @@ const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
 ];
 
 export default function OrdersPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -120,8 +107,6 @@ export default function OrdersPage() {
     countBy: 'id',
   });
 
-  const uniqueOrderCount = new Set(orders.map((o) => o.orderId)).size;
-
   useEffect(() => {
     const params = new URLSearchParams();
     params.set('page', String(page));
@@ -153,7 +138,8 @@ export default function OrdersPage() {
       });
       setCounts(res.data.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
@@ -185,7 +171,8 @@ export default function OrdersPage() {
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '주문 목록을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       } finally {
         if (!cancelled) {
@@ -279,10 +266,12 @@ export default function OrdersPage() {
     <div className="bg-background p-8">
       <div className="flex flex-row justify-between items-center mb-8">
         <h1 className="text-h2 font-bold text-dark-text">주문 관리</h1>
-        <Button onClick={handleExcelDownload} disabled={isExporting}>
-          <Download />
-          {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
-        </Button>
+        {!isAdmin && (
+          <Button onClick={handleExcelDownload} disabled={isExporting}>
+            <Download />
+            {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+          </Button>
+        )}
       </div>
       <StatusCards
         cards={statusCardData}

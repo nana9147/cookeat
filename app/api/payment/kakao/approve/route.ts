@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   await supabaseAdmin
     .from('orders')
-    .update({ status: '결제완료', payment_method: '카카오페이', updated_at: new Date().toISOString() })
+    .update({ status: '결제완료', payment_method: '카카오페이', payment_key: tid, updated_at: new Date().toISOString() })
     .eq('order_id', orderId);
 
   const data = await res.json();

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
@@ -38,6 +39,7 @@ const STATUS_OPTIONS: { label: string; value: SettlementDbStatus | '전체' }[] 
 ];
 
 export default function SettlementsPage() {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [status, setStatus] = useState<SettlementDbStatus | '전체'>('전체');
   const [search, setSearch] = useState('');
   const [settlements, setSettlements] = useState<SettlementRow[]>([]);
@@ -151,12 +153,16 @@ export default function SettlementsPage() {
       const res = await api.get('/seller/settlements/summary');
       setSummary(res.data.data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '정산 요약을 불러오지 못했습니다.');
+      const msg = e instanceof Error ? e.message : '정산 요약을 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
     }
   };
 
   useEffect(() => {
-    fetchSummary();
+    api
+      .post('/seller/settlements/ensure')
+      .catch(() => {})
+      .finally(fetchSummary);
   }, []);
 
   useEffect(() => {
@@ -174,7 +180,8 @@ export default function SettlementsPage() {
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : '정산 내역을 불러오지 못했습니다.');
+          const msg = e instanceof Error ? e.message : '정산 내역을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
         }
       } finally {
         if (!cancelled) {
@@ -214,10 +221,12 @@ export default function SettlementsPage() {
               <span className="font-semibold text-gray-800">{summary.nextSettlementDate}</span>
             </p>
           )}
-          <Button onClick={handleExcelDownload} disabled={isExporting}>
-            <Download />
-            {isExporting ? '다운로드 중...' : '엑셀 다운로드'}
-          </Button>
+          {!isAdmin && (
+            <Button onClick={handleExcelDownload} disabled={isExporting}>
+              <Download />
+              {isExporting ? '다운로드 중...' : '엑셀 다운로드'}
+            </Button>
+          )}
         </div>
       </div>
 

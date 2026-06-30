@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
 import { getSellerProductById, updateSellerProduct, deleteSellerProduct } from './db';
 import { resolveDiscountValue } from '@/lib/productPricing';
+import { validateProductFields, validateImageFile } from '@/lib/validators';
 
 interface RouteParams {
   params: Promise<{ productId: string }>;
@@ -84,6 +85,30 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     );
   }
 
+  const fieldError = validateProductFields({
+    status,
+    price: Number(price),
+    stock: Number(stock),
+    discountType,
+    discountValue,
+  });
+  if (fieldError) {
+    return NextResponse.json({ success: false, error: fieldError }, { status: 400 });
+  }
+
+  if (representativeImage) {
+    const repImageError = validateImageFile(representativeImage);
+    if (repImageError) {
+      return NextResponse.json({ success: false, error: repImageError }, { status: 400 });
+    }
+  }
+  for (const file of subImagesFiles) {
+    const subImageError = validateImageFile(file);
+    if (subImageError) {
+      return NextResponse.json({ success: false, error: subImageError }, { status: 400 });
+    }
+  }
+
   let subImages: { imageId?: number; file?: File }[] = [];
   if (metaRaw) {
     try {
@@ -163,7 +188,9 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
         ? 404
         : message === '해당 상품을 삭제할 권한이 없습니다.'
           ? 403
-          : 500;
+          : message === '주문건이 존재하여 삭제할 수 없습니다. 판매종료로 상태변경하세요.'
+            ? 409
+            : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }

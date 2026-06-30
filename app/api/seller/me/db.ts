@@ -20,6 +20,17 @@ export async function getSellerByUserId(userId: number) {
   return data ?? null;
 }
 
+export async function getSellerBySellerId(sellerId: number) {
+  const { data } = await supabaseAdmin
+    .from('sellers')
+    .select(
+      'seller_id, user_id, is_co_representative, representative_name, cs_phone, store_name, business_number, business_address, bank_name, bank_account, commission_rate, approve_status, rejected_reason, created_at'
+    )
+    .eq('seller_id', sellerId)
+    .maybeSingle();
+  return data ?? null;
+}
+
 export async function updateSeller(userId: number, fields: UpdateSellerFields) {
   return supabaseAdmin
     .from('sellers')

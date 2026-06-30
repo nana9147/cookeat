@@ -20,6 +20,7 @@ import {
 } from '@/types/seller/shipping';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 import StatusBadge from '../StatusBadge';
 import {
   Table,
@@ -52,6 +53,7 @@ export default function AllOrdersTable({
   totalPages,
   onPageChange,
 }: AllOrdersTableProps) {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [inputs, setInputs] = useState<Record<number, ShippingInputState>>({});
 
   const handleConfirm = (itemId: number) => {
@@ -71,42 +73,44 @@ export default function AllOrdersTable({
 
   const renderTrackingCell = (order: ShippingRow) => {
     if (order.status === '배송준비') {
-      return (
-        <div className="flex items-center gap-1.5 justify-center">
-          <Select
-            value={inputs[order.itemId]?.courier ?? ''}
-            onValueChange={(value) =>
-              setInputs((prev) => ({
-                ...prev,
-                [order.itemId]: { ...prev[order.itemId], courier: value as CourierCode },
-              }))
-            }
-          >
-            <SelectTrigger size="sm" className="w-28">
-              <SelectValue placeholder="택배사" />
-            </SelectTrigger>
-            <SelectContent>
-              {COURIERS.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            type="number"
-            value={inputs[order.itemId]?.trackingNumber ?? ''}
-            onChange={(e) =>
-              setInputs((prev) => ({
-                ...prev,
-                [order.itemId]: { ...prev[order.itemId], trackingNumber: e.target.value },
-              }))
-            }
-            placeholder="운송장번호"
-            className="w-28 whitespace-nowrap [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
-        </div>
-      );
+      if (!isAdmin) {
+        return (
+          <div className="flex items-center gap-1.5 justify-center">
+            <Select
+              value={inputs[order.itemId]?.courier ?? ''}
+              onValueChange={(value) =>
+                setInputs((prev) => ({
+                  ...prev,
+                  [order.itemId]: { ...prev[order.itemId], courier: value as CourierCode },
+                }))
+              }
+            >
+              <SelectTrigger size="sm" className="w-28">
+                <SelectValue placeholder="택배사" />
+              </SelectTrigger>
+              <SelectContent>
+                {COURIERS.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="number"
+              value={inputs[order.itemId]?.trackingNumber ?? ''}
+              onChange={(e) =>
+                setInputs((prev) => ({
+                  ...prev,
+                  [order.itemId]: { ...prev[order.itemId], trackingNumber: e.target.value },
+                }))
+              }
+              placeholder="운송장번호"
+              className="w-28 whitespace-nowrap [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          </div>
+        );
+      }
     }
 
     if (order.courier && order.trackingNumber) {
@@ -121,6 +125,7 @@ export default function AllOrdersTable({
   };
 
   const renderActionCell = (order: ShippingRow) => {
+    if (isAdmin) return <span className="text-gray-400 text-sm">-</span>;
     switch (order.status) {
       case '결제완료':
         return (

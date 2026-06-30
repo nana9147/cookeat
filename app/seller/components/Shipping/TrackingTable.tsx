@@ -24,6 +24,7 @@ import {
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
+import { useAuthStore } from '@/store/authStore';
 import {
   Table,
   TableBody,
@@ -63,9 +64,10 @@ export default function TrackingTable({
   onPageChange,
   onUpdate,
 }: TrackingTableProps) {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
   const [inputs, setInputs] = useState<Record<number, ShippingInputState>>({});
   const [defaultCourier, setDefaultCourier] = useState<CourierCode | ''>('');
-  const isEditable = status === '배송준비';
+  const isEditable = status === '배송준비' && !isAdmin;
   const isShipping = status === '배송중';
   const hasActionColumn = isEditable || isShipping;
 
@@ -196,7 +198,7 @@ export default function TrackingTable({
 
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
-  const isCompletable = status === '배송중';
+  const isCompletable = status === '배송중' && !isAdmin;
 
   useEffect(() => {
     setSelectedItemIds([]);
@@ -224,10 +226,12 @@ export default function TrackingTable({
         itemIds: selectedItemIds,
         status: '배송완료',
       });
-      const { successCount, failCount, results } = res.data.data;
+      const { successCount, failCount, failures, results } = res.data.data;
 
       if (failCount > 0) {
-        toast.error(`${successCount}건 처리 완료, ${failCount}건 실패했습니다.`);
+        toast.error(
+          `${successCount}건 처리 완료, ${failCount}건 실패: ${failures.map((f: { itemId: number; error?: string }) => `항목 ${f.itemId}(${f.error})`).join(', ')}`
+        );
       } else {
         toast.success(`${successCount}건이 일괄 배송완료 처리되었습니다.`);
       }
