@@ -50,10 +50,6 @@ export default function MembersPage() {
   const [editStatus, setEditStatus] = useState<AdminMemberStatus>('active');
 
   useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
     let cancelled = false;
 
     async function load() {
@@ -178,7 +174,7 @@ export default function MembersPage() {
           className="pl-9"
           placeholder="회원명, 이메일로 검색"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         />
       </div>
 

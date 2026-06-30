@@ -34,10 +34,6 @@ export default function RecipesPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   useEffect(() => {
-    setPage(1);
-  }, [search]);
-
-  useEffect(() => {
     let cancelled = false;
 
     async function fetchRecipes() {
@@ -152,7 +148,10 @@ export default function RecipesPage() {
           className="pl-4 bg-white"
           placeholder="레시피 제목 검색"
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
         />
       </div>
 

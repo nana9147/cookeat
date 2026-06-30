@@ -90,10 +90,6 @@ export default function SellersPage() {
   const [filterRating, setFilterRating] = useState<string>('all');
 
   useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
     let cancelled = false;
 
     async function load() {
@@ -262,7 +258,7 @@ export default function SellersPage() {
           className="pl-9"
           placeholder="판매자명, 사업자 번호로 검색"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         />
       </div>
 
