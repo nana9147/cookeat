@@ -1,3 +1,5 @@
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+
 export type CategoryName =
   | '채소'
   | '과일·견과·쌀'
@@ -28,6 +30,8 @@ export interface Product {
   categoryId: number | null;
   categories: { name: string; parent_id: number | null } | null;
   createdAt: string;
+  rating: number;
+  reviewCount: number;
 }
 
 export type ProductData = Omit<Product, 'id' | 'linkedRecipeCount' | 'createdAt'>;
@@ -204,7 +208,6 @@ export interface ProductFilters {
   sortOrder?: SortOrder;
 }
 
-// ProductTableProps에 추가
 export interface ProductTableProps {
   products: Product[];
   isLoading?: boolean;
@@ -212,4 +215,68 @@ export interface ProductTableProps {
   sortBy?: ProductSortBy;
   sortOrder?: SortOrder;
   onSortChange?: (sortBy: ProductSortBy) => void;
+  selectedIds: number[];
+  isAllSelectedMode: boolean;
+  onSelect: (productId: number, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
+  onStatusChanged?: () => void;
+}
+
+export interface BulkDeleteResult {
+  successCount: number;
+  failures: { productId: number; reason: string }[];
+}
+
+export interface ProductCounts {
+  전체: number;
+  판매중: number;
+  품절: number;
+  판매종료: number;
+  숨김: number;
+}
+
+export interface LowStockProduct {
+  productId: number;
+  name: string;
+  stock: number;
+  minStock: number;
+}
+
+export interface ProductExportRow {
+  productId: number;
+  name: string;
+  parentCategoryName: string;
+  categoryName: string;
+  brand: string;
+  origin: string;
+  price: number;
+  stock: number | null;
+  discountType: string;
+  discountValue: number | null;
+  status: ProductStatus | null;
+  shippingTemplateName: string;
+  returnPolicyTemplateName: string;
+  linkedRecipeCount: number;
+  rating: number;
+  reviewCount: number;
+  description: string;
+  image: string;
+  createdAt: string;
+}
+
+export interface BulkImportRow {
+  name: string;
+  parentCategoryName: string;
+  categoryName: string;
+  brand: string;
+  origin: string;
+  price: number;
+  stock: number;
+  discountType: string;
+  discountValue: number | null;
+  status: string;
+  shippingTemplateName: string;
+  returnPolicyTemplateName: string;
+  description: string;
+  image: string;
 }

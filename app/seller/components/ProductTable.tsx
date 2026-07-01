@@ -1,7 +1,7 @@
 'use client';
 
 import StatusBadge from '@/app/seller/components/StatusBadge';
-import { SquarePen, Eye, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { SquarePen, Eye, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Star } from 'lucide-react';
 import Link from 'next/link';
 import EmptyRows from '@/components/ui/EmptyRows';
 import {
@@ -17,7 +17,16 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuthStore } from '@/store/authStore';
-import type { Product, ProductSortBy, ProductTableProps } from '@/types/seller/product';
+import type { ProductSortBy, ProductStatus, ProductTableProps } from '@/types/seller/product';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+const ALL_STATUSES: ProductStatus[] = ['판매중', '품절', '판매종료', '숨김'];
 
 export default function ProductTable({
   products,
@@ -26,10 +35,31 @@ export default function ProductTable({
   sortBy,
   sortOrder,
   onSortChange,
+  selectedIds,
+  isAllSelectedMode,
+  onSelect,
+  onSelectAll,
+  onStatusChanged,
 }: ProductTableProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
+
+  const [changingId, setChangingId] = useState<number | null>(null);
+
+  const handleStatusChange = async (productId: number, newStatus: ProductStatus) => {
+    setChangingId(productId);
+    try {
+      await api.patch(`/seller/products/${productId}/status`, { status: newStatus });
+      toast.success(`상태가 '${newStatus}'로 변경되었습니다.`);
+      onStatusChanged?.(); // 부모(page.tsx)에서 목록/카운트 재조회
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '상태 변경에 실패했습니다.';
+      toast.error(msg, { id: msg });
+    } finally {
+      setChangingId(null);
+    }
+  };
 
   const renderSortIcon = (column: ProductSortBy) => {
     if (sortBy !== column) {
@@ -62,6 +92,16 @@ export default function ProductTable({
       <Table>
         <TableHeader>
           <TableRow className="border-b border-gray-100">
+            <TableHead className="text-center w-10">
+              <input
+                type="checkbox"
+                checked={
+                  isAllSelectedMode ||
+                  (selectedIds.length === products.length && products.length > 0)
+                }
+                onChange={(e) => onSelectAll(e.target.checked)}
+              />
+            </TableHead>
             <TableHead className="text-center text-sm font-semibold text-gray-600">상품</TableHead>
             <TableHead className="text-center text-sm font-semibold text-gray-600">
               카테고리
@@ -81,6 +121,7 @@ export default function ProductTable({
             <TableHead className="text-center text-sm font-semibold text-gray-600">
               레시피 연동
             </TableHead>
+            <TableHead className="text-center text-sm font-semibold text-gray-600">리뷰</TableHead>
             <TableHead className="text-center text-sm font-semibold text-gray-600">상태</TableHead>
             <TableHead className="text-center text-sm font-semibold text-gray-600">관리</TableHead>
           </TableRow>
@@ -104,7 +145,7 @@ export default function ProductTable({
             ))
           ) : products.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
+              <TableCell colSpan={9} className="text-center py-16 text-gray-400 text-sm">
                 등록된 상품이 존재하지 않습니다.
               </TableCell>
             </TableRow>
@@ -115,6 +156,13 @@ export default function ProductTable({
                   key={product.productId}
                   className="border-b border-gray-50 last:border-b-0"
                 >
+                  <TableCell className="text-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelectedMode || selectedIds.includes(product.productId)}
+                      onChange={(e) => onSelect(product.productId, e.target.checked)}
+                    />
+                  </TableCell>
                   <TableCell className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <img
@@ -143,8 +191,41 @@ export default function ProductTable({
                   <TableCell className="text-sm text-gray-600 text-center">
                     {product.linkedRecipeCount}개
                   </TableCell>
+                  <TableCell className="text-sm text-center">
+                    {product.reviewCount > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-gray-700">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        {product.rating.toFixed(1)}
+                        <span className="text-gray-400">({product.reviewCount})</span>
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-center">
-                    <StatusBadge status={product.status ?? '판매중'} />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        asChild
+                        disabled={isAdmin || changingId === product.productId}
+                      >
+                        <button className="cursor-pointer disabled:cursor-default">
+                          <StatusBadge status={product.status ?? '판매중'} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      {!isAdmin && (
+                        <DropdownMenuContent align="center">
+                          {ALL_STATUSES.map((s) => (
+                            <DropdownMenuItem
+                              key={s}
+                              disabled={s === product.status}
+                              onClick={() => handleStatusChange(product.productId, s)}
+                            >
+                              {s}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      )}
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-2 text-gray-400">
@@ -172,7 +253,7 @@ export default function ProductTable({
                   </TableCell>
                 </TableRow>
               ))}
-              <EmptyRows count={Math.max(0, pageSize - products.length)} colSpan={7} />
+              <EmptyRows count={Math.max(0, pageSize - products.length)} colSpan={9} />
             </>
           )}
         </TableBody>
