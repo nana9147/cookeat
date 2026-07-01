@@ -54,6 +54,8 @@ export default function ProductsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(null);
   const [editProduct, setEditProduct] = useState<AdminProduct | null>(null);
 
@@ -85,7 +87,10 @@ export default function ProductsPage() {
         if (!cancelled) {
           setProductList(data.products as AdminProduct[]);
           setTotal(data.pagination.total as number);
+          setError(null);
         }
+      } catch {
+        if (!cancelled) setError('상품 목록을 불러오지 못했습니다.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -111,11 +116,18 @@ export default function ProductsPage() {
 
   const handleSaveEdit = async () => {
     if (!editProduct) return;
-    await api.patch(`/admin/products/${editProduct.productId}`, { status: editProduct.status });
-    setProductList((prev) =>
-      prev.map((p) => (p.productId === editProduct.productId ? editProduct : p))
-    );
-    setEditProduct(null);
+    setSaving(true);
+    try {
+      await api.patch(`/admin/products/${editProduct.productId}`, { status: editProduct.status });
+      setProductList((prev) =>
+        prev.map((p) => (p.productId === editProduct.productId ? editProduct : p))
+      );
+      setEditProduct(null);
+    } catch {
+      alert('상품 상태 변경에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -207,6 +219,12 @@ export default function ProductsPage() {
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                   불러오는 중...
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-10 text-red-500">
+                  {error}
                 </TableCell>
               </TableRow>
             ) : productList.length === 0 ? (
@@ -332,7 +350,9 @@ export default function ProductsPage() {
             <DialogClose asChild>
               <Button variant="outline">취소</Button>
             </DialogClose>
-            <Button onClick={handleSaveEdit}>저장</Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? '저장 중...' : '저장'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -29,7 +29,7 @@ import { formatWon, formatDate } from '@/lib/format';
 import type { AdminOrder, AdminOrderStatus } from '@/types/admin';
 
 const PAGE_SIZE = 20;
-const STATUSES: AdminOrderStatus[] = ['결제완료', '주문확인', '배송준비', '배송중', '배송완료', '취소'];
+const STATUSES: AdminOrderStatus[] = ['결제전', '결제완료', '주문확인', '배송준비', '배송중', '배송완료', '구매확정', '취소', '환불'];
 
 export default function OrdersPage() {
   const [search, setSearch] = useState('');
@@ -95,7 +95,7 @@ export default function OrdersPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">주문 관리</h1>
-          <p className="text-sm text-muted-foreground">오늘 주문: 234건</p>
+          <p className="text-sm text-muted-foreground">전체 주문: {total}건</p>
         </div>
         <Button
           variant="outline"
