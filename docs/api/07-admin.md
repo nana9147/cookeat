@@ -33,6 +33,10 @@
 | POST   | `/admin/faqs`                       | FAQ 등록                   | ✓    |
 | PATCH  | `/admin/faqs/:faqId`                | FAQ 수정                   | ✓    |
 | DELETE | `/admin/faqs/:faqId`                | FAQ 삭제                   | ✓    |
+| GET    | `/admin/coupons`                    | 쿠폰 목록 조회             | ✓    |
+| POST   | `/admin/coupons`                    | 쿠폰 생성 및 전체 지급     | ✓    |
+| DELETE | `/admin/coupons/:couponId`          | 쿠폰 삭제                  | ✓    |
+| POST   | `/admin/coupons/:couponId/issue`    | 쿠폰 전체/개별 지급        | ✓    |
 
 ---
 
@@ -432,4 +436,120 @@
 
 ```json
 { "success": true }
+```
+
+---
+
+### GET `/admin/coupons`
+
+`Response 200`
+
+| 필드                       | 타입     | 설명                              |
+| -------------------------- | -------- | --------------------------------- |
+| `coupons[].couponId`       | `int`    | 쿠폰 ID                           |
+| `coupons[].code`           | `string` | 쿠폰 코드                         |
+| `coupons[].discountType`   | `string` | 할인 유형 (`rate` \| `fixed`)     |
+| `coupons[].discountValue`  | `int`    | 할인 값 (% 또는 원)               |
+| `coupons[].minOrderAmount` | `int\|null` | 최소 주문 금액 (원)            |
+| `coupons[].maxUsageCount`  | `int\|null` | 최대 발급 횟수 (NULL이면 무제한) |
+| `coupons[].issuedCount`    | `int`    | 현재까지 발급된 수                |
+| `coupons[].usedCount`      | `int`    | 현재까지 사용된 수                |
+| `coupons[].expiredAt`      | `string` | 만료일시 (ISO 8601)               |
+| `coupons[].createdAt`      | `string` | 생성일시 (ISO 8601)               |
+
+```json
+{
+  "coupons": [
+    {
+      "couponId": 1,
+      "code": "SUMMER2026",
+      "discountType": "rate",
+      "discountValue": 10,
+      "minOrderAmount": 30000,
+      "maxUsageCount": null,
+      "issuedCount": 1250,
+      "usedCount": 342,
+      "expiredAt": "2026-08-31T23:59:59Z",
+      "createdAt": "2026-07-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### POST `/admin/coupons`
+
+> 쿠폰을 생성하고 **전체 활성 사용자(`role=user`, `status=active`)에게 즉시 자동 지급**합니다.
+
+`Request Body`
+
+| 필드              | 타입     | 필수 | 설명                          |
+| ----------------- | -------- | ---- | ----------------------------- |
+| `code`            | `string` | ✓    | 쿠폰 코드 (대문자, 중복 불가) |
+| `discountType`    | `string` | ✓    | `rate` (정률) 또는 `fixed` (정액) |
+| `discountValue`   | `int`    | ✓    | 할인 값 (정률이면 1~100)      |
+| `minOrderAmount`  | `int`    | ✗    | 최소 주문 금액 (원)           |
+| `expiredAt`       | `string` | ✓    | 만료일시 (ISO 8601, 미래 시각) |
+
+```json
+{
+  "code": "SUMMER2026",
+  "discountType": "rate",
+  "discountValue": 10,
+  "minOrderAmount": 30000,
+  "expiredAt": "2026-08-31T23:59:59Z"
+}
+```
+
+`Response 201` — 생성된 쿠폰 객체 (`GET /admin/coupons` 항목과 동일한 shape)
+
+`Error`
+
+| 상태 | 설명                        |
+| ---- | --------------------------- |
+| 409  | 이미 존재하는 쿠폰 코드     |
+| 400  | 유효성 검증 실패            |
+
+---
+
+### DELETE `/admin/coupons/:couponId`
+
+> 이미 사용된(`used_at IS NOT NULL`) 쿠폰이 1건이라도 있으면 삭제 불가.
+
+`Response 204` — 본문 없음
+
+`Error`
+
+| 상태 | 설명                             |
+| ---- | -------------------------------- |
+| 409  | 이미 사용된 쿠폰은 삭제 불가    |
+
+---
+
+### POST `/admin/coupons/:couponId/issue`
+
+> 쿠폰을 특정 사용자 또는 전체 활성 사용자에게 지급합니다. `user_coupons` 테이블에 row를 생성하며, 이미 지급된 사용자는 중복 지급되지 않습니다(`ignoreDuplicates`).
+
+`Request Body`
+
+| 필드       | 타입       | 필수 | 설명                                              |
+| ---------- | ---------- | ---- | ------------------------------------------------- |
+| `issueAll` | `boolean`  | ✗    | `true`이면 전체 활성 사용자에게 지급              |
+| `userIds`  | `int[]`    | ✗    | `issueAll`이 없거나 `false`일 때 지급할 userId 목록 |
+
+> `issueAll`과 `userIds`는 택일. `issueAll: true` 시 `userIds` 무시.
+
+```json
+{ "issueAll": true }
+```
+
+`Response 200`
+
+| 필드          | 타입  | 설명                        |
+| ------------- | ----- | --------------------------- |
+| `issuedCount` | `int` | 실제 신규 지급된 건수       |
+
+```json
+{ "issuedCount": 1250 }
 ```

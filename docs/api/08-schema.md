@@ -31,13 +31,13 @@ recipe_categories (레시피 카테고리, 예: 한식, 양식)
 users ──────────────┬── sellers (위 참조)
   │
   ├── recipes (위 참조)
-  ├── orders (coupon_id → coupons) ── order_items ── return_requests
-  │         │                             (seller_id)
+  ├── user_coupons (user_id + coupon_id → coupons) — 계정 지급 쿠폰
+  ├── orders (user_coupon_id → user_coupons) ── order_items ── return_requests
+  │         │                                      (seller_id)
   │         └── shippings (seller_id 포함 — 셀러별 배송 단위)
   │         └── reviews (product_id / recipe_id) ── review_images
   │                   └── review_reports
   ├── point_history
-  ├── coupons
   └── inquiries ──── inquiry_images
                  └── inquiry_replies  (isAnswered는 이 row 존재 여부로 파생)
 
@@ -222,9 +222,9 @@ faqs (자주 묻는 질문, 셀러/사용자 도메인과 직접 연결 없음)
 | `user_id`          | `INT`                | FK → users, NOT NULL | 주문자 ID                     |
 | `total_amount`     | `INT`                | NOT NULL             | 상품 합계 금액 (원)           |
 | `shipping_fee`     | `INT`                | NULL                 | 배송비 (원)                   |
-| `used_point`       | `INT`                | NULL                 | 사용 포인트                   |
-| `coupon_id`        | `INT`                | FK → coupons, NULL   | 사용한 쿠폰 ID                |
-| `coupon_discount`  | `INT`                | NULL                 | 쿠폰 할인 금액 (원)           |
+| `used_point`       | `INT`                | NULL                        | 사용 포인트                   |
+| `user_coupon_id`   | `BIGINT`             | FK → user_coupons, NULL     | 사용한 사용자 쿠폰 ID         |
+| `coupon_discount`  | `INT`                | NULL                        | 쿠폰 할인 금액 (원)           |
 | `final_amount`     | `INT`                | NOT NULL             | 최종 결제 금액 (원)           |
 | `payment_method`   | `VARCHAR(20)`        | NOT NULL             | 결제 수단                     |
 | `status`           | `ENUM(order_status)` | NULL                 | 주문 상태 (아래 참고)         |
@@ -395,10 +395,26 @@ faqs (자주 묻는 질문, 셀러/사용자 도메인과 직접 연결 없음)
 | `discount_type`       | `ENUM(discount_type)` | NOT NULL         | 할인 유형                        |
 | `discount_value`      | `INT`                 | NOT NULL         | 할인 값 (% 또는 원)              |
 | `min_order_amount`    | `INT`                 | NULL             | 최소 주문 금액 (원)              |
-| `max_usage_count`     | `INT`                 | NULL             | 최대 사용 횟수 (NULL이면 무제한) |
-| `current_usage_count` | `INT`                 | NULL             | 현재 사용 횟수                   |
+| `max_usage_count`     | `INT`                 | NULL             | 최대 발급 횟수 (NULL이면 무제한) |
 | `expired_at`          | `TIMESTAMPTZ`         | NOT NULL         | 만료일시                         |
 | `created_at`          | `TIMESTAMPTZ`         | NULL             | 생성일시                         |
+
+### user_coupons
+
+> 어드민이 특정 쿠폰을 사용자 계정에 지급(발급)할 때 생성되는 테이블. 쿠폰 코드 입력 방식 대신 계정 지급 방식을 사용합니다. 주문 시 `orders.user_coupon_id`로 참조합니다.
+
+| 컬럼         | 타입          | 제약                          | 설명                              |
+| ------------ | ------------- | ----------------------------- | --------------------------------- |
+| `id`         | `BIGSERIAL`   | PK                            | 사용자 쿠폰 고유 ID               |
+| `user_id`    | `INT`         | FK → users, NOT NULL          | 지급 대상 사용자 ID               |
+| `coupon_id`  | `INT`         | FK → coupons, NOT NULL        | 지급된 쿠폰 ID                    |
+| `issued_at`  | `TIMESTAMPTZ` | DEFAULT NOW(), NOT NULL       | 지급 일시                         |
+| `used_at`    | `TIMESTAMPTZ` | NULL                          | 사용 일시 (NULL이면 미사용)       |
+
+> UNIQUE 제약 `(user_id, coupon_id)` — 같은 쿠폰은 사용자당 1번만 발급.
+> RLS 활성화 — 사용자는 자신의 쿠폰만 조회 가능.
+
+---
 
 ### settlements
 

@@ -28,7 +28,7 @@
 | `shipping.request`       | `string` | ✗    | 배송 요청사항                        |
 | `payment.method`         | `string` | ✓    | 결제 수단 (`card`, `point`, `kakao`) |
 | `payment.usePoint`       | `int`    | ✗    | 사용할 포인트 (기본 0)               |
-| `payment.couponCode`     | `string` | ✗    | 쿠폰 코드 (없으면 생략)              |
+| `payment.userCouponId`   | `int`    | ✗    | 사용할 user_coupons.id (없으면 생략) |
 
 ```json
 {
@@ -40,7 +40,7 @@
     "addressDetail": "101호",
     "request": "문 앞에 놔주세요"
   },
-  "payment": { "method": "card", "usePoint": 1000, "couponCode": "SUMMER2026" }
+  "payment": { "method": "card", "usePoint": 1000, "userCouponId": 42 }
 }
 ```
 
