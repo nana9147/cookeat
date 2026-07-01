@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
 import type { CreateProductInput, ProductFilters } from '@/types/seller/product';
+import { resolveProductStatus } from '@/lib/products';
 
 export async function getSellerProducts(sellerId: number, filters: ProductFilters) {
   const {
@@ -111,7 +112,7 @@ export async function createSellerProduct(
       brand: input.brand || null,
       origin: input.origin,
       category_id: input.categoryId,
-      status: input.status,
+      status: resolveProductStatus(input.status, input.stock),
       price: input.price,
       stock: input.stock,
       description: input.description || null,
