@@ -20,6 +20,12 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
+  let body: { items: unknown; paymentMethod: string; recipient?: string; phone?: string; address?: string; addressDetail?: string; usePoint?: number; couponCode?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
+  }
   const {
     items,
     paymentMethod,

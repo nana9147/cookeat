@@ -21,10 +21,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
-    .select('order_id, total_amount, shipping_fee, coupon_discount, final_amount, payment_method, recipient, phone, address, created_at')
+    .select('order_id, total_amount, shipping_fee, used_point, coupon_discount, final_amount, payment_method, recipient, phone, address, created_at')
     .eq('order_id', orderId)
     .eq('user_id', authed.userId)
-    .single();
+    .single() as { data: { order_id: string; total_amount: number; shipping_fee: number; used_point: number; coupon_discount: number; final_amount: number; payment_method: string; recipient: string; phone: string; address: string; created_at: string } | null; error: unknown };
 
   if (orderError || !order) {
     return NextResponse.json({ error: '주문을 찾을 수 없습니다.' }, { status: 404 });
@@ -45,7 +45,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
     orderId: order.order_id,
     totalAmount: order.total_amount,
     shippingFee: order.shipping_fee,
-    couponDiscount: order.coupon_discount,
+    usedPoint: order.used_point ?? 0,
+    couponDiscount: order.coupon_discount ?? 0,
     finalAmount: order.final_amount,
     paymentMethod: order.payment_method,
     recipient: order.recipient,
