@@ -1,6 +1,7 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Sidebar,
@@ -14,8 +15,17 @@ import {
   SidebarMenuSubButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { CircleUser } from 'lucide-react';
-import type { User } from '@/types/seller/user';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { CircleUser, Store, LogOut } from 'lucide-react';
+import { toast } from 'sonner';
+import api from '@/lib/api';
+import { authService } from '@/services/auth/authService';
+import { useAuthStore } from '@/store/authStore';
 
 const menuItems = [
   { label: '대시보드', href: '/seller' },
@@ -42,13 +52,46 @@ const menuItems = [
   { label: '판매자정보', href: '/seller/info' },
 ];
 
-const userInfo: User = {
-  store: '당근나라',
-  email: 'carrot@naver.com',
-};
+interface SellerMe {
+  storeName: string;
+  email: string;
+}
 
 export default function SellerSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+
+  const [sellerInfo, setSellerInfo] = useState<SellerMe | null>(null);
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const { data } = await api.get('/seller/me');
+        setSellerInfo({ storeName: data.data.storeName, email: data.data.email });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '판매자 정보를 불러오지 못했습니다.';
+        toast.error(msg, { id: msg });
+      }
+    };
+    fetchMe();
+  }, []);
+
+  const handleGoToShop = () => {
+    window.open('/', '_blank');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '로그아웃 처리 중 문제가 발생했습니다.';
+      toast.error(msg, { id: msg });
+    } finally {
+      clearAuth();
+      router.replace('/login');
+    }
+  };
 
   return (
     <Sidebar collapsible="none" className="hidden md:flex bg-primary text-white">
@@ -69,7 +112,6 @@ export default function SellerSidebar() {
                     <Link href={item.href}>{item.label}</Link>
                   </SidebarMenuButton>
 
-                  {/* 서브메뉴 */}
                   {item.subItems && isActive && (
                     <SidebarMenuSub>
                       {item.subItems.map((sub) => (
@@ -92,15 +134,30 @@ export default function SellerSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t-2 p-4">
-        <div className="flex items-center gap-4">
-          <div>
-            <CircleUser size={36} className="text-white opacity-70" />
-          </div>
-          <div>
-            <p className="text-sm">{userInfo.store}</p>
-            <p className="text-xs">{userInfo.email}</p>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-4 w-full text-left hover:bg-white/10 rounded-lg p-1 transition-colors">
+              <CircleUser size={36} className="text-white opacity-70 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm truncate">{sellerInfo?.storeName ?? '불러오는 중...'}</p>
+                <p className="text-xs truncate">{sellerInfo?.email ?? ''}</p>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-48">
+            <DropdownMenuItem onClick={handleGoToShop} className="cursor-pointer">
+              <Store className="mr-2 h-4 w-4" />
+              쇼핑몰로 이동
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="cursor-pointer text-red focus:text-red"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              로그아웃
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   );

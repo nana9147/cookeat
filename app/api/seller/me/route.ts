@@ -9,10 +9,29 @@ export async function GET(req: NextRequest) {
   const seller = await getSellerBySellerId(sellerCtx.sellerId);
 
   if (!seller) {
-    return NextResponse.json({ success: false, error: '판매자 정보를 찾을 수 없습니다.' }, { status: 404 });
+    return NextResponse.json(
+      { success: false, error: '판매자 정보를 찾을 수 없습니다.' },
+      { status: 404 }
+    );
   }
 
-  return NextResponse.json({ success: true, data: seller });
+  const users = seller.users as unknown as { email: string; phone: string } | null;
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      sellerId: seller.seller_id,
+      storeName: seller.store_name,
+      email: users?.email ?? '',
+      phone: users?.phone ?? '',
+      businessNumber: seller.business_number,
+      bankName: seller.bank_name,
+      bankAccount: seller.bank_account,
+      approveStatus: seller.approve_status,
+      rejectedReason: seller.rejected_reason,
+      createdAt: seller.created_at,
+    },
+  });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -23,10 +42,13 @@ export async function PATCH(req: NextRequest) {
   const { storeName, representativeName, csPhone, businessAddress, bankName, bankAccount } = body;
 
   if (!storeName || !representativeName || !csPhone || !bankName || !bankAccount) {
-    return NextResponse.json({ success: false, error: '필수 항목을 입력해주세요.' }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: '필수 항목을 입력해주세요.' },
+      { status: 400 }
+    );
   }
 
-  const { error } = await updateSeller(sellerCtx.userId, {
+  const { error } = await updateSeller(sellerCtx.sellerId, {
     storeName,
     representativeName,
     csPhone,

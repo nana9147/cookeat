@@ -13,6 +13,7 @@ import type { SettlementOrderTableProps, SettlementOrderItem } from '@/types/sel
 import StatusBadge from '../StatusBadge';
 import { usePagination } from '@/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
+import { formatDateTime } from '@/lib/utils';
 
 function OrderSection({
   title,
@@ -66,7 +67,9 @@ function OrderSection({
             >
               <TableCell className="text-xs text-gray-text font-mono">{order.orderId}</TableCell>
               <TableCell className="text-sm text-dark-text">{order.productName}</TableCell>
-              <TableCell className="text-sm text-gray-text">{order.orderDate}</TableCell>
+              <TableCell className="text-sm text-gray-text">
+                {formatDateTime(order.orderDate)}
+              </TableCell>
               <TableCell className="text-sm text-dark-text">
                 {order.salesAmount.toLocaleString()}원
               </TableCell>

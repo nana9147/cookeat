@@ -7,6 +7,7 @@ import DeliverInfo, { SelectedAddress } from './DeliveryInfo';
 import OrderItems from './OrderItems';
 import PaymentMethod from './PaymentMethod';
 import OrderAgreement from './OrderAgreement';
+import DiscountSection, { AppliedCoupon } from './DiscountSection';
 import { useCheckoutPayment } from './useCheckoutPayment';
 import { useCartItems } from '../useCartItems';
 import { useCartStore } from '@/store/cartStore';
@@ -16,6 +17,8 @@ export default function Checkout() {
   const [allAgreed, setAllAgreed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [deliveryInfo, setDeliveryInfo] = useState<SelectedAddress | null>(null);
+  const [usedPoint, setUsedPoint] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
   const checkoutItems = useCartStore((s) => s.checkoutItems);
   const { items, storeItems, loading } = useCartItems();
@@ -42,8 +45,16 @@ export default function Checkout() {
   );
   const shippingFee = calcShipping(totalAmount);
 
+  const couponDiscount = appliedCoupon?.discountAmount ?? 0;
+
   const [paying, setPaying] = useState(false);
-  const doHandlePay = useCheckoutPayment(paymentMethod, availableStoreItems, deliveryInfo);
+  const doHandlePay = useCheckoutPayment(
+    paymentMethod,
+    availableStoreItems,
+    deliveryInfo,
+    usedPoint,
+    appliedCoupon?.code ?? null
+  );
   const handlePay = async () => {
     if (paying) return;
     setPaying(true);
@@ -64,6 +75,13 @@ export default function Checkout() {
         <div className="flex-1 min-w-0">
           <DeliverInfo onAddressSelect={setDeliveryInfo} />
           <OrderItems items={orderItems} loading={loading} />
+          <DiscountSection
+            orderTotal={totalAmount}
+            usedPoint={usedPoint}
+            onPointChange={setUsedPoint}
+            appliedCoupon={appliedCoupon}
+            onCouponApply={setAppliedCoupon}
+          />
           <PaymentMethod onPaymentChange={setPaymentMethod} />
           <OrderAgreement onAgreementChange={setAllAgreed} />
         </div>
@@ -75,7 +93,8 @@ export default function Checkout() {
             onPay={handlePay}
             productTotal={totalAmount}
             shippingFee={shippingFee}
-            couponDiscount={0}
+            couponDiscount={couponDiscount}
+            usedPoint={usedPoint}
             productDiscount={0}
           />
         </div>
