@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  let body: { items: unknown; paymentMethod: string; recipient?: string; phone?: string; address?: string; addressDetail?: string; usePoint?: number; couponCode?: string };
+  let body: { items: unknown; paymentMethod: string; recipient?: string; phone?: string; address?: string; addressDetail?: string; usePoint?: number; userCouponId?: number };
   try {
     body = await req.json();
   } catch {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     addressDetail = '',
     usePoint = 0,
     userCouponId,
-  } = await req.json();
+  } = body;
 
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: '주문 상품이 없습니다.' }, { status: 400 });
