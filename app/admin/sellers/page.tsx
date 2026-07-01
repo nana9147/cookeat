@@ -168,8 +168,8 @@ export default function SellersPage() {
       });
       setSellerList((prev) => prev.map((s) => (s.id === editSeller.id ? editSeller : s)));
       setEditSeller(null);
-    } catch (e) {
-      console.error('판매자 정보 수정 실패', e);
+    } catch {
+      alert('판매자 정보 수정에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
