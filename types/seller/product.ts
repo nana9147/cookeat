@@ -230,3 +230,10 @@ export interface ProductCounts {
   판매종료: number;
   숨김: number;
 }
+
+export interface LowStockProduct {
+  productId: number;
+  name: string;
+  stock: number;
+  minStock: number;
+}

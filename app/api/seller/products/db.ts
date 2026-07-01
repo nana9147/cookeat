@@ -234,3 +234,24 @@ export async function getSellerProductCounts(sellerId: number) {
 
   return counts;
 }
+
+export async function getSellerLowStockProducts(sellerId: number) {
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select('product_id, name, stock, min_stock')
+    .eq('seller_id', sellerId)
+    .eq('status', '판매중')
+    .not('min_stock', 'is', null)
+    .order('stock', { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? [])
+    .filter((p) => p.stock !== null && p.min_stock !== null && p.stock <= p.min_stock)
+    .map((p) => ({
+      productId: p.product_id,
+      name: p.name,
+      stock: p.stock,
+      minStock: p.min_stock,
+    }));
+}
