@@ -1,5 +1,11 @@
 'use client';
 
+import * as XLSX from 'xlsx';
+import { Upload } from 'lucide-react';
+import { useRef } from 'react';
+import { useExcelExport } from '@/hooks/useExcelExport';
+import { Download } from 'lucide-react';
+import type { ProductExportRow } from '@/types/seller/product';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +30,31 @@ import { useAuthStore } from '@/store/authStore';
 
 const statuses: (ProductStatus | '전체')[] = ['전체', '판매중', '품절', '판매종료', '숨김'];
 const LIMIT = 10;
+const EXPORT_COLUMNS = [
+  { key: 'name' as const, label: '상품명' },
+  { key: 'parentCategoryName' as const, label: '대카테고리' },
+  { key: 'categoryName' as const, label: '소카테고리' },
+  { key: 'brand' as const, label: '브랜드' },
+  { key: 'origin' as const, label: '원산지' },
+  { key: 'price' as const, label: '가격' },
+  { key: 'stock' as const, label: '재고' },
+  { key: 'discountType' as const, label: '할인유형' },
+  { key: 'discountValue' as const, label: '할인값' },
+  { key: 'status' as const, label: '상태' },
+  { key: 'shippingTemplateName' as const, label: '배송템플릿' },
+  { key: 'returnPolicyTemplateName' as const, label: '반품정책' },
+  { key: 'linkedRecipeCount' as const, label: '연동레시피수' },
+  { key: 'rating' as const, label: '평점' },
+  { key: 'reviewCount' as const, label: '리뷰수' },
+  { key: 'description' as const, label: '상품설명' },
+  { key: 'image' as const, label: '대표이미지URL' },
+  {
+    key: 'createdAt' as const,
+    label: '등록일',
+    format: (v: ProductExportRow[keyof ProductExportRow]) =>
+      new Date(v as string).toLocaleDateString(),
+  },
+];
 
 const PRODUCT_COLOR_MAP: Record<string, string> = {
   전체: 'text-gray-800',
@@ -61,6 +92,114 @@ export default function ProductsPage() {
     판매종료: 0,
     숨김: 0,
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleTemplateDownload = () => {
+    const sheetData = [
+      {
+        상품명: '',
+        대카테고리: '',
+        소카테고리: '',
+        브랜드: '',
+        원산지: '',
+        가격: '',
+        재고: '',
+        할인유형: 'none',
+        할인값: '',
+        상태: '판매중',
+        배송템플릿: '',
+        반품정책: '',
+        상품설명: '',
+        대표이미지URL: '',
+      },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(sheetData), '상품등록양식');
+
+    // 참고용 카테고리 목록 시트
+    const categorySheet = categories.flatMap((c) =>
+      c.children.map((child) => ({ 대카테고리: c.name, 소카테고리: child.name }))
+    );
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(categorySheet), '카테고리참고');
+
+    XLSX.writeFile(workbook, `상품등록양식_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const handleUploadClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
+
+      const rows = rawRows.map((r) => ({
+        name: String(r['상품명'] ?? '').trim(),
+        parentCategoryName: String(r['대카테고리'] ?? '').trim(),
+        categoryName: String(r['소카테고리'] ?? '').trim(),
+        brand: String(r['브랜드'] ?? '').trim(),
+        origin: String(r['원산지'] ?? '').trim(),
+        price: Number(r['가격']),
+        stock: Number(r['재고']),
+        discountType: String(r['할인유형'] ?? 'none').trim(),
+        discountValue: r['할인값'] ? Number(r['할인값']) : null,
+        status: String(r['상태'] ?? '판매중').trim(),
+        shippingTemplateName: String(r['배송템플릿'] ?? '').trim(),
+        returnPolicyTemplateName: String(r['반품정책'] ?? '').trim(),
+        description: String(r['상품설명'] ?? '').trim(),
+        image: String(r['대표이미지URL'] ?? '').trim(),
+      }));
+
+      const { data } = await api.post('/seller/products/bulk-import', { rows });
+      const { successCount, failures } = data.data;
+
+      if (failures.length > 0) {
+        toast.error(
+          `${successCount}건 등록 완료, ${failures.length}건 실패: ${failures
+            .map((f: { row: number; reason: string }) => `${f.row}행(${f.reason})`)
+            .join(', ')}`
+        );
+      } else {
+        toast.success(`${successCount}건이 등록되었습니다.`);
+      }
+
+      loadProducts();
+      fetchCounts();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '파일 처리 중 오류가 발생했습니다.';
+      toast.error(msg, { id: msg });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const { exportToExcel, isExporting, progress } = useExcelExport<ProductExportRow>({
+    endpoint: '/seller/products/export',
+    columns: EXPORT_COLUMNS,
+    sheetName: '상품목록',
+    fileNamePrefix: '상품목록',
+    countBy: 'productId',
+  });
+
+  const handleExcelDownload = () => {
+    if (selectedIds.length > 0) {
+      exportToExcel({ productIds: selectedIds.join(',') });
+      return;
+    }
+    exportToExcel({
+      keyword: search || undefined,
+      status: status !== '전체' ? status : undefined,
+      categoryId: selectedCategoryId ? String(selectedCategoryId) : undefined,
+      parentId: selectedParentId ? String(selectedParentId) : undefined,
+    });
+  };
 
   const fetchCounts = async () => {
     try {
@@ -236,14 +375,29 @@ export default function ProductsPage() {
       <div className="mb-8 pr-5 flex items-center justify-between">
         <h1 className="text-h2 font-bold text-dark-text">상품 관리</h1>
         {!isAdmin && (
-          <Link href="/seller/products/new">
-            <Button className="p-5">
-              <Plus /> 상품 등록
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="lg" onClick={handleTemplateDownload}>
+              양식 다운로드
             </Button>
-          </Link>
+            <Button variant="outline" size="lg" onClick={handleUploadClick} disabled={isUploading}>
+              <Upload className="w-4 h-4" />
+              {isUploading ? '업로드 중...' : '엑셀로 등록'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <Link href="/seller/products/new">
+              <Button size="lg">
+                <Plus /> 상품 등록
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
-
       <StatusCards
         cards={statusCardData}
         status={status}
@@ -400,9 +554,24 @@ export default function ProductsPage() {
           </div>
         )}
 
-        <p className="text-sm text-gray-500">
-          전체 상품 수 <span className="font-semibold text-gray-800">{total}</span>개
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            전체 상품 수 <span className="font-semibold text-gray-800">{total}</span>개
+          </p>
+          {!isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExcelDownload}
+              disabled={isExporting}
+            >
+              <Download className="w-4 h-4" />
+              {isExporting
+                ? `다운로드 중... (${progress.current}/${progress.total})`
+                : '엑셀 다운로드'}
+            </Button>
+          )}
+        </div>
 
         <ProductTable
           products={products}

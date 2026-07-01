@@ -274,3 +274,243 @@ export async function getSellerLowStockProducts(sellerId: number) {
       minStock: p.min_stock,
     }));
 }
+
+export async function getSellerProductsForExport(
+  sellerId: number,
+  options: {
+    offset: number;
+    limit: number;
+    keyword?: string;
+    status?: string;
+    categoryId?: number;
+    parentId?: number;
+    productIds?: number[];
+  }
+) {
+  const { offset, limit, keyword, status, categoryId, parentId, productIds } = options;
+
+  let query = supabaseAdmin
+    .from('products')
+    .select(
+      `product_id, name, brand, origin, price, stock, discount_type, discount_value, status,
+       description, image, created_at,
+       categories(name, parent_id),
+       shipping_templates(name),
+       return_policy_templates(name)`,
+      { count: 'exact' }
+    )
+    .eq('seller_id', sellerId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (productIds && productIds.length > 0) {
+    query = query.in('product_id', productIds);
+  } else {
+    if (keyword) query = query.ilike('name', `%${keyword}%`);
+    if (status) query = query.eq('status', status);
+    if (categoryId) query = query.eq('category_id', categoryId);
+    if (parentId) {
+      const { data: childCategories } = await supabaseAdmin
+        .from('categories')
+        .select('category_id')
+        .eq('parent_id', parentId);
+      const childIds = (childCategories ?? []).map((c) => c.category_id);
+      query = query.in('category_id', childIds);
+    }
+  }
+
+  const { data, count, error } = await query;
+  if (error) throw error;
+
+  const products = data ?? [];
+  const fetchedProductIds = products.map((p) => p.product_id);
+
+  const parentIds = [
+    ...new Set(
+      products
+        .map((p) => (p.categories as unknown as { parent_id: number | null } | null)?.parent_id)
+        .filter((id): id is number => id !== null)
+    ),
+  ];
+
+  const [{ data: parentRows }, { data: recipeLinks }, { data: reviewRows }] = await Promise.all([
+    parentIds.length > 0
+      ? supabaseAdmin
+          .from('ingredients')
+          .select('ingredient_id, category')
+          .in('ingredient_id', parentIds)
+      : Promise.resolve({ data: [] }),
+    fetchedProductIds.length > 0
+      ? supabaseAdmin
+          .from('recipe_ingredients')
+          .select('product_id, recipe_id')
+          .in('product_id', fetchedProductIds)
+      : Promise.resolve({ data: [] }),
+    fetchedProductIds.length > 0
+      ? supabaseAdmin
+          .from('reviews')
+          .select('product_id, rating')
+          .in('product_id', fetchedProductIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const parentNameMap = new Map((parentRows ?? []).map((p) => [p.ingredient_id, p.category]));
+
+  const recipeCountMap = new Map<number, Set<number>>();
+  for (const link of recipeLinks ?? []) {
+    if (link.product_id === null) continue;
+    if (!recipeCountMap.has(link.product_id)) recipeCountMap.set(link.product_id, new Set());
+    recipeCountMap.get(link.product_id)!.add(link.recipe_id);
+  }
+
+  const ratingMap = new Map<number, { sum: number; count: number }>();
+  for (const r of reviewRows ?? []) {
+    if (!ratingMap.has(r.product_id)) ratingMap.set(r.product_id, { sum: 0, count: 0 });
+    const stat = ratingMap.get(r.product_id)!;
+    stat.sum += r.rating;
+    stat.count += 1;
+  }
+
+  const rows = products.map((p) => {
+    const category = p.categories as unknown as { name: string; parent_id: number | null } | null;
+    const shippingTemplate = p.shipping_templates as unknown as { name: string } | null;
+    const returnPolicyTemplate = p.return_policy_templates as unknown as { name: string } | null;
+    const ratingStat = ratingMap.get(p.product_id);
+
+    return {
+      productId: p.product_id,
+      name: p.name,
+      parentCategoryName: category?.parent_id ? (parentNameMap.get(category.parent_id) ?? '') : '',
+      categoryName: category?.name ?? '',
+      brand: p.brand ?? '',
+      origin: p.origin ?? '',
+      price: p.price,
+      stock: p.stock,
+      discountType: p.discount_type ?? 'none',
+      discountValue: p.discount_value,
+      status: p.status,
+      shippingTemplateName: shippingTemplate?.name ?? '',
+      returnPolicyTemplateName: returnPolicyTemplate?.name ?? '',
+      linkedRecipeCount: recipeCountMap.get(p.product_id)?.size ?? 0,
+      rating: ratingStat ? calcRating(ratingStat.sum, ratingStat.count) : 0,
+      reviewCount: ratingStat?.count ?? 0,
+      description: p.description ?? '',
+      image: p.image,
+      createdAt: p.created_at,
+    };
+  });
+
+  return { rows, total: count ?? 0 };
+}
+
+interface BulkImportRow {
+  name: string;
+  parentCategoryName: string;
+  categoryName: string;
+  brand: string;
+  origin: string;
+  price: number;
+  stock: number;
+  discountType: string;
+  discountValue: number | null;
+  status: string;
+  shippingTemplateName: string;
+  returnPolicyTemplateName: string;
+  description: string;
+  image: string;
+}
+
+export async function bulkImportSellerProducts(sellerId: number, rows: BulkImportRow[]) {
+  const { data: allCategories } = await supabaseAdmin
+    .from('categories')
+    .select('category_id, name, parent_id, ingredients(category)');
+
+  const { data: shippingTemplates } = await supabaseAdmin
+    .from('shipping_templates')
+    .select('template_id, name')
+    .eq('seller_id', sellerId);
+
+  const { data: returnPolicyTemplates } = await supabaseAdmin
+    .from('return_policy_templates')
+    .select('template_id, name')
+    .eq('seller_id', sellerId);
+
+  const categoryMap = new Map<string, number>();
+  for (const c of allCategories ?? []) {
+    const parentName = (c.ingredients as unknown as { category: string } | null)?.category ?? '';
+    categoryMap.set(`${parentName}|${c.name}`, c.category_id);
+  }
+
+  const shippingMap = new Map((shippingTemplates ?? []).map((t) => [t.name, t.template_id]));
+  const returnPolicyMap = new Map(
+    (returnPolicyTemplates ?? []).map((t) => [t.name, t.template_id])
+  );
+
+  let successCount = 0;
+  const failures: { row: number; reason: string }[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+
+    if (!row.name || !row.price || !row.stock || !row.origin || !row.image) {
+      failures.push({
+        row: i + 1,
+        reason: '필수 항목이 누락되었습니다. (상품명/가격/재고/원산지/대표이미지URL)',
+      });
+      continue;
+    }
+
+    const categoryId = categoryMap.get(`${row.parentCategoryName}|${row.categoryName}`);
+    if (!categoryId) {
+      failures.push({
+        row: i + 1,
+        reason: `카테고리를 찾을 수 없습니다. (${row.parentCategoryName} > ${row.categoryName})`,
+      });
+      continue;
+    }
+
+    const shippingTemplateId = shippingMap.get(row.shippingTemplateName);
+    if (!shippingTemplateId) {
+      failures.push({
+        row: i + 1,
+        reason: `배송템플릿 '${row.shippingTemplateName}'을 찾을 수 없습니다.`,
+      });
+      continue;
+    }
+
+    const returnPolicyTemplateId = returnPolicyMap.get(row.returnPolicyTemplateName);
+    if (!returnPolicyTemplateId) {
+      failures.push({
+        row: i + 1,
+        reason: `반품정책 '${row.returnPolicyTemplateName}'을 찾을 수 없습니다.`,
+      });
+      continue;
+    }
+
+    const { error } = await supabaseAdmin.from('products').insert({
+      seller_id: sellerId,
+      name: row.name,
+      brand: row.brand || null,
+      origin: row.origin,
+      category_id: categoryId,
+      status: resolveProductStatus(row.status || '판매중', row.stock),
+      price: row.price,
+      stock: row.stock,
+      description: row.description || null,
+      shipping_template_id: shippingTemplateId,
+      return_policy_template_id: returnPolicyTemplateId,
+      discount_type: row.discountType || 'none',
+      discount_value: row.discountValue ?? null,
+      image: row.image,
+    });
+
+    if (error) {
+      failures.push({ row: i + 1, reason: error.message });
+      continue;
+    }
+
+    successCount += 1;
+  }
+
+  return { successCount, failures };
+}
