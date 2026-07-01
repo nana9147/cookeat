@@ -89,8 +89,8 @@ export default function ProductsPage() {
           setTotal(data.pagination.total as number);
           setError(null);
         }
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.');
+      } catch {
+        if (!cancelled) setError('상품 목록을 불러오지 못했습니다.');
       } finally {
         if (!cancelled) setLoading(false);
       }
