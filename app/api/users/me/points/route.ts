@@ -10,18 +10,19 @@ export async function GET(req: NextRequest) {
     supabaseAdmin.from('users').select('point').eq('user_id', authed.userId).single(),
     supabaseAdmin
       .from('point_history')
-      .select('id, type, amount, description, created_at')
+      .select('point_id, type, amount, description, created_at')
       .eq('user_id', authed.userId)
       .order('created_at', { ascending: false })
       .limit(50),
   ]);
 
   if (userRes.error) return NextResponse.json({ error: userRes.error.message }, { status: 500 });
+  if (historyRes.error) return NextResponse.json({ error: historyRes.error.message }, { status: 500 });
 
-  type HistoryRow = { id: number; type: string; amount: number; description: string; created_at: string };
+  type HistoryRow = { point_id: number; type: string; amount: number; description: string; created_at: string };
 
   const history = ((historyRes.data as unknown as HistoryRow[]) ?? []).map((h) => ({
-    pointId: h.id, type: h.type, amount: h.amount,
+    pointId: h.point_id, type: h.type, amount: h.amount,
     description: h.description, createdAt: h.created_at,
   }));
 

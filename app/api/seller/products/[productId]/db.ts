@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
 import type { UpdateProductInput, SubImageInput } from '@/types/seller/product';
+import { resolveProductStatus } from '@/lib/products';
 
 // ===== 상품 단건 조회 =====
 
@@ -75,7 +76,7 @@ export async function updateSellerProduct(
       brand: input.brand || null,
       origin: input.origin,
       category_id: input.categoryId,
-      status: input.status,
+      status: resolveProductStatus(input.status, input.stock),
       price: input.price,
       stock: input.stock,
       description: input.description || null,
@@ -199,4 +200,29 @@ export async function deleteSellerProduct(sellerId: number, productId: number) {
   if (deleteProductError) throw deleteProductError;
 
   return { productId };
+}
+
+export async function updateSellerProductStatus(
+  sellerId: number,
+  productId: number,
+  status: string
+) {
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .from('products')
+    .select('product_id, seller_id')
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error('상품을 찾을 수 없습니다.');
+  if (existing.seller_id !== sellerId) {
+    throw new Error('해당 상품을 수정할 권한이 없습니다.');
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('products')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('product_id', productId);
+
+  if (updateError) throw updateError;
 }

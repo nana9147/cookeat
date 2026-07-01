@@ -27,12 +27,12 @@ export default function Pagination({
       </Button>
       {getPageNumbers().map((page, i) =>
         page === '...' ? (
-          <span key={i} className="px-2 text-gray-400">
+          <span key={`ellipsis-${i}`} className="px-2 text-gray-400">
             ...
           </span>
         ) : (
           <Button
-            key={page}
+            key={`page-${page}`}
             variant={currentPage === page ? 'default' : 'outline'}
             size="sm"
             onClick={() => onPageChange(Number(page))}

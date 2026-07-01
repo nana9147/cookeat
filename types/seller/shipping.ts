@@ -35,6 +35,7 @@ export interface ShippingSectionProps {
   templates: ShippingTemplateOption[];
   value: number | null;
   onChange: (templateId: number | null) => void;
+  onTemplateCreated: () => void | Promise<void>;
 }
 
 export interface ShippingOrder {
@@ -158,6 +159,7 @@ export interface ReturnPolicyFieldProps {
   templates: ReturnPolicyTemplateOption[];
   value: number | null;
   onChange: (templateId: number | null) => void;
+  onTemplateCreated: () => void | Promise<void>;
 }
 
 export interface ReturnPolicyTableProps {

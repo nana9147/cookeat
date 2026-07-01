@@ -260,3 +260,17 @@ export interface OrderRow {
   itemTotalPrice: number;
   status: OrderStatus;
 }
+
+export interface SellerOrderRpcRow {
+  item_id: number;
+  order_id: string;
+  quantity: number;
+  unit_price: number;
+  product_name: string | null;
+  order_date: string;
+  status: string;
+  recipient: string;
+  phone: string;
+  nickname: string | null;
+  total_count: number;
+}

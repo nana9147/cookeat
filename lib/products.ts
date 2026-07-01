@@ -40,9 +40,7 @@ export async function getProductDetail(id: number): Promise<ProductDetail | null
   const seller = product.sellers as unknown as SellerRow | null;
   const category = product.categories as unknown as CategoryRow | null;
 
-  const images = [product.image, ...extraImages.map((img) => img.url)].filter(
-    Boolean
-  ) as string[];
+  const images = [product.image, ...extraImages.map((img) => img.url)].filter(Boolean) as string[];
 
   return {
     productId: product.product_id,
@@ -61,4 +59,10 @@ export async function getProductDetail(id: number): Promise<ProductDetail | null
     rating,
     reviewCount,
   };
+}
+
+/** 재고가 0이면 '판매중'을 '품절'로 강제 전환 */
+export function resolveProductStatus(status: string, stock: number): string {
+  if (stock <= 0 && status === '판매중') return '품절';
+  return status;
 }
