@@ -11,7 +11,7 @@ export default function DashboardSettlementCard({ settlement }: DashboardSettlem
         <div className="flex items-center justify-between">
           <CardTitle className="text-h5 font-semibold text-dark-text">정산 정보</CardTitle>
           <Link
-            href="/seller/settlement"
+            href="/seller/settlements"
             className="text-xs text-light-gray hover:text-gray-text transition-colors"
           >
             전체보기 →
