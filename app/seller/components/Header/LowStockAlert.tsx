@@ -14,8 +14,33 @@ import {
 import api from '@/lib/api';
 import type { LowStockProduct } from '@/types/seller/product';
 
+const STORAGE_KEY = 'seller_low_stock_seen_ids';
+
+function loadSeenIds(): Set<number> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return new Set();
+    const parsed: number[] = JSON.parse(raw);
+    return new Set(parsed);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeenIds(ids: Set<number>) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+  } catch {}
+}
+
 export default function LowStockAlert() {
   const [products, setProducts] = useState<LowStockProduct[]>([]);
+  const [seenIds, setSeenIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    setSeenIds(loadSeenIds());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,7 +48,8 @@ export default function LowStockAlert() {
     const fetchLowStock = async () => {
       try {
         const { data } = await api.get('/seller/products/low-stock');
-        if (!cancelled) setProducts(data.data);
+        if (cancelled) return;
+        setProducts(data.data);
       } catch {}
     };
 
@@ -36,14 +62,25 @@ export default function LowStockAlert() {
     };
   }, []);
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) return;
+    const next = new Set(seenIds);
+    for (const p of products) next.add(p.productId);
+    setSeenIds(next);
+    saveSeenIds(next);
+  };
+
+  const unseenCount = products.filter((p) => !seenIds.has(p.productId)).length;
+  const showBadge = unseenCount > 0;
+
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <button className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors">
           <Bell size={18} className="text-white" />
-          {products.length > 0 && (
+          {showBadge && (
             <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-2xs font-semibold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
-              {products.length > 9 ? '9+' : products.length}
+              {unseenCount > 9 ? '9+' : unseenCount}
             </span>
           )}
         </button>
@@ -62,7 +99,12 @@ export default function LowStockAlert() {
                 href={`/seller/products/${p.productId}/edit`}
                 className="flex flex-col items-start gap-0.5"
               >
-                <span className="text-sm font-medium text-gray-800 truncate w-full">{p.name}</span>
+                <span className="text-sm font-medium text-gray-800 truncate w-full flex items-center gap-1.5">
+                  {p.name}
+                  {!seenIds.has(p.productId) && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                  )}
+                </span>
                 <span className="text-xs text-red-500">
                   재고 {p.stock}개 (기준 {p.minStock}개)
                 </span>

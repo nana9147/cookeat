@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
-import type { CreateProductInput, ProductFilters } from '@/types/seller/product';
+import type { BulkImportRow, CreateProductInput, ProductFilters } from '@/types/seller/product';
 import { resolveProductStatus } from '@/lib/products';
 import { deleteSellerProduct } from './[productId]/db';
 import { calcRating } from '@/lib/utils';
@@ -401,23 +401,6 @@ export async function getSellerProductsForExport(
   });
 
   return { rows, total: count ?? 0 };
-}
-
-interface BulkImportRow {
-  name: string;
-  parentCategoryName: string;
-  categoryName: string;
-  brand: string;
-  origin: string;
-  price: number;
-  stock: number;
-  discountType: string;
-  discountValue: number | null;
-  status: string;
-  shippingTemplateName: string;
-  returnPolicyTemplateName: string;
-  description: string;
-  image: string;
 }
 
 export async function bulkImportSellerProducts(sellerId: number, rows: BulkImportRow[]) {

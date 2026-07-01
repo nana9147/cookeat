@@ -1,3 +1,5 @@
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+
 export type CategoryName =
   | '채소'
   | '과일·견과·쌀'
@@ -262,8 +264,7 @@ export interface ProductExportRow {
   createdAt: string;
 }
 
-
-interface BulkImportRow {
+export interface BulkImportRow {
   name: string;
   parentCategoryName: string;
   categoryName: string;
@@ -278,87 +279,4 @@ interface BulkImportRow {
   returnPolicyTemplateName: string;
   description: string;
   image: string;
-}
-
-export async function bulkImportSellerProducts(sellerId: number, rows: BulkImportRow[]) {
-  // 1. 이름 → ID 매핑용 참조 데이터 미리 조회
-  const { data: allCategories } = await supabaseAdmin
-    .from('categories')
-    .select('category_id, name, parent_id, ingredients(category)');
-
-  const { data: shippingTemplates } = await supabaseAdmin
-    .from('shipping_templates')
-    .select('template_id, name')
-    .eq('seller_id', sellerId);
-
-  const { data: returnPolicyTemplates } = await supabaseAdmin
-    .from('return_policy_templates')
-    .select('template_id, name')
-    .eq('seller_id', sellerId);
-
-  // "대카테고리명|소카테고리명" 조합으로 category_id 찾기
-  const categoryMap = new Map<string, number>();
-  for (const c of allCategories ?? []) {
-    const parentName = (c.ingredients as unknown as { category: string } | null)?.category ?? '';
-    categoryMap.set(`${parentName}|${c.name}`, c.category_id);
-  }
-
-  const shippingMap = new Map((shippingTemplates ?? []).map((t) => [t.name, t.template_id]));
-  const returnPolicyMap = new Map((returnPolicyTemplates ?? []).map((t) => [t.name, t.template_id]));
-
-  let successCount = 0;
-  const failures: { row: number; reason: string }[] = [];
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-
-    if (!row.name || !row.price || !row.stock || !row.origin || !row.image) {
-      failures.push({ row: i + 1, reason: '필수 항목이 누락되었습니다. (상품명/가격/재고/원산지/대표이미지URL)' });
-      continue;
-    }
-
-    const categoryId = categoryMap.get(`${row.parentCategoryName}|${row.categoryName}`);
-    if (!categoryId) {
-      failures.push({ row: i + 1, reason: `카테고리를 찾을 수 없습니다. (${row.parentCategoryName} > ${row.categoryName})` });
-      continue;
-    }
-
-    const shippingTemplateId = shippingMap.get(row.shippingTemplateName);
-    if (!shippingTemplateId) {
-      failures.push({ row: i + 1, reason: `배송템플릿 '${row.shippingTemplateName}'을 찾을 수 없습니다.` });
-      continue;
-    }
-
-    const returnPolicyTemplateId = returnPolicyMap.get(row.returnPolicyTemplateName);
-    if (!returnPolicyTemplateId) {
-      failures.push({ row: i + 1, reason: `반품정책 '${row.returnPolicyTemplateName}'을 찾을 수 없습니다.` });
-      continue;
-    }
-
-    const { error } = await supabaseAdmin.from('products').insert({
-      seller_id: sellerId,
-      name: row.name,
-      brand: row.brand || null,
-      origin: row.origin,
-      category_id: categoryId,
-      status: resolveProductStatus(row.status || '판매중', row.stock),
-      price: row.price,
-      stock: row.stock,
-      description: row.description || null,
-      shipping_template_id: shippingTemplateId,
-      return_policy_template_id: returnPolicyTemplateId,
-      discount_type: row.discountType || 'none',
-      discount_value: row.discountValue ?? null,
-      image: row.image,
-    });
-
-    if (error) {
-      failures.push({ row: i + 1, reason: error.message });
-      continue;
-    }
-
-    successCount += 1;
-  }
-
-  return { successCount, failures };
 }
