@@ -8,12 +8,14 @@ const styles = {
   숨김: 'bg-gray-100 text-gray-500',
 
   // 주문 상태
+  결제전: 'bg-gray-50 text-gray-500 border border-gray-200',
   결제완료: 'bg-emerald-50 text-primary border border-emerald-200',
   주문확인: 'bg-purple-50 text-primary border border-purple-200',
   배송준비중: 'bg-amber-50 text-yellow border border-amber-200',
   배송준비: 'bg-amber-50 text-yellow border border-amber-200',
   배송중: 'bg-blue-50 text-blue-600 border border-blue-200',
   배송완료: 'bg-beige text-muted border border-border',
+  구매확정: 'bg-green-50 text-green-700 border border-green-200',
   취소: 'bg-slate-50 text-slate-500 border border-slate-200',
   환불: 'bg-red-50 text-red-600 border border-red-200',
 

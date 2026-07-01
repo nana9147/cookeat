@@ -30,12 +30,15 @@ export interface AdminMember {
 
 // ─── 주문 ───────────────────────────────────────────────────────────────────
 export type AdminOrderStatus =
+  | '결제전'
   | '결제완료'
   | '주문확인'
   | '배송준비'
   | '배송중'
   | '배송완료'
-  | '취소';
+  | '구매확정'
+  | '취소'
+  | '환불';
 
 export interface AdminOrderItem {
   itemId: number;
