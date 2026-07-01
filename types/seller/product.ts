@@ -28,6 +28,8 @@ export interface Product {
   categoryId: number | null;
   categories: { name: string; parent_id: number | null } | null;
   createdAt: string;
+  rating: number;
+  reviewCount: number;
 }
 
 export type ProductData = Omit<Product, 'id' | 'linkedRecipeCount' | 'createdAt'>;

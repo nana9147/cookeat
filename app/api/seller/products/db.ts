@@ -3,6 +3,7 @@ import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
 import type { CreateProductInput, ProductFilters } from '@/types/seller/product';
 import { resolveProductStatus } from '@/lib/products';
 import { deleteSellerProduct } from './[productId]/db';
+import { calcRating } from '@/lib/utils';
 
 export async function getSellerProducts(sellerId: number, filters: ProductFilters) {
   const {
@@ -57,11 +58,18 @@ export async function getSellerProducts(sellerId: number, filters: ProductFilter
   }
 
   const productIds = products.map((p) => p.product_id);
-  const { data: recipeLinks, error: recipeError } = await supabaseAdmin
-    .from('recipe_ingredients')
-    .select('product_id, recipe_id')
-    .in('product_id', productIds);
+
+  const [{ data: recipeLinks, error: recipeError }, { data: reviewRows, error: reviewError }] =
+    await Promise.all([
+      supabaseAdmin
+        .from('recipe_ingredients')
+        .select('product_id, recipe_id')
+        .in('product_id', productIds),
+      supabaseAdmin.from('reviews').select('product_id, rating').in('product_id', productIds),
+    ]);
+
   if (recipeError) throw recipeError;
+  if (reviewError) throw reviewError;
 
   const recipeCountMap = new Map<number, Set<number>>();
   for (const link of recipeLinks ?? []) {
@@ -71,20 +79,31 @@ export async function getSellerProducts(sellerId: number, filters: ProductFilter
     }
     recipeCountMap.get(link.product_id)!.add(link.recipe_id);
   }
-
-  const productsWithCount = products.map((p) => ({
-    productId: p.product_id,
-    name: p.name,
-    price: p.price,
-    stock: p.stock,
-    status: p.status,
-    image: p.image,
-    brand: p.brand,
-    categoryId: p.category_id,
-    categories: p.categories,
-    createdAt: p.created_at,
-    linkedRecipeCount: recipeCountMap.get(p.product_id)?.size ?? 0,
-  }));
+  const ratingMap = new Map<number, { sum: number; count: number }>();
+  for (const r of reviewRows ?? []) {
+    if (!ratingMap.has(r.product_id)) ratingMap.set(r.product_id, { sum: 0, count: 0 });
+    const stat = ratingMap.get(r.product_id)!;
+    stat.sum += r.rating;
+    stat.count += 1;
+  }
+  const productsWithCount = products.map((p) => {
+    const ratingStat = ratingMap.get(p.product_id);
+    return {
+      productId: p.product_id,
+      name: p.name,
+      price: p.price,
+      stock: p.stock,
+      status: p.status,
+      image: p.image,
+      brand: p.brand,
+      categoryId: p.category_id,
+      categories: p.categories,
+      createdAt: p.created_at,
+      linkedRecipeCount: recipeCountMap.get(p.product_id)?.size ?? 0,
+      rating: ratingStat ? calcRating(ratingStat.sum, ratingStat.count) : 0,
+      reviewCount: ratingStat?.count ?? 0,
+    };
+  });
 
   return { products: productsWithCount, total: count ?? 0 };
 }

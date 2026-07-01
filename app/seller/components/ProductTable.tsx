@@ -1,7 +1,7 @@
 'use client';
 
 import StatusBadge from '@/app/seller/components/StatusBadge';
-import { SquarePen, Eye, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { SquarePen, Eye, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Star } from 'lucide-react';
 import Link from 'next/link';
 import EmptyRows from '@/components/ui/EmptyRows';
 import {
@@ -121,6 +121,7 @@ export default function ProductTable({
             <TableHead className="text-center text-sm font-semibold text-gray-600">
               레시피 연동
             </TableHead>
+            <TableHead className="text-center text-sm font-semibold text-gray-600">리뷰</TableHead>
             <TableHead className="text-center text-sm font-semibold text-gray-600">상태</TableHead>
             <TableHead className="text-center text-sm font-semibold text-gray-600">관리</TableHead>
           </TableRow>
@@ -144,7 +145,7 @@ export default function ProductTable({
             ))
           ) : products.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-16 text-gray-400 text-sm">
+              <TableCell colSpan={9} className="text-center py-16 text-gray-400 text-sm">
                 등록된 상품이 존재하지 않습니다.
               </TableCell>
             </TableRow>
@@ -189,6 +190,17 @@ export default function ProductTable({
                   </TableCell>
                   <TableCell className="text-sm text-gray-600 text-center">
                     {product.linkedRecipeCount}개
+                  </TableCell>
+                  <TableCell className="text-sm text-center">
+                    {product.reviewCount > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-gray-700">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        {product.rating.toFixed(1)}
+                        <span className="text-gray-400">({product.reviewCount})</span>
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     <DropdownMenu>
@@ -241,7 +253,7 @@ export default function ProductTable({
                   </TableCell>
                 </TableRow>
               ))}
-              <EmptyRows count={Math.max(0, pageSize - products.length)} colSpan={8} />
+              <EmptyRows count={Math.max(0, pageSize - products.length)} colSpan={9} />
             </>
           )}
         </TableBody>
