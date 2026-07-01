@@ -24,7 +24,7 @@ interface CouponModalProps {
 }
 
 function formatDiscount(c: CouponItem) {
-  return c.discountType === '%' ? `${c.discountValue}% 할인` : `${c.discountValue.toLocaleString()}원 할인`;
+  return c.discountType === 'rate' ? `${c.discountValue}% 할인` : `${c.discountValue.toLocaleString()}원 할인`;
 }
 
 function formatExpiry(expiredAt: string) {

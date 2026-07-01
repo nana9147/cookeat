@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     }
     couponId = coupon.coupon_id;
     couponDiscount =
-      coupon.discount_type === '%'
+      coupon.discount_type === 'rate'
         ? Math.floor(totalAmount * coupon.discount_value / 100)
         : coupon.discount_value;
   }

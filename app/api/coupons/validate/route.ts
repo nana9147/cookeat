@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
   }
 
   const discountAmount =
-    coupon.discount_type === '%'
+    coupon.discount_type === 'rate'
       ? Math.floor(amount * coupon.discount_value / 100)
       : coupon.discount_value;
 

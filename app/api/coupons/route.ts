@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     .filter((c) => !usedCouponIds.has(c.coupon_id))
     .map((c) => {
       const discountAmount =
-        c.discount_type === '%'
+        c.discount_type === 'rate'
           ? Math.floor(amount * c.discount_value / 100)
           : c.discount_value;
       const usable = c.min_order_amount === null || amount >= c.min_order_amount;
