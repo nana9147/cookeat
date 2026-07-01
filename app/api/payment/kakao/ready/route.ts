@@ -9,7 +9,13 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  const { orderId, itemName, quantity, totalAmount } = await req.json();
+  let body: { orderId: string; itemName: string; quantity: number; totalAmount: number };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
+  }
+  const { orderId, itemName, quantity, totalAmount } = body;
 
   const res = await fetch('https://open-api.kakaopay.com/online/v1/payment/ready', {
     method: 'POST',
