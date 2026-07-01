@@ -16,13 +16,35 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { userIds } = body as { userIds: unknown };
+  const { userIds, issueAll } = body as { userIds?: unknown; issueAll?: boolean };
 
-  if (!Array.isArray(userIds) || userIds.length === 0) {
-    return NextResponse.json({ error: '지급할 유저를 선택해주세요.' }, { status: 400 });
+  // 대상 userId 목록 확정
+  let targetUserIds: number[];
+
+  if (issueAll) {
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('users')
+      .select('user_id')
+      .eq('role', 'user')
+      .eq('status', 'active');
+
+    if (usersError) {
+      console.error('[POST /admin/coupons/[id]/issue] users fetch:', usersError);
+      return NextResponse.json({ error: usersError.message }, { status: 500 });
+    }
+    targetUserIds = (users ?? []).map((u) => u.user_id);
+  } else {
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return NextResponse.json({ error: '지급할 유저를 선택해주세요.' }, { status: 400 });
+    }
+    if (userIds.some((uid) => typeof uid !== 'number' || !Number.isInteger(uid))) {
+      return NextResponse.json({ error: 'userIds 형식이 올바르지 않습니다.' }, { status: 400 });
+    }
+    targetUserIds = userIds as number[];
   }
-  if (userIds.some((uid) => typeof uid !== 'number' || !Number.isInteger(uid))) {
-    return NextResponse.json({ error: 'userIds 형식이 올바르지 않습니다.' }, { status: 400 });
+
+  if (targetUserIds.length === 0) {
+    return NextResponse.json({ issuedCount: 0 });
   }
 
   const { data: coupon, error: couponError } = await supabaseAdmin
@@ -39,12 +61,16 @@ export async function POST(
   }
 
   if (coupon.max_usage_count !== null) {
-    const { count } = await supabaseAdmin
+    const { count, error: countError } = await supabaseAdmin
       .from('user_coupons')
       .select('id', { count: 'exact', head: true })
       .eq('coupon_id', id);
 
-    if ((count ?? 0) + userIds.length > coupon.max_usage_count) {
+    if (countError) {
+      console.error('[POST /admin/coupons/[id]/issue] count:', countError);
+      return NextResponse.json({ error: countError.message }, { status: 500 });
+    }
+    if ((count ?? 0) + targetUserIds.length > coupon.max_usage_count) {
       return NextResponse.json(
         { error: `최대 발급 수량(${coupon.max_usage_count}개)을 초과합니다.` },
         { status: 400 }
@@ -52,7 +78,7 @@ export async function POST(
     }
   }
 
-  const rows = (userIds as number[]).map((userId) => ({
+  const rows = targetUserIds.map((userId) => ({
     user_id: userId,
     coupon_id: id,
   }));
