@@ -144,6 +144,22 @@ export interface AdminSettlementStats {
   totalFee: number;
 }
 
+// ─── 쿠폰 ───────────────────────────────────────────────────────────────────
+export type AdminCouponDiscountType = 'rate' | 'fixed';
+
+export interface AdminCoupon {
+  couponId: number;
+  code: string;
+  discountType: AdminCouponDiscountType;
+  discountValue: number;
+  minOrderAmount: number | null;
+  maxUsageCount: number | null;
+  issuedCount: number;
+  usedCount: number;
+  expiredAt: string;
+  createdAt: string;
+}
+
 // ─── 레시피·포인트 ───────────────────────────────────────────────────────────
 export interface AdminRecipe {
   recipeId: number;
