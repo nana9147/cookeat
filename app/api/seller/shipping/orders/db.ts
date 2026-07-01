@@ -79,7 +79,12 @@ export async function getSellerShippingOrders(
   const itemIds = (data ?? []).map((row) => row.item_id);
   const shippingByItemId = new Map<
     number,
-    { carrier: string; tracking_number: string; shipped_at: string | null; delivered_at: string | null }
+    {
+      carrier: string;
+      tracking_number: string;
+      shipped_at: string | null;
+      delivered_at: string | null;
+    }
   >();
 
   if (itemIds.length > 0) {
@@ -327,6 +332,8 @@ export async function updateShippingTracking(
   if (statusUpdateError) throw statusUpdateError;
 
   await logOrderItemStatusHistory(itemId, '배송중');
+
+  await syncOrderStatus(orderId);
 
   return { newStatus: '배송중' };
 }
