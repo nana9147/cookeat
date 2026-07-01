@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
 import type { CreateProductInput, ProductFilters } from '@/types/seller/product';
 import { resolveProductStatus } from '@/lib/products';
+import { deleteSellerProduct } from './[productId]/db';
 
 export async function getSellerProducts(sellerId: number, filters: ProductFilters) {
   const {
@@ -164,4 +165,72 @@ export async function createSellerProduct(
     await supabaseAdmin.from('products').delete().eq('product_id', productId);
     throw err;
   }
+}
+
+export async function bulkUpdateProductStatus(
+  sellerId: number,
+  productIds: number[],
+  status: string
+) {
+  const { data: ownedRows, error: ownedError } = await supabaseAdmin
+    .from('products')
+    .select('product_id')
+    .eq('seller_id', sellerId)
+    .in('product_id', productIds);
+
+  if (ownedError) throw ownedError;
+
+  const ownedIds = (ownedRows ?? []).map((r) => r.product_id);
+  const failCount = productIds.length - ownedIds.length;
+
+  if (ownedIds.length === 0) {
+    return { successCount: 0, failCount: productIds.length };
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('products')
+    .update({ status, updated_at: new Date().toISOString() })
+    .in('product_id', ownedIds);
+
+  if (updateError) throw updateError;
+
+  return { successCount: ownedIds.length, failCount };
+}
+
+export async function bulkDeleteSellerProducts(sellerId: number, productIds: number[]) {
+  let successCount = 0;
+  const failures: { productId: number; reason: string }[] = [];
+
+  for (const productId of productIds) {
+    try {
+      await deleteSellerProduct(sellerId, productId);
+      successCount += 1;
+    } catch (e) {
+      failures.push({
+        productId,
+        reason: e instanceof Error ? e.message : '삭제에 실패했습니다.',
+      });
+    }
+  }
+
+  return { successCount, failures };
+}
+
+export async function getSellerProductCounts(sellerId: number) {
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select('status')
+    .eq('seller_id', sellerId);
+
+  if (error) throw error;
+
+  const counts = { 전체: 0, 판매중: 0, 품절: 0, 판매종료: 0, 숨김: 0 };
+  counts.전체 = (data ?? []).length;
+
+  for (const row of data ?? []) {
+    const status = row.status as keyof typeof counts;
+    if (status in counts) counts[status] += 1;
+  }
+
+  return counts;
 }

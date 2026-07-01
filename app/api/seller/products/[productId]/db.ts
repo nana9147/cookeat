@@ -201,3 +201,28 @@ export async function deleteSellerProduct(sellerId: number, productId: number) {
 
   return { productId };
 }
+
+export async function updateSellerProductStatus(
+  sellerId: number,
+  productId: number,
+  status: string
+) {
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .from('products')
+    .select('product_id, seller_id')
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error('상품을 찾을 수 없습니다.');
+  if (existing.seller_id !== sellerId) {
+    throw new Error('해당 상품을 수정할 권한이 없습니다.');
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('products')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('product_id', productId);
+
+  if (updateError) throw updateError;
+}

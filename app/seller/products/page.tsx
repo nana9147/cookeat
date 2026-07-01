@@ -7,6 +7,7 @@ import { Filter, Plus } from 'lucide-react';
 import ProductTable from '@/app/seller/components/ProductTable';
 import FilterTabs from '@/app/seller/components/FilterTabs';
 import Pagination from '@/components/ui/Pagination';
+import StatusCards from '@/components/ui/StatusCards';
 import { getPageNumbers } from '@/lib/utils';
 import type {
   ProductStatus,
@@ -14,6 +15,7 @@ import type {
   CategoryNode,
   ProductSortBy,
   SortOrder,
+  ProductCounts,
 } from '@/types/seller/product';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -22,6 +24,14 @@ import { useAuthStore } from '@/store/authStore';
 
 const statuses: (ProductStatus | '전체')[] = ['전체', '판매중', '품절', '판매종료', '숨김'];
 const LIMIT = 10;
+
+const PRODUCT_COLOR_MAP: Record<string, string> = {
+  전체: 'text-gray-800',
+  판매중: 'text-emerald-500',
+  품절: 'text-red-500',
+  판매종료: 'text-gray-500',
+  숨김: 'text-gray-400',
+};
 
 export default function ProductsPage() {
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
@@ -37,8 +47,139 @@ export default function ProductsPage() {
   const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isAllSelectedMode, setIsAllSelectedMode] = useState(false);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
   const [sortBy, setSortBy] = useState<ProductSortBy | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const [counts, setCounts] = useState<ProductCounts>({
+    전체: 0,
+    판매중: 0,
+    품절: 0,
+    판매종료: 0,
+    숨김: 0,
+  });
+
+  const fetchCounts = async () => {
+    try {
+      const { data } = await api.get('/seller/products/counts');
+      setCounts(data.data);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
+    }
+  };
+
+  const loadProducts = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, string | number> = { page, limit: LIMIT };
+      if (search) params.keyword = search;
+      if (status !== '전체') params.status = status;
+      if (selectedCategoryId) params.categoryId = selectedCategoryId;
+      else if (selectedParentId) params.parentId = selectedParentId;
+      if (sortBy) {
+        params.sortBy = sortBy;
+        params.sortOrder = sortOrder;
+      }
+
+      const { data } = await api.get('/seller/products', { params });
+      if (data) {
+        setProducts(data.data.products);
+        setTotal(data.data.pagination.total);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.';
+      toast.error(msg, { id: msg });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelect = (productId: number, checked: boolean) => {
+    setSelectedIds((prev) =>
+      checked ? [...prev, productId] : prev.filter((id) => id !== productId)
+    );
+    setIsAllSelectedMode(false);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setIsAllSelectedMode(true);
+      setSelectedIds(products.map((p) => p.productId));
+    } else {
+      setIsAllSelectedMode(false);
+      setSelectedIds([]);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedIds([]);
+    setIsAllSelectedMode(false);
+  }, [page, status, search, selectedParentId, selectedCategoryId]);
+
+  const handleBulkStatusChange = async (newStatus: '판매중' | '품절' | '판매종료' | '숨김') => {
+    if (selectedIds.length === 0) {
+      toast.error('상품을 선택해주세요.');
+      return;
+    }
+    setIsBulkProcessing(true);
+    try {
+      const { data } = await api.patch('/seller/products/bulk-status', {
+        productIds: selectedIds,
+        status: newStatus,
+      });
+      const { successCount, failCount } = data.data;
+      if (failCount > 0) {
+        toast.error(`${successCount}건 처리 완료, ${failCount}건 실패했습니다.`);
+      } else {
+        toast.success(`${successCount}건이 '${newStatus}'로 변경되었습니다.`);
+      }
+      setSelectedIds([]);
+      setIsAllSelectedMode(false);
+      loadProducts();
+      fetchCounts();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '일괄 처리에 실패했습니다.';
+      toast.error(msg, { id: msg });
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('상품을 선택해주세요.');
+      return;
+    }
+    if (!confirm(`선택한 ${selectedIds.length}개 상품을 정말 삭제하시겠습니까?`)) return;
+
+    setIsBulkProcessing(true);
+    try {
+      const { data } = await api.delete('/seller/products/bulk-delete', {
+        data: { productIds: selectedIds },
+      });
+      const { successCount, failures } = data.data;
+      if (failures.length > 0) {
+        toast.error(
+          `${successCount}건 삭제 완료, ${failures.length}건 실패했습니다. (진행 중인 주문 있는 상품은 판매종료로 변경하세요)`
+        );
+      } else {
+        toast.success(`${successCount}건이 삭제되었습니다.`);
+      }
+      setSelectedIds([]);
+      setIsAllSelectedMode(false);
+      loadProducts();
+      fetchCounts();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '일괄 삭제에 실패했습니다.';
+      toast.error(msg, { id: msg });
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
 
   const handleSortChange = (newSortBy: ProductSortBy) => {
     if (sortBy === newSortBy) {
@@ -60,35 +201,11 @@ export default function ProductsPage() {
       }
     }
     loadCategories();
+    fetchCounts();
   }, []);
 
   useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      try {
-        const params: Record<string, string | number> = { page, limit: LIMIT };
-        if (search) params.keyword = search;
-        if (status !== '전체') params.status = status;
-        if (selectedCategoryId) params.categoryId = selectedCategoryId;
-        else if (selectedParentId) params.parentId = selectedParentId;
-        if (sortBy) {
-          params.sortBy = sortBy;
-          params.sortOrder = sortOrder;
-        }
-
-        const { data } = await api.get('/seller/products', { params });
-        if (data) {
-          setProducts(data.data.products);
-          setTotal(data.data.pagination.total);
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : '상품 목록을 불러오지 못했습니다.';
-        toast.error(msg, { id: msg });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    load();
+    loadProducts();
   }, [page, search, status, selectedParentId, selectedCategoryId, sortBy, sortOrder]);
 
   const totalPages = Math.ceil(total / LIMIT);
@@ -106,6 +223,14 @@ export default function ProductsPage() {
 
   const selectedParent = categories.find((c) => c.categoryId === selectedParentId);
 
+  const statusCardData = [
+    { label: '전체', count: counts.전체, filterValue: '전체' },
+    { label: '판매중', count: counts.판매중, filterValue: '판매중' },
+    { label: '품절', count: counts.품절, filterValue: '품절' },
+    { label: '판매종료', count: counts.판매종료, filterValue: '판매종료' },
+    { label: '숨김', count: counts.숨김, filterValue: '숨김' },
+  ];
+
   return (
     <div className="bg-background p-8">
       <div className="mb-8 pr-5 flex items-center justify-between">
@@ -118,6 +243,17 @@ export default function ProductsPage() {
           </Link>
         )}
       </div>
+
+      <StatusCards
+        cards={statusCardData}
+        status={status}
+        onStatusChange={(v) => {
+          setStatus(v as ProductStatus | '전체');
+          setPage(1);
+        }}
+        colorMap={PRODUCT_COLOR_MAP}
+        cols={5}
+      />
 
       <div className="flex flex-col gap-4">
         <div className="flex gap-2">
@@ -142,7 +278,6 @@ export default function ProductsPage() {
 
         {isFilterOpen && (
           <>
-            {/* 대카테고리 */}
             <div className="flex gap-1.5 flex-wrap">
               <button
                 onClick={() => handleSelectParent(null)}
@@ -169,7 +304,6 @@ export default function ProductsPage() {
               ))}
             </div>
 
-            {/* 소카테고리*/}
             {selectedParent && selectedParent.children.length > 0 && (
               <div className="flex gap-1.5 flex-wrap">
                 <button
@@ -209,6 +343,63 @@ export default function ProductsPage() {
           </>
         )}
 
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-2 bg-beige/40 border border-border rounded-lg px-4 py-2.5">
+            <p className="text-sm text-gray-700 mr-auto">{selectedIds.length}개 선택됨</p>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setSelectedIds([]);
+                setIsAllSelectedMode(false);
+              }}
+              disabled={isBulkProcessing}
+            >
+              선택 취소
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkStatusChange('판매중')}
+              disabled={isBulkProcessing}
+            >
+              판매중으로
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkStatusChange('품절')}
+              disabled={isBulkProcessing}
+            >
+              품절로
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkStatusChange('판매종료')}
+              disabled={isBulkProcessing}
+            >
+              판매종료
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkStatusChange('숨김')}
+              disabled={isBulkProcessing}
+            >
+              숨김
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isBulkProcessing}
+            >
+              선택 삭제
+            </Button>
+          </div>
+        )}
+
         <p className="text-sm text-gray-500">
           전체 상품 수 <span className="font-semibold text-gray-800">{total}</span>개
         </p>
@@ -219,6 +410,14 @@ export default function ProductsPage() {
           sortBy={sortBy}
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
+          selectedIds={selectedIds}
+          isAllSelectedMode={isAllSelectedMode}
+          onSelect={handleSelect}
+          onSelectAll={handleSelectAll}
+          onStatusChanged={() => {
+            loadProducts();
+            fetchCounts();
+          }}
         />
         {!isLoading && (
           <Pagination

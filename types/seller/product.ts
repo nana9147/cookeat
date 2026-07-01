@@ -204,7 +204,6 @@ export interface ProductFilters {
   sortOrder?: SortOrder;
 }
 
-// ProductTableProps에 추가
 export interface ProductTableProps {
   products: Product[];
   isLoading?: boolean;
@@ -212,4 +211,22 @@ export interface ProductTableProps {
   sortBy?: ProductSortBy;
   sortOrder?: SortOrder;
   onSortChange?: (sortBy: ProductSortBy) => void;
+  selectedIds: number[];
+  isAllSelectedMode: boolean;
+  onSelect: (productId: number, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
+  onStatusChanged?: () => void;
+}
+
+export interface BulkDeleteResult {
+  successCount: number;
+  failures: { productId: number; reason: string }[];
+}
+
+export interface ProductCounts {
+  전체: number;
+  판매중: number;
+  품절: number;
+  판매종료: number;
+  숨김: number;
 }
