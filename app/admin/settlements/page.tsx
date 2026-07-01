@@ -62,28 +62,33 @@ export default function SettlementsPage() {
     const target = settlements.find((s) => s.settlementId === settlementId);
     if (!target) return;
 
-    await api.patch(`/admin/settlements/${settlementId}`, { status: '완료' });
-
-    setSettlements((prev) =>
-      prev.map((s) =>
-        s.settlementId === settlementId
-          ? { ...s, status: '완료' as const, settledAt: new Date().toISOString() }
-          : s
-      )
-    );
-    setStats((prev) => ({
-      ...prev,
-      pendingCount: prev.pendingCount - 1,
-      pendingAmount: prev.pendingAmount - target.amount,
-      completedCount: prev.completedCount + 1,
-      completedAmount: prev.completedAmount + target.amount,
-    }));
-    setSelectedId(null);
+    try {
+      await api.patch(`/admin/settlements/${settlementId}`, { status: '완료' });
+      setSettlements((prev) =>
+        prev.map((s) =>
+          s.settlementId === settlementId
+            ? { ...s, status: '완료' as const, settledAt: new Date().toISOString() }
+            : s
+        )
+      );
+      setStats((prev) => ({
+        ...prev,
+        pendingCount: prev.pendingCount - 1,
+        pendingAmount: prev.pendingAmount - target.amount,
+        completedCount: prev.completedCount + 1,
+        completedAmount: prev.completedAmount + target.amount,
+      }));
+      setSelectedId(null);
+    } catch {
+      alert('정산 처리에 실패했습니다. 다시 시도해주세요.');
+    }
   }
 
   async function handleBulkSettle() {
     const pending = settlements.filter((s) => s.status === '대기');
     if (pending.length === 0) return;
+    if (!window.confirm(`대기 중인 정산 ${pending.length}건을 일괄 처리합니다. 계속하시겠습니까?`))
+      return;
 
     const results = await Promise.allSettled(
       pending.map((s) => api.patch(`/admin/settlements/${s.settlementId}`, { status: '완료' }))
