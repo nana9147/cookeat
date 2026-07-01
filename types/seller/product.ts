@@ -1,5 +1,3 @@
-import { NonReturnReason, ShippingFeeType } from './shipping';
-
 export type CategoryName =
   | '채소'
   | '과일·견과·쌀'
@@ -192,6 +190,9 @@ export interface SubImageInput {
   file?: File;
 }
 
+export type ProductSortBy = 'price' | 'stock';
+export type SortOrder = 'asc' | 'desc';
+
 export interface ProductFilters {
   keyword?: string;
   status?: string;
@@ -199,4 +200,16 @@ export interface ProductFilters {
   parentId?: number;
   page: number;
   limit: number;
+  sortBy?: ProductSortBy;
+  sortOrder?: SortOrder;
+}
+
+// ProductTableProps에 추가
+export interface ProductTableProps {
+  products: Product[];
+  isLoading?: boolean;
+  pageSize?: number;
+  sortBy?: ProductSortBy;
+  sortOrder?: SortOrder;
+  onSortChange?: (sortBy: ProductSortBy) => void;
 }

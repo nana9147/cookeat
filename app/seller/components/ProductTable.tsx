@@ -1,8 +1,7 @@
 'use client';
 
-import type { Product } from '@/types/seller/product';
 import StatusBadge from '@/app/seller/components/StatusBadge';
-import { SquarePen, Eye, Trash2 } from 'lucide-react';
+import { SquarePen, Eye, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import Link from 'next/link';
 import EmptyRows from '@/components/ui/EmptyRows';
 import {
@@ -18,17 +17,30 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuthStore } from '@/store/authStore';
+import type { Product, ProductSortBy, ProductTableProps } from '@/types/seller/product';
 
-interface ProductTableProps {
-  products: Product[];
-  isLoading?: boolean;
-  pageSize?: number;
-}
-
-export default function ProductTable({ products, isLoading = false, pageSize = 10 }: ProductTableProps) {
+export default function ProductTable({
+  products,
+  isLoading = false,
+  pageSize = 10,
+  sortBy,
+  sortOrder,
+  onSortChange,
+}: ProductTableProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
+
+  const renderSortIcon = (column: ProductSortBy) => {
+    if (sortBy !== column) {
+      return <ChevronsUpDown className="inline w-3.5 h-3.5 ml-0.5 text-gray-300" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ChevronUp className="inline w-3.5 h-3.5 ml-0.5" />
+    ) : (
+      <ChevronDown className="inline w-3.5 h-3.5 ml-0.5" />
+    );
+  };
 
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`[${name}] \n\n해당 상품을 정말 삭제하시겠습니까?`)) return;
@@ -54,8 +66,18 @@ export default function ProductTable({ products, isLoading = false, pageSize = 1
             <TableHead className="text-center text-sm font-semibold text-gray-600">
               카테고리
             </TableHead>
-            <TableHead className="text-center text-sm font-semibold text-gray-600">가격</TableHead>
-            <TableHead className="text-center text-sm font-semibold text-gray-600">재고</TableHead>
+            <TableHead
+              className="text-center text-sm font-semibold text-gray-600 cursor-pointer select-none"
+              onClick={() => onSortChange?.('price')}
+            >
+              가격{renderSortIcon('price')}
+            </TableHead>
+            <TableHead
+              className="text-center text-sm font-semibold text-gray-600 cursor-pointer select-none"
+              onClick={() => onSortChange?.('stock')}
+            >
+              재고{renderSortIcon('stock')}
+            </TableHead>
             <TableHead className="text-center text-sm font-semibold text-gray-600">
               레시피 연동
             </TableHead>

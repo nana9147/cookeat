@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status') ?? undefined;
   const categoryId = searchParams.get('categoryId');
   const parentId = searchParams.get('parentId');
+  const sortBy = searchParams.get('sortBy') ?? undefined;
+  const sortOrder = (searchParams.get('sortOrder') ?? 'desc') as 'asc' | 'desc';
 
   const { products, total } = await getSellerProducts(sellerCtx.sellerId, {
     page,
@@ -23,6 +25,8 @@ export async function GET(req: NextRequest) {
     status,
     categoryId: categoryId ? Number(categoryId) : undefined,
     parentId: parentId ? Number(parentId) : undefined,
+    sortBy: sortBy === 'price' || sortBy === 'stock' ? sortBy : undefined,
+    sortOrder,
   });
 
   return NextResponse.json({
