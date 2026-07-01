@@ -12,6 +12,7 @@ const menuItems = [
   { label: '상품관리', href: '/admin/products' },
   { label: '주문관리', href: '/admin/orders' },
   { label: '정산관리', href: '/admin/settlements' },
+  { label: '쿠폰관리', href: '/admin/coupons' },
   { label: '레시피/포인트', href: '/admin/recipes' },
   { label: '리뷰/신고', href: '/admin/reviews' },
   { label: '고객센터', href: '/admin/support' },

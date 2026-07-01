@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
     address = '',
     addressDetail = '',
     usePoint = 0,
-    couponCode,
-  } = body;
+    userCouponId,
+  } = await req.json();
 
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: '주문 상품이 없습니다.' }, { status: 400 });
@@ -119,35 +119,50 @@ export async function POST(req: NextRequest) {
   }
 
   // 쿠폰 검증
-  let couponId: number | null = null;
+  let resolvedUserCouponId: number | null = null;
   let couponDiscount = 0;
-  if (couponCode) {
-    const { data: coupon, error: couponError } = await supabaseAdmin
-      .from('coupons')
-      .select('coupon_id, discount_type, discount_value, min_order_amount, max_usage_count, current_usage_count, expired_at')
-      .eq('code', String(couponCode).trim())
+  if (userCouponId) {
+    const parsedId = Number(userCouponId);
+    if (!Number.isInteger(parsedId) || parsedId <= 0) {
+      return NextResponse.json({ error: '잘못된 쿠폰 정보입니다.' }, { status: 400 });
+    }
+
+    const { data: uc, error: ucError } = await supabaseAdmin
+      .from('user_coupons')
+      .select('id, used_at, coupons(discount_type, discount_value, min_order_amount, expired_at)')
+      .eq('id', parsedId)
+      .eq('user_id', authed.userId)
       .single();
 
-    if (couponError || !coupon) {
-      return NextResponse.json({ error: '존재하지 않는 쿠폰 코드입니다.' }, { status: 400 });
+    if (ucError || !uc) {
+      return NextResponse.json({ error: '보유하지 않은 쿠폰입니다.' }, { status: 400 });
     }
-    if (new Date(coupon.expired_at) < new Date()) {
+    if (uc.used_at) {
+      return NextResponse.json({ error: '이미 사용한 쿠폰입니다.' }, { status: 400 });
+    }
+
+    const c = uc.coupons as unknown as {
+      discount_type: 'rate' | 'fixed';
+      discount_value: number;
+      min_order_amount: number | null;
+      expired_at: string;
+    } | null;
+
+    if (!c || new Date(c.expired_at) < new Date()) {
       return NextResponse.json({ error: '만료된 쿠폰입니다.' }, { status: 400 });
     }
-    if (coupon.max_usage_count !== null && coupon.current_usage_count >= coupon.max_usage_count) {
-      return NextResponse.json({ error: '사용 가능 횟수를 초과한 쿠폰입니다.' }, { status: 400 });
-    }
-    if (coupon.min_order_amount !== null && totalAmount < coupon.min_order_amount) {
+    if (c.min_order_amount !== null && totalAmount < c.min_order_amount) {
       return NextResponse.json(
-        { error: `최소 주문 금액 ${coupon.min_order_amount.toLocaleString()}원 이상 시 사용 가능한 쿠폰입니다.` },
+        { error: `최소 주문 금액 ${c.min_order_amount.toLocaleString()}원 이상 시 사용 가능한 쿠폰입니다.` },
         { status: 400 }
       );
     }
-    couponId = coupon.coupon_id;
+
+    resolvedUserCouponId = parsedId;
     couponDiscount =
-      coupon.discount_type === 'rate'
-        ? Math.floor(totalAmount * coupon.discount_value / 100)
-        : coupon.discount_value;
+      c.discount_type === 'rate'
+        ? Math.floor(totalAmount * c.discount_value / 100)
+        : c.discount_value;
   }
 
   const finalAmount = Math.max(0, totalAmount + shippingFee - usedPoint - couponDiscount);
@@ -173,7 +188,7 @@ export async function POST(req: NextRequest) {
     p_address: address,
     p_address_detail: addressDetail ?? '',
     p_used_point: usedPoint,
-    p_coupon_id: couponId,
+    p_user_coupon_id: resolvedUserCouponId,
   });
 
   if (rpcError) {

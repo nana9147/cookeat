@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin
     .from('orders')
     .select(
-      `order_id, user_id, total_amount, shipping_fee, used_point, coupon_id, coupon_discount,
+      `order_id, user_id, total_amount, shipping_fee, used_point, user_coupon_id, coupon_discount,
        final_amount, payment_method, status, recipient, phone, address, address_detail,
        shipping_request, created_at, updated_at,
        order_items(item_id, product_id, seller_id, quantity, unit_price,
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
       totalAmount: o.total_amount,
       shippingFee: o.shipping_fee,
       usedPoint: o.used_point,
-      couponId: o.coupon_id,
+      userCouponId: o.user_coupon_id,
       couponDiscount: o.coupon_discount,
       finalAmount: o.final_amount,
       paymentMethod: o.payment_method,
