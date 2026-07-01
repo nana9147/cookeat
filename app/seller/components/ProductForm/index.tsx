@@ -24,13 +24,33 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
     []
   );
 
+  const fetchShippingTemplates = async (selectDefaultIfCreate = false) => {
+    const { data } = await api.get('/seller/shipping/templates');
+    setShippingTemplates(data.data);
+    if (selectDefaultIfCreate && mode === 'create') {
+      const defaultTemplate = (data.data as ShippingTemplateOption[]).find((t) => t.isDefault);
+      if (defaultTemplate) {
+        setForm((prev) => ({ ...prev, shippingTemplateId: defaultTemplate.templateId }));
+      }
+    }
+  };
+
+  const fetchReturnPolicyTemplates = async (selectDefaultIfCreate = false) => {
+    const { data } = await api.get('/seller/return-policy/templates');
+    setReturnPolicyTemplates(data.data);
+    if (selectDefaultIfCreate && mode === 'create') {
+      const defaultTemplate = (data.data as ReturnPolicyTemplateOption[]).find((t) => t.isDefault);
+      if (defaultTemplate) {
+        setForm((prev) => ({ ...prev, returnPolicyTemplateId: defaultTemplate.templateId }));
+      }
+    }
+  };
+
   useEffect(() => {
     api.get('/categories').then(({ data }) => setCategories(data.data));
-    api.get('/seller/shipping/templates').then(({ data }) => setShippingTemplates(data.data));
-    api
-      .get('/seller/return-policy/templates')
-      .then(({ data }) => setReturnPolicyTemplates(data.data));
-  }, []);
+    fetchShippingTemplates(true);
+    fetchReturnPolicyTemplates(true);
+  }, [mode]);
 
   const handleChange = <S extends 'basicInfo' | 'pricingInfo', K extends keyof ProductFormData[S]>(
     section: S,
@@ -152,6 +172,7 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         templates={shippingTemplates}
         value={form.shippingTemplateId}
         onChange={(templateId) => setForm((prev) => ({ ...prev, shippingTemplateId: templateId }))}
+        onTemplateCreated={() => fetchShippingTemplates(false)}
       />
       <ReturnPolicyField
         templates={returnPolicyTemplates}
@@ -159,7 +180,9 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         onChange={(templateId) =>
           setForm((prev) => ({ ...prev, returnPolicyTemplateId: templateId }))
         }
+        onTemplateCreated={() => fetchReturnPolicyTemplates(false)}
       />
+
       <FormActionButtons mode={mode} onSubmit={handleSubmit} />
     </div>
   );
