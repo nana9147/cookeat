@@ -8,7 +8,13 @@ import ProductTable from '@/app/seller/components/ProductTable';
 import FilterTabs from '@/app/seller/components/FilterTabs';
 import Pagination from '@/components/ui/Pagination';
 import { getPageNumbers } from '@/lib/utils';
-import type { ProductStatus, Product, CategoryNode } from '@/types/seller/product';
+import type {
+  ProductStatus,
+  Product,
+  CategoryNode,
+  ProductSortBy,
+  SortOrder,
+} from '@/types/seller/product';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -31,6 +37,19 @@ export default function ProductsPage() {
   const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  const [sortBy, setSortBy] = useState<ProductSortBy | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const handleSortChange = (newSortBy: ProductSortBy) => {
+    if (sortBy === newSortBy) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(newSortBy);
+      setSortOrder('desc');
+    }
+    setPage(1);
+  };
+
   useEffect(() => {
     async function loadCategories() {
       try {
@@ -52,6 +71,10 @@ export default function ProductsPage() {
         if (status !== '전체') params.status = status;
         if (selectedCategoryId) params.categoryId = selectedCategoryId;
         else if (selectedParentId) params.parentId = selectedParentId;
+        if (sortBy) {
+          params.sortBy = sortBy;
+          params.sortOrder = sortOrder;
+        }
 
         const { data } = await api.get('/seller/products', { params });
         if (data) {
@@ -66,7 +89,7 @@ export default function ProductsPage() {
       }
     }
     load();
-  }, [page, search, status, selectedParentId, selectedCategoryId]);
+  }, [page, search, status, selectedParentId, selectedCategoryId, sortBy, sortOrder]);
 
   const totalPages = Math.ceil(total / LIMIT);
 
@@ -190,7 +213,13 @@ export default function ProductsPage() {
           전체 상품 수 <span className="font-semibold text-gray-800">{total}</span>개
         </p>
 
-        <ProductTable products={products} isLoading={isLoading} />
+        <ProductTable
+          products={products}
+          isLoading={isLoading}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSortChange={handleSortChange}
+        />
         {!isLoading && (
           <Pagination
             currentPage={page}

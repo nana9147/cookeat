@@ -1,9 +1,19 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
 import type { CreateProductInput, ProductFilters } from '@/types/seller/product';
+import { resolveProductStatus } from '@/lib/products';
 
 export async function getSellerProducts(sellerId: number, filters: ProductFilters) {
-  const { keyword, status, categoryId, parentId, page, limit } = filters;
+  const {
+    keyword,
+    status,
+    categoryId,
+    parentId,
+    page,
+    limit,
+    sortBy,
+    sortOrder = 'desc',
+  } = filters;
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
@@ -13,8 +23,7 @@ export async function getSellerProducts(sellerId: number, filters: ProductFilter
       'product_id, name, price, stock, status, sales_count, created_at, image, brand, category_id, categories(name, parent_id)',
       { count: 'exact' }
     )
-    .eq('seller_id', sellerId)
-    .range(from, to);
+    .eq('seller_id', sellerId);
 
   if (keyword) query = query.ilike('name', `%${keyword}%`);
   if (status) query = query.eq('status', status);
@@ -30,7 +39,15 @@ export async function getSellerProducts(sellerId: number, filters: ProductFilter
     query = query.in('category_id', childIds);
   }
 
+  if (sortBy === 'price' || sortBy === 'stock') {
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+  query = query.range(from, to);
+
   const { data, count, error } = await query;
+
   if (error) throw error;
 
   const products = data ?? [];
@@ -95,7 +112,7 @@ export async function createSellerProduct(
       brand: input.brand || null,
       origin: input.origin,
       category_id: input.categoryId,
-      status: input.status,
+      status: resolveProductStatus(input.status, input.stock),
       price: input.price,
       stock: input.stock,
       description: input.description || null,

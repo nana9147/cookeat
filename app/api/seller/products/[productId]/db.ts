@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { uploadProductImage, deleteProductImageFile } from '@/lib/productImage';
 import type { UpdateProductInput, SubImageInput } from '@/types/seller/product';
+import { resolveProductStatus } from '@/lib/products';
 
 // ===== 상품 단건 조회 =====
 
@@ -75,7 +76,7 @@ export async function updateSellerProduct(
       brand: input.brand || null,
       origin: input.origin,
       category_id: input.categoryId,
-      status: input.status,
+      status: resolveProductStatus(input.status, input.stock),
       price: input.price,
       stock: input.stock,
       description: input.description || null,
