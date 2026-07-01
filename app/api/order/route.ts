@@ -20,6 +20,12 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
+  let body: { items: unknown; paymentMethod: string; recipient?: string; phone?: string; address?: string; addressDetail?: string; usePoint?: number; couponCode?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
+  }
   const {
     items,
     paymentMethod,
@@ -29,7 +35,7 @@ export async function POST(req: NextRequest) {
     addressDetail = '',
     usePoint = 0,
     couponCode,
-  } = await req.json();
+  } = body;
 
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: '주문 상품이 없습니다.' }, { status: 400 });
@@ -139,7 +145,7 @@ export async function POST(req: NextRequest) {
     }
     couponId = coupon.coupon_id;
     couponDiscount =
-      coupon.discount_type === '%'
+      coupon.discount_type === 'rate'
         ? Math.floor(totalAmount * coupon.discount_value / 100)
         : coupon.discount_value;
   }

@@ -8,7 +8,13 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  const { paymentKey, orderId, amount } = await req.json();
+  let body: { paymentKey: string; orderId: string; amount: number };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
+  }
+  const { paymentKey, orderId, amount } = body;
 
   const { data: order, error } = await supabaseAdmin
     .from('orders')

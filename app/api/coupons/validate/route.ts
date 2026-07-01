@@ -35,6 +35,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: '사용 가능 횟수를 초과한 쿠폰입니다.' }, { status: 400 });
   }
 
+  const { count } = await supabaseAdmin
+    .from('orders')
+    .select('order_id', { count: 'exact', head: true })
+    .eq('user_id', authed.userId)
+    .eq('coupon_id', coupon.coupon_id)
+    .neq('status', '취소');
+
+  if (count && count > 0) {
+    return NextResponse.json({ error: '이미 사용한 쿠폰입니다.' }, { status: 400 });
+  }
+
   if (coupon.min_order_amount !== null && amount < coupon.min_order_amount) {
     return NextResponse.json(
       { error: `최소 주문 금액 ${coupon.min_order_amount.toLocaleString()}원 이상 시 사용 가능합니다.` },
@@ -43,7 +54,7 @@ export async function GET(req: NextRequest) {
   }
 
   const discountAmount =
-    coupon.discount_type === '%'
+    coupon.discount_type === 'rate'
       ? Math.floor(amount * coupon.discount_value / 100)
       : coupon.discount_value;
 

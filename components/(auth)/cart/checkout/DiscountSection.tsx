@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
+import CouponModal from './CouponModal';
 
 export interface AppliedCoupon {
   couponId: number;
@@ -28,9 +29,7 @@ export default function DiscountSection({
 }: DiscountSectionProps) {
   const [pointBalance, setPointBalance] = useState(0);
   const [pointInput, setPointInput] = useState('');
-  const [couponInput, setCouponInput] = useState('');
-  const [couponError, setCouponError] = useState('');
-  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
   const initialFetched = useRef(false);
 
   useEffect(() => {
@@ -47,8 +46,7 @@ export default function DiscountSection({
     const numeric = value.replace(/\D/g, '');
     setPointInput(numeric);
     const parsed = parseInt(numeric || '0', 10);
-    const clamped = Math.min(parsed, maxUsablePoint);
-    onPointChange(clamped);
+    onPointChange(Math.min(parsed, maxUsablePoint));
   }
 
   function applyAllPoints() {
@@ -61,33 +59,8 @@ export default function DiscountSection({
     setPointInput('');
   }
 
-  async function handleCouponApply() {
-    const code = couponInput.trim();
-    if (!code) return;
-    setCouponError('');
-    setCouponLoading(true);
-    try {
-      const { data } = await api.get<AppliedCoupon>('/coupons/validate', {
-        params: { code, amount: orderTotal },
-      });
-      onCouponApply(data);
-      setCouponError('');
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? '쿠폰 적용에 실패했습니다.';
-      setCouponError(message);
-      onCouponApply(null);
-    } finally {
-      setCouponLoading(false);
-    }
-  }
-
   function handleCouponRemove() {
     onCouponApply(null);
-    setCouponInput('');
-    setCouponError('');
   }
 
   return (
@@ -131,9 +104,7 @@ export default function DiscountSection({
           </button>
         </div>
         {usedPoint > 0 && (
-          <p className="mt-1.5 text-xs text-primary">
-            {usedPoint.toLocaleString()}P 적용됨
-          </p>
+          <p className="mt-1.5 text-xs text-primary">{usedPoint.toLocaleString()}P 적용됨</p>
         )}
         {maxUsablePoint === 0 && pointBalance > 0 && (
           <p className="mt-1.5 text-xs text-gray-text">주문 금액이 부족하여 포인트를 사용할 수 없습니다.</p>
@@ -148,7 +119,7 @@ export default function DiscountSection({
             <div>
               <p className="text-sm font-semibold text-primary">{appliedCoupon.code}</p>
               <p className="text-xs text-gray-text mt-0.5">
-                {appliedCoupon.discountType === '%'
+                {appliedCoupon.discountType === 'rate'
                   ? `${appliedCoupon.discountValue}% 할인`
                   : `${appliedCoupon.discountValue.toLocaleString()}원 할인`}
                 {' — '}
@@ -164,31 +135,22 @@ export default function DiscountSection({
             </button>
           </div>
         ) : (
-          <>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={couponInput}
-                onChange={(e) => setCouponInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCouponApply()}
-                placeholder="쿠폰 코드 입력"
-                className="flex-1 border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary uppercase"
-              />
-              <button
-                type="button"
-                onClick={handleCouponApply}
-                disabled={!couponInput.trim() || couponLoading}
-                className="shrink-0 px-4 py-2.5 text-xs font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {couponLoading ? '확인 중' : '적용'}
-              </button>
-            </div>
-            {couponError && (
-              <p className="mt-1.5 text-xs text-red">{couponError}</p>
-            )}
-          </>
+          <button
+            type="button"
+            onClick={() => setCouponModalOpen(true)}
+            className="w-full border border-border rounded-lg px-4 py-2.5 text-sm text-gray-text hover:border-primary hover:text-primary transition-colors text-left"
+          >
+            쿠폰 선택하기
+          </button>
         )}
       </div>
+
+      <CouponModal
+        open={couponModalOpen}
+        orderTotal={orderTotal}
+        onClose={() => setCouponModalOpen(false)}
+        onSelect={onCouponApply}
+      />
     </section>
   );
 }

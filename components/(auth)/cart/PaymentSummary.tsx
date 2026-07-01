@@ -14,7 +14,6 @@ interface PaymentSummaryProps {
   couponDiscount?: number;
   usedPoint?: number;
   shippingFee?: number;
-  pointRate?: number;
 }
 
 export default function PaymentSummary({
@@ -29,10 +28,8 @@ export default function PaymentSummary({
   couponDiscount = 0,
   usedPoint = 0,
   shippingFee = 0,
-  pointRate = 0.01,
 }: PaymentSummaryProps) {
   const finalAmount = Math.max(0, productTotal - productDiscount - couponDiscount - usedPoint + shippingFee);
-  const earnPoints = Math.floor(finalAmount * pointRate);
   const rows = [
     { label: '상품 금액', value: `${productTotal.toLocaleString()}원`, red: false },
     ...(productDiscount > 0
@@ -90,7 +87,6 @@ export default function PaymentSummary({
           <span className="text-sm font-semibold text-dark-text">결제 금액</span>
           <span className="text-h3 font-bold text-primary">{finalAmount.toLocaleString()}원</span>
         </div>
-        <p className="text-right text-xs text-yellow">+ {earnPoints.toLocaleString()}P 적립 예정</p>
       </div>
       {mode === 'checkout' && (
         <button

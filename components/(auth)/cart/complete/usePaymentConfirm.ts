@@ -26,11 +26,11 @@ export function usePaymentConfirm(
       sessionStorage.removeItem('kakaoOrderId');
     };
 
-    const confirmAndFetch = async (confirmFn: () => Promise<void>) => {
+    const confirmAndFetch = async (confirmFn: () => Promise<void>, resolvedOrderId: string | null) => {
       try {
         await confirmFn();
-        if (orderId) {
-          const { data } = await api.get<OrderDetail>(`/order/${orderId}`);
+        if (resolvedOrderId) {
+          const { data } = await api.get<OrderDetail>(`/order/${resolvedOrderId}`);
           setOrderDetail(data);
         }
         setStatus('success');
@@ -42,25 +42,30 @@ export function usePaymentConfirm(
     };
 
     if (paymentKey) {
-      confirmAndFetch(() =>
-        api
-          .post('/payment/toss/confirm', { paymentKey, orderId, amount })
-          .then(({ data }) => {
-            if (data.status !== 'DONE') throw new Error('결제 실패');
-          }),
+      confirmAndFetch(
+        () =>
+          api
+            .post('/payment/toss/confirm', { paymentKey, orderId, amount })
+            .then(({ data }) => {
+              if (data.status !== 'DONE') throw new Error('결제 실패');
+            }),
+        orderId,
       );
       return;
     }
 
     if (pgToken) {
       const tid = sessionStorage.getItem('kakaoTid');
-      confirmAndFetch(() =>
-        api
-          .post('/payment/kakao/approve', { tid, pgToken, orderId })
-          .then(({ data }) => {
-            cleanKakao();
-            if (!data.tid) throw new Error('결제 실패');
-          }),
+      const resolvedOrderId = orderId ?? sessionStorage.getItem('kakaoOrderId');
+      confirmAndFetch(
+        () =>
+          api
+            .post('/payment/kakao/approve', { tid, pgToken, orderId: resolvedOrderId })
+            .then(({ data }) => {
+              cleanKakao();
+              if (!data.tid) throw new Error('결제 실패');
+            }),
+        resolvedOrderId,
       );
     }
   // clearCart만 의존 — paymentKey 등은 initRef로 마운트 시 1회만 실행
