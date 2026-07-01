@@ -148,7 +148,7 @@ export default function DiscountSection({
             <div>
               <p className="text-sm font-semibold text-primary">{appliedCoupon.code}</p>
               <p className="text-xs text-gray-text mt-0.5">
-                {appliedCoupon.discountType === '%'
+                {appliedCoupon.discountType === 'rate'
                   ? `${appliedCoupon.discountValue}% 할인`
                   : `${appliedCoupon.discountValue.toLocaleString()}원 할인`}
                 {' — '}
