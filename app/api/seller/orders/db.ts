@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import type { SellerOrderRpcRow } from '@/types/seller/order';
 
 export async function getSellerOrders(
   sellerId: number,
@@ -14,10 +15,9 @@ export async function getSellerOrders(
   }
 ) {
   const { page, limit, keyword, status, startDate, endDate, sortBy, sortOrder = 'desc' } = options;
-  const rangeFrom = (page - 1) * limit;
-  const rangeTo = rangeFrom + limit - 1;
+  const offset = (page - 1) * limit;
 
-  // Keyword spans multiple tables — pre-fetch matching order IDs
+  // 키워드는 여러 테이블에 걸쳐 있어서 미리 order_id 목록으로 좁혀둠 (기존 로직 그대로)
   let keywordOrderIds: string[] | null = null;
   if (keyword) {
     const { data: userRows } = await supabaseAdmin
@@ -46,36 +46,25 @@ export async function getSellerOrders(
     }
   }
 
-  let query = supabaseAdmin
-    .from('order_items')
-    .select(
-      `item_id, order_id, quantity, unit_price,
-       products(name),
-       orders!inner(created_at, status, recipient, phone, users(nickname))`,
-      { count: 'exact' }
-    )
-    .eq('seller_id', sellerId);
+  const { data, error } = await supabaseAdmin.rpc('get_seller_orders', {
+    p_seller_id: sellerId,
+    p_status: status && status !== '전체' ? status : null,
+    p_start_date: startDate ? `${startDate}T00:00:00` : null,
+    p_end_date: endDate ? `${endDate}T23:59:59` : null,
+    p_order_ids: keywordOrderIds,
+    p_sort_by: sortBy ?? 'orderDate',
+    p_sort_order: sortOrder,
+    p_limit: limit,
+    p_offset: offset,
+  });
 
-  if (status && status !== '전체') query = query.eq('orders.status', status);
-  if (startDate) query = query.gte('orders.created_at', `${startDate}T00:00:00`);
-  if (endDate) query = query.lte('orders.created_at', `${endDate}T23:59:59`);
-  if (keywordOrderIds !== null) query = query.in('order_id', keywordOrderIds);
-
-  if (sortBy === 'orderId') {
-    query = query.order('order_id', { ascending: sortOrder === 'asc' });
-  } else {
-    query = query.order('created_at', {
-      referencedTable: 'orders',
-      ascending: sortOrder === 'asc',
-    });
-  }
-  query = query.range(rangeFrom, rangeTo);
-
-  const { data, count, error } = await query;
   if (error) throw error;
 
-  // Fetch refunds only for this page's items
-  const itemIds = (data ?? []).map((row) => row.item_id);
+  const rows = (data ?? []) as SellerOrderRpcRow[];
+  const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+
+  const itemIds = rows.map((row) => row.item_id);
+
   const latestRefundByItem = new Map<number, { status: string; rejectReason: string | null }>();
 
   if (itemIds.length > 0) {
@@ -94,35 +83,27 @@ export async function getSellerOrders(
     }
   }
 
-  const orders = (data ?? []).map((item) => {
-    const order = item.orders as unknown as {
-      created_at: string;
-      status: string;
-      recipient: string;
-      phone: string;
-      users: { nickname: string } | null;
-    };
-    const product = item.products as unknown as { name: string } | null;
-    const refund = latestRefundByItem.get(item.item_id);
+  const orders = rows.map((row) => {
+    const refund = latestRefundByItem.get(row.item_id);
     const hasActiveClaim = Boolean(refund && !refund.rejectReason);
 
     return {
-      orderId: item.order_id,
-      orderDate: order.created_at,
-      customer: order.users?.nickname ?? '알 수 없음',
-      recipient: order.recipient,
-      phone: order.phone,
-      itemId: item.item_id,
-      productName: product?.name ?? '알 수 없음',
-      quantity: item.quantity,
-      unitPrice: item.unit_price,
-      itemTotalPrice: item.quantity * item.unit_price,
-      status: order.status,
+      orderId: row.order_id,
+      orderDate: row.order_date,
+      customer: row.nickname ?? '알 수 없음',
+      recipient: row.recipient,
+      phone: row.phone,
+      itemId: row.item_id,
+      productName: row.product_name ?? '알 수 없음',
+      quantity: row.quantity,
+      unitPrice: row.unit_price,
+      itemTotalPrice: row.quantity * row.unit_price,
+      status: row.status,
       hasActiveClaim,
     };
   });
 
-  return { orders, total: count ?? 0 };
+  return { orders, total };
 }
 
 export async function getSellerOrderCounts(
