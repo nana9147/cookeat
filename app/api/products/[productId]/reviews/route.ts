@@ -4,34 +4,44 @@ import { requireAuth } from '@/lib/serverAuth';
 
 const PRODUCT_REVIEW_POINT = 10;
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ productId: string }> },
-) {
-  const { productId: productIdStr } = await params;
-  const productId = parseInt(productIdStr);
-  if (isNaN(productId)) return NextResponse.json({ error: '잘못된 productId' }, { status: 400 });
+type Params = { params: Promise<{ productId: string }> };
+
+export async function GET(req: NextRequest, { params }: Params) {
+  const { productId: raw } = await params;
+  const productId = parseInt(raw);
+  if (isNaN(productId))
+    return NextResponse.json(
+      { error: '잘못된 productId' },
+      { status: 400 },
+    );
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
-  const limit = Math.max(1, Math.min(50, parseInt(searchParams.get('limit') ?? '10')));
+  const limit = Math.max(
+    1,
+    Math.min(50, parseInt(searchParams.get('limit') ?? '10')),
+  );
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  const { data, error, count } = await supabaseAdmin
-    .from('reviews')
-    .select(
-      `review_id, rating, content, created_at,
-       users(nickname, profile_image),
-       review_images(url)`,
-      { count: 'exact' },
-    )
-    .eq('product_id', productId)
-    .order('created_at', { ascending: false })
-    .range(from, to);
+  const [{ data, error, count }, { data: ratingRows }] = await Promise.all([
+    supabaseAdmin
+      .from('reviews')
+      .select(
+        'review_id, rating, content, created_at, user_id, review_images(url)',
+        { count: 'exact' },
+      )
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false })
+      .range(from, to),
+    supabaseAdmin
+      .from('reviews')
+      .select('rating')
+      .eq('product_id', productId),
+  ]);
 
   if (error) {
-    console.error('[GET /api/products/:id/reviews]', JSON.stringify(error));
+    console.error('[GET /products/:id/reviews]', JSON.stringify(error));
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -40,54 +50,124 @@ export async function GET(
     rating: number;
     content: string;
     created_at: string;
-    users: { nickname: string; profile_image: string | null } | null;
+    user_id: number;
     review_images: { url: string }[];
   };
 
-  const reviews = ((data ?? []) as unknown as RawRow[]).map((r) => ({
-    reviewId: r.review_id,
-    rating: r.rating,
-    content: r.content,
-    createdAt: r.created_at,
-    nickname: r.users?.nickname ?? '(알 수 없음)',
-    profileImage: r.users?.profile_image ?? null,
-    images: (r.review_images ?? []).map((img) => img.url),
-  }));
+  const rows = (data ?? []) as unknown as RawRow[];
+  const userIds = [...new Set(rows.map((r) => r.user_id))];
 
-  return NextResponse.json({ reviews, totalCount: count ?? 0 });
+  const { data: usersData, error: usersError } = userIds.length
+    ? await supabaseAdmin
+        .from('users')
+        .select('user_id, nickname, email, profile_image, auth_id')
+        .in('user_id', userIds)
+    : { data: [], error: null };
+
+  if (usersError) {
+    console.error('[GET /products/:id/reviews] users query', JSON.stringify(usersError));
+  }
+
+  type UserRow = {
+    user_id: number;
+    nickname: string | null;
+    email: string;
+    profile_image: string | null;
+    auth_id: string | null;
+  };
+  const userMap = new Map(
+    (usersData as UserRow[] ?? []).map((u) => [u.user_id, u]),
+  );
+
+  const reviews = rows.map((r) => {
+    const u = userMap.get(r.user_id);
+    return {
+      reviewId: r.review_id,
+      userId: r.user_id,
+      authId: u?.auth_id ?? '',
+      rating: r.rating,
+      content: r.content,
+      createdAt: r.created_at,
+      nickname: u?.nickname ?? u?.email?.split('@')[0] ?? '(알 수 없음)',
+      profileImage: u?.profile_image ?? null,
+      images: (r.review_images ?? []).map((img) => img.url),
+    };
+  });
+
+  const breakdown: Record<1 | 2 | 3 | 4 | 5, number> =
+    { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let ratingSum = 0;
+  for (const r of ratingRows ?? []) {
+    const star = r.rating as 1 | 2 | 3 | 4 | 5;
+    if (star >= 1 && star <= 5) { breakdown[star]++; ratingSum += r.rating; }
+  }
+  const totalCount = count ?? 0;
+  const allCount = ratingRows?.length ?? 0;
+  const averageRating =
+    allCount > 0
+      ? Math.round((ratingSum / allCount) * 10) / 10
+      : 0;
+
+  return NextResponse.json({
+    reviews,
+    totalCount,
+    averageRating,
+    ratingBreakdown: breakdown,
+  });
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ productId: string }> },
-) {
+export async function POST(req: NextRequest, { params }: Params) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  const { productId: productIdStr } = await params;
-  const productId = parseInt(productIdStr);
-  if (isNaN(productId)) return NextResponse.json({ error: '잘못된 productId' }, { status: 400 });
+  const { productId: raw } = await params;
+  const productId = parseInt(raw);
+  if (isNaN(productId))
+    return NextResponse.json(
+      { error: '잘못된 productId' },
+      { status: 400 },
+    );
 
   const body = await req.json();
   const orderItemId = Number(body.orderItemId);
   const rating = Number(body.rating);
   const content = String(body.content ?? '').trim();
   const rawImages: unknown[] = Array.isArray(body.images) ? body.images : [];
-  const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`;
+  const storageBase =
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`;
 
   if (!Number.isInteger(orderItemId) || orderItemId <= 0)
-    return NextResponse.json({ error: 'orderItemId가 필요합니다' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'orderItemId가 필요합니다' },
+      { status: 400 },
+    );
   if (!Number.isInteger(rating) || rating < 1 || rating > 5)
-    return NextResponse.json({ error: '평점은 1~5 정수여야 합니다' }, { status: 400 });
-  if (!content) return NextResponse.json({ error: '리뷰 내용을 입력해주세요' }, { status: 400 });
+    return NextResponse.json(
+      { error: '평점은 1~5 정수여야 합니다' },
+      { status: 400 },
+    );
+  if (!content)
+    return NextResponse.json(
+      { error: '리뷰 내용을 입력해주세요' },
+      { status: 400 },
+    );
   if (rawImages.length > 5)
-    return NextResponse.json({ error: '이미지는 최대 5개까지 첨부할 수 있습니다' }, { status: 400 });
-  if (!rawImages.every((u) => typeof u === 'string' && u.startsWith(storageBase)))
-    return NextResponse.json({ error: '유효하지 않은 이미지 URL입니다' }, { status: 400 });
+    return NextResponse.json(
+      { error: '이미지는 최대 5개까지 첨부할 수 있습니다' },
+      { status: 400 },
+    );
+  if (
+    !rawImages.every(
+      (u) => typeof u === 'string' && u.startsWith(storageBase),
+    )
+  )
+    return NextResponse.json(
+      { error: '유효하지 않은 이미지 URL입니다' },
+      { status: 400 },
+    );
 
   const images = rawImages as string[];
 
-  // 구매 확인 및 포인트 계산 기준 조회
   const { data: orderItem, error: itemError } = await supabaseAdmin
     .from('order_items')
     .select('item_id, product_id, quantity, unit_price, orders!inner(user_id)')
@@ -96,7 +176,10 @@ export async function POST(
     .single();
 
   if (itemError || !orderItem)
-    return NextResponse.json({ error: '해당 주문 상품을 찾을 수 없습니다' }, { status: 404 });
+    return NextResponse.json(
+      { error: '해당 주문 상품을 찾을 수 없습니다' },
+      { status: 404 },
+    );
 
   type RawOrderItem = {
     item_id: number;
@@ -105,13 +188,16 @@ export async function POST(
     unit_price: number;
     orders: { user_id: number } | { user_id: number }[];
   };
-  const raw = orderItem as unknown as RawOrderItem;
-  const orderUserId = Array.isArray(raw.orders) ? raw.orders[0]?.user_id : raw.orders?.user_id;
+  const rawItem = orderItem as unknown as RawOrderItem;
+  const orderUserId = Array.isArray(rawItem.orders)
+    ? rawItem.orders[0]?.user_id
+    : rawItem.orders?.user_id;
 
   if (orderUserId !== authed.userId)
-    return NextResponse.json({ error: '본인 주문에만 리뷰를 작성할 수 있습니다' }, { status: 403 });
-
-  const pointAmount = PRODUCT_REVIEW_POINT;
+    return NextResponse.json(
+      { error: '본인 주문에만 리뷰를 작성할 수 있습니다' },
+      { status: 403 },
+    );
 
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from('reviews')
@@ -127,27 +213,47 @@ export async function POST(
 
   if (insertError) {
     if (insertError.code === '23505')
-      return NextResponse.json({ error: '이미 리뷰를 작성했습니다' }, { status: 409 });
-    console.error('[POST /api/products/:id/reviews] insert', JSON.stringify(insertError));
+      return NextResponse.json(
+        { error: '이미 리뷰를 작성했습니다' },
+        { status: 409 },
+      );
+    console.error(
+      '[POST /products/:id/reviews] insert',
+      JSON.stringify(insertError),
+    );
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
   if (images.length > 0) {
     await supabaseAdmin
       .from('review_images')
-      .insert(images.map((url) => ({ review_id: inserted.review_id, url })));
+      .insert(
+        images.map((url) => ({ review_id: inserted.review_id, url })),
+      );
   }
 
-  const { error: pointError } = await supabaseAdmin.rpc('award_review_point', {
-    p_user_id: authed.userId,
-    p_amount: pointAmount,
-    p_description: '상품 리뷰 작성',
-  });
+  const { error: pointError } = await supabaseAdmin.rpc(
+    'award_review_point',
+    {
+      p_user_id: authed.userId,
+      p_amount: PRODUCT_REVIEW_POINT,
+      p_description: '상품 리뷰 작성',
+    },
+  );
 
   if (pointError) {
-    console.error('[POST /api/products/:id/reviews] point award failed', pointError);
-    return NextResponse.json({ reviewId: inserted.review_id, pointAwarded: 0 }, { status: 201 });
+    console.error(
+      '[POST /products/:id/reviews] point award failed',
+      pointError,
+    );
+    return NextResponse.json(
+      { reviewId: inserted.review_id, pointAwarded: 0 },
+      { status: 201 },
+    );
   }
 
-  return NextResponse.json({ reviewId: inserted.review_id, pointAwarded: pointAmount }, { status: 201 });
+  return NextResponse.json(
+    { reviewId: inserted.review_id, pointAwarded: PRODUCT_REVIEW_POINT },
+    { status: 201 },
+  );
 }

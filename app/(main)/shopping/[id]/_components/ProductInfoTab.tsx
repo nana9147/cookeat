@@ -1,23 +1,25 @@
-import { Review } from '@/components/common/ReviewSection';
 import ProductDescription from './ProductDescription';
 import RelatedRecipes from './RelatedRecipes';
-import { InfoTabReviewPreview } from './InfoTabReviewPreview';
+import ReviewSectionClient from '@/components/common/ReviewSectionClient';
 
 interface Props {
+  productId: number;
+  productName: string;
   title: string;
   description: string;
   imageUrl?: string;
   features: { title: string; desc: string }[];
-  reviews: Review[];
-  reviewCount: number;
-  averageRating: number;
-  ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number>;
   onViewAllReviews: () => void;
 }
 
 export function ProductInfoTab({
-  title, description, imageUrl, features,
-  reviews, reviewCount, averageRating, ratingBreakdown, onViewAllReviews,
+  productId,
+  productName,
+  title,
+  description,
+  imageUrl,
+  features,
+  onViewAllReviews,
 }: Props) {
   return (
     <>
@@ -28,13 +30,15 @@ export function ProductInfoTab({
         features={features}
       />
       <RelatedRecipes />
-      <InfoTabReviewPreview
-        reviews={reviews}
-        reviewCount={reviewCount}
-        averageRating={averageRating}
-        ratingBreakdown={ratingBreakdown}
-        onViewAll={onViewAllReviews}
-      />
+      <div className="mt-10">
+        <ReviewSectionClient
+          type="product"
+          targetId={productId}
+          targetName={productName}
+          compact
+          onViewAll={onViewAllReviews}
+        />
+      </div>
     </>
   );
 }

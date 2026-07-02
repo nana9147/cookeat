@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
       .select(
         `order_id, total_amount, shipping_fee, used_point, coupon_discount, final_amount,
          payment_method, status, recipient, phone, address, address_detail, shipping_request, created_at,
-         order_items(item_id, quantity, unit_price, products(name, image))`
+         order_items(item_id, product_id, quantity, unit_price, products(name, image))`
       )
       .eq('order_id', orderId)
       .eq('user_id', authed.userId)
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
   }
 
   type Item = {
-    item_id: number; quantity: number; unit_price: number;
+    item_id: number; product_id: number; quantity: number; unit_price: number;
     products: { name: string; image: string | null } | null;
   };
   type Row = {
@@ -62,6 +62,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
     },
     items: (r.order_items ?? []).map((i) => ({
       itemId: i.item_id,
+      productId: i.product_id,
       name: i.products?.name ?? '',
       image: i.products?.image ?? null,
       quantity: i.quantity,
