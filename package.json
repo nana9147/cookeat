@@ -48,6 +48,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "eslint-config-prettier": "^10.1.8",
+    "portfolio-shot": "^1.0.0",
     "prettier": "^3.8.3",
     "tailwindcss": "^4",
     "typescript": "^5"
