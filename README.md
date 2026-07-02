@@ -32,15 +32,15 @@
 
 ### 홈
 
-> 스크린샷 추가 예정
+![홈 화면](public/screenshots/home.webp)
 
 ### 레시피 목록
 
-> 스크린샷 추가 예정
+![레시피 목록 화면](public/screenshots/recipes.webp)
 
 ### 재료 구매 목록
 
-> 스크린샷 추가 예정
+![재료 구매 목록 화면](public/screenshots/shopping.webp)
 
 ---
 
