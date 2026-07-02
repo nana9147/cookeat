@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/serverAuth';
+import { getActiveUserIds, isIssueFailure, issueCouponToUsers } from '@/lib/coupons';
 
 export async function GET(req: NextRequest) {
   const authed = await requireAdmin(req);
@@ -102,6 +103,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  let activeUserIds: number[];
+  try {
+    activeUserIds = await getActiveUserIds();
+  } catch (usersError) {
+    console.error('[POST /admin/coupons] users fetch:', usersError);
+    await supabaseAdmin.from('coupons').delete().eq('coupon_id', data.coupon_id);
+    return NextResponse.json({ error: '유저 목록을 불러오지 못했습니다.' }, { status: 500 });
+  }
+
+  const issueResult = await issueCouponToUsers(data.coupon_id, activeUserIds, data.max_usage_count);
+  if (isIssueFailure(issueResult)) {
+    console.error('[POST /admin/coupons] issue:', issueResult.error);
+    await supabaseAdmin.from('coupons').delete().eq('coupon_id', data.coupon_id);
+    return NextResponse.json(
+      { error: `쿠폰 지급에 실패하여 생성이 취소되었습니다. (${issueResult.error})` },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json({
     couponId: data.coupon_id,
     code: data.code,
@@ -109,7 +129,7 @@ export async function POST(req: NextRequest) {
     discountValue: data.discount_value,
     minOrderAmount: data.min_order_amount,
     maxUsageCount: data.max_usage_count,
-    issuedCount: 0,
+    issuedCount: issueResult.issuedCount,
     usedCount: 0,
     expiredAt: data.expired_at,
     createdAt: data.created_at,

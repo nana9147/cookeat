@@ -105,14 +105,9 @@ export default function CouponsPage() {
         expiredAt: new Date(form.expiredAt).toISOString(),
       });
 
-      const { data: issueResult } = await api.post<{ issuedCount: number }>(
-        `/admin/coupons/${coupon.couponId}/issue`,
-        { issueAll: true }
-      );
-
-      setCoupons((prev) => [{ ...coupon, issuedCount: issueResult.issuedCount }, ...prev]);
+      setCoupons((prev) => [coupon, ...prev]);
       setShowCreate(false);
-      alert(`쿠폰이 생성되어 ${issueResult.issuedCount}명에게 지급되었습니다.`);
+      alert(`쿠폰이 생성되어 ${coupon.issuedCount}명에게 지급되었습니다.`);
     } catch (e) {
       const msg =
         (e as { response?: { data?: { error?: string } } })?.response?.data?.error ??
