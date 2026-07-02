@@ -31,10 +31,16 @@ export default function OrderProductSection({ products, refundTotal }: OrderProd
                 수량
               </th>
               <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-32">
-                단가
+                상품금액
+              </th>
+              <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-28">
+                상품할인
+              </th>
+              <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-28">
+                쿠폰할인
               </th>
               <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-32">
-                합계
+                결제금액
               </th>
               <th className="px-5 py-3.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide w-28">
                 상태
@@ -70,7 +76,21 @@ export default function OrderProductSection({ products, refundTotal }: OrderProd
                   </td>
                   <td className="px-5 py-4 text-center text-sm text-gray-600">{p.quantity}개</td>
                   <td className="px-5 py-4 text-center text-sm text-gray-600">
-                    {p.unitPrice.toLocaleString()}원
+                    {(p.originalUnitPrice * p.quantity).toLocaleString()}원
+                  </td>
+                  <td className="px-5 py-4 text-center text-sm text-gray-600">
+                    {p.productDiscount > 0 ? (
+                      <span className="text-red-500">- {p.productDiscount.toLocaleString()}원</span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-center text-sm text-gray-600">
+                    {p.couponDiscount > 0 ? (
+                      <span className="text-red-500">- {p.couponDiscount.toLocaleString()}원</span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-5 py-4 text-center text-sm font-bold text-gray-900">
                     {p.itemTotalPrice.toLocaleString()}원

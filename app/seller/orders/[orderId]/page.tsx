@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { RotateCcw } from 'lucide-react';
 import BackButton from '../../components/BackButton';
 import { OrderDetail } from '@/types/seller/order';
 import OrderDetailHeader from '../../components/OrderDetail/OrderDetailHeader';
@@ -81,9 +83,11 @@ export default function OrderDetailPage() {
     );
   }
 
-  const refundTotal = order.products
-    .filter((p) => p.itemStatus !== null && CLAIM_STATUSES.includes(p.itemStatus))
-    .reduce((sum, p) => sum + p.itemNetAmount, 0);
+  const claimProducts = order.products.filter(
+    (p) => p.itemStatus !== null && CLAIM_STATUSES.includes(p.itemStatus)
+  );
+  const refundTotal = claimProducts.reduce((sum, p) => sum + p.itemTotalPrice, 0);
+  const hasActiveClaim = claimProducts.length > 0;
 
   return (
     <div className="bg-background p-8">
@@ -93,9 +97,22 @@ export default function OrderDetailPage() {
       </div>
       <OrderDetailHeader info={order.info} paymentMethod={order.payment.paymentMethod} />
       <div className="flex flex-col gap-6">
+        {hasActiveClaim && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-center justify-between">
+            <p className="text-sm text-amber-800 flex items-center gap-1.5">
+              <RotateCcw className="w-4 h-4" />이 주문에 처리 중인 취소·환불 요청이 있어요.
+            </p>
+            <Link
+              href={`/seller/orders/cancel-refund?keyword=${order.info.id}`}
+              className="text-sm font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900"
+            >
+              취소·환불 관리에서 보기
+            </Link>
+          </div>
+        )}
         <OrderCustomerSection customerName={order.delivery.name} delivery={order.delivery} />
         <OrderProductSection products={order.products} refundTotal={refundTotal} />
-        <OrderPaymentSection payment={order.payment} refundTotal={refundTotal} />
+        <OrderPaymentSection payment={order.payment} />
       </div>
     </div>
   );
