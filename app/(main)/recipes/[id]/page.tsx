@@ -7,7 +7,7 @@ import RecipeMetaRow from './_components/RecipeMetaRow';
 import RecipeAuthor from './_components/RecipeAuthor';
 import RecipeIngredients from './_components/RecipeIngredients';
 import RecipeSteps from './_components/RecipeSteps';
-import ReviewSection from '@/components/common/ReviewSection';
+import ReviewSectionClient from '@/components/common/ReviewSectionClient';
 import RecipeBookmarkButton from './_components/RecipeBookmarkButton';
 
 interface Props {
@@ -48,12 +48,11 @@ export default async function RecipeDetailPage({ params }: Props) {
       <RecipeIngredients ingredients={recipe.recipeIngredients} />
       <RecipeSteps steps={recipe.steps} />
 
-      <div className="mt-2">
-        <ReviewSection
-          averageRating={recipe.rating}
-          totalCount={recipe.reviewCount}
-          ratingBreakdown={recipe.ratingBreakdown}
-          reviews={[]}
+      <div className="mt-8">
+        <ReviewSectionClient
+          type="recipe"
+          targetId={idNum}
+          targetName={recipe.title}
         />
       </div>
     </div>

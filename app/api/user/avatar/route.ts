@@ -22,10 +22,17 @@ export async function POST(req: NextRequest) {
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })
 
   const { data: { publicUrl } } = supabaseAdmin.storage.from('avatars').getPublicUrl(path)
+  const urlWithBuster = `${publicUrl}?t=${Date.now()}`
 
-  await supabaseAdmin.auth.admin.updateUserById(user.id, {
-    user_metadata: { custom_avatar_url: publicUrl },
-  })
+  await Promise.all([
+    supabaseAdmin.auth.admin.updateUserById(user.id, {
+      user_metadata: { custom_avatar_url: urlWithBuster },
+    }),
+    supabaseAdmin
+      .from('users')
+      .update({ profile_image: urlWithBuster })
+      .eq('auth_id', user.id),
+  ])
 
-  return NextResponse.json({ url: publicUrl })
+  return NextResponse.json({ url: urlWithBuster })
 }

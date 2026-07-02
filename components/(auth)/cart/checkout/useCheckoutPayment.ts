@@ -50,7 +50,7 @@ export function useCheckoutPayment(
   cartItems: CartStoreItem[],
   deliveryInfo: DeliveryInfo | null,
   usedPoint: number = 0,
-  couponCode: string | null = null
+  userCouponId: number | null = null
 ) {
   return async () => {
     if (cartItems.length === 0) {
@@ -66,14 +66,14 @@ export function useCheckoutPayment(
         address: deliveryInfo?.address ?? '',
         addressDetail: deliveryInfo?.addressDetail ?? null,
         usePoint: usedPoint,
-        ...(couponCode ? { couponCode } : {}),
+        userCouponId,
       });
       const { orderId, finalAmount } = order;
 
       if (paymentMethod === 'kakao') {
         const { data } = await api.post<{ tid: string; redirectUrl: string }>(
           '/payment/kakao/ready',
-          { orderId, itemName: 'Cookeat 주문', quantity: 1, totalAmount: finalAmount }
+          { orderId, itemName: 'Cookeat 주문', quantity: 1 }
         );
         if (!isValidKakaoRedirectUrl(data.redirectUrl)) {
           toast.error('유효하지 않은 결제 URL입니다.');

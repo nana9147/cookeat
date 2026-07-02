@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import type { AppliedCoupon } from './DiscountSection';
 
 interface CouponItem {
+  userCouponId: number;
   couponId: number;
   code: string;
   discountType: string;
@@ -41,7 +42,7 @@ export default function CouponModal({ open, orderTotal, onClose, onSelect }: Cou
     setLoading(true);
     setError(null);
     api
-      .get<{ coupons: CouponItem[] }>('/coupons', { params: { amount: orderTotal } })
+      .get<{ coupons: CouponItem[] }>('/coupons/mine', { params: { amount: orderTotal } })
       .then(({ data }) => setCoupons(data.coupons))
       .catch(() => setError('쿠폰 목록을 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
@@ -49,6 +50,7 @@ export default function CouponModal({ open, orderTotal, onClose, onSelect }: Cou
 
   function handleSelect(c: CouponItem) {
     onSelect({
+      userCouponId: c.userCouponId,
       couponId: c.couponId,
       code: c.code,
       discountType: c.discountType,
@@ -78,7 +80,7 @@ export default function CouponModal({ open, orderTotal, onClose, onSelect }: Cou
         ) : (
           <ul className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto py-1 pr-1">
             {coupons.map((c) => (
-              <li key={c.couponId}>
+              <li key={c.userCouponId}>
                 <button
                   type="button"
                   disabled={!c.usable}

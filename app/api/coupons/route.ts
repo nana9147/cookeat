@@ -25,15 +25,13 @@ export async function GET(req: NextRequest) {
   const couponIds = validCoupons.map((c) => c.coupon_id);
   const usedCouponIds = new Set<number>();
   if (couponIds.length > 0) {
-    const { data: usedOrders } = await supabaseAdmin
-      .from('orders')
+    const { data: usedUserCoupons } = await supabaseAdmin
+      .from('user_coupons')
       .select('coupon_id')
       .eq('user_id', authed.userId)
-      .neq('status', '취소')
+      .not('used_at', 'is', null)
       .in('coupon_id', couponIds);
-    (usedOrders ?? []).forEach((o) => {
-      if (o.coupon_id !== null) usedCouponIds.add(o.coupon_id as number);
-    });
+    (usedUserCoupons ?? []).forEach((uc) => usedCouponIds.add(uc.coupon_id as number));
   }
 
   const coupons = validCoupons

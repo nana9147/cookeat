@@ -47,7 +47,7 @@ export async function getSellerOrderDetail(sellerId: number, orderId: string) {
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
     .select(
-      'order_id, total_amount,shipping_fee,used_point, coupon_discount,final_amount,payment_method, status,  recipient, phone, address, address_detail, shipping_request,created_at, user_coupons(coupons(code,discount_type,discount_value))'
+      'order_id, created_at, status, recipient, phone, address, address_detail, shipping_request, total_amount, shipping_fee, coupon_discount, used_point, final_amount, payment_method, user_coupons(coupons(code, discount_type, discount_value))'
     )
     .eq('order_id', orderId)
     .single();

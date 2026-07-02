@@ -27,6 +27,7 @@ export default function AuthCallbackPage() {
       const u = session.user;
       setAuth(session.access_token, session.refresh_token, {
         userId: u.id,
+        dbUserId: 0,
         email: u.email ?? '',
         nickname:
           u.user_metadata?.full_name ?? u.user_metadata?.name ?? u.email?.split('@')[0] ?? '',

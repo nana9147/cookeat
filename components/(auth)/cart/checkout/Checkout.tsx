@@ -53,7 +53,7 @@ export default function Checkout() {
     availableStoreItems,
     deliveryInfo,
     usedPoint,
-    appliedCoupon?.code ?? null
+    appliedCoupon?.userCouponId ?? null
   );
   const handlePay = async () => {
     if (paying) return;
