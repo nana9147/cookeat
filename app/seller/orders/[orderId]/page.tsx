@@ -11,6 +11,8 @@ import OrderPaymentSection from '../../components/OrderDetail/OrderPaymentSectio
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
+const CLAIM_STATUSES = ['환불요청', '환불진행중', '환불', '취소요청', '취소'];
+
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.orderId as string;
@@ -80,8 +82,8 @@ export default function OrderDetailPage() {
   }
 
   const refundTotal = order.products
-    .filter((p) => p.itemStatus === '환불요청' || p.itemStatus === '환불')
-    .reduce((sum, p) => sum + p.itemTotalPrice, 0);
+    .filter((p) => p.itemStatus !== null && CLAIM_STATUSES.includes(p.itemStatus))
+    .reduce((sum, p) => sum + p.itemNetAmount, 0);
 
   return (
     <div className="bg-background p-8">

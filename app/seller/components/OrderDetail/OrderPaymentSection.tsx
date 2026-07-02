@@ -96,6 +96,28 @@ export default function OrderPaymentSection({
                 {finalAfterRefund.toLocaleString()}원
               </span>
             </div>
+            {payment.refundedPointAmount > 0 && (
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-sm text-blue-600 flex items-center gap-1.5">
+                  <Coins className="w-3.5 h-3.5" />
+                  환급된 포인트
+                </span>
+                <span className="text-sm text-blue-600">
+                  + {payment.refundedPointAmount.toLocaleString()}p
+                </span>
+              </div>
+            )}
+            {payment.couponRestored && (
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-sm text-gray-500 flex items-center gap-1.5">
+                  <Ticket className="w-3.5 h-3.5" />
+                  쿠폰 복원
+                </span>
+                <span className="text-xs text-primary bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                  재사용 가능
+                </span>
+              </div>
+            )}
           </>
         )}
       </CardContent>

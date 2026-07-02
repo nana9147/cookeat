@@ -1,18 +1,15 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { OrderProduct } from '@/types/seller/order';
+import { OrderProductSectionProps } from '@/types/seller/order';
 import { ShoppingBag, RotateCcw } from 'lucide-react';
 import StatusBadge from '../StatusBadge';
 
-interface OrderProductSectionProps {
-  products: OrderProduct[];
-  refundTotal: number;
-}
+const CLAIM_STATUSES = ['환불요청', '환불진행중', '환불', '취소요청', '취소'];
 
 export default function OrderProductSection({ products, refundTotal }: OrderProductSectionProps) {
   const refundingProducts = products.filter(
-    (p) => p.itemStatus === '환불요청' || p.itemStatus === '환불'
+    (p) => p.itemStatus !== null && CLAIM_STATUSES.includes(p.itemStatus)
   );
 
   return (
@@ -46,7 +43,7 @@ export default function OrderProductSection({ products, refundTotal }: OrderProd
           </thead>
           <tbody>
             {products.map((p) => {
-              const isRefunding = p.itemStatus === '환불요청' || p.itemStatus === '환불';
+              const isRefunding = p.itemStatus !== null && CLAIM_STATUSES.includes(p.itemStatus);
 
               return (
                 <tr
