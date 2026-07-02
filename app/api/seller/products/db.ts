@@ -4,6 +4,9 @@ import type { BulkImportRow, CreateProductInput, ProductFilters } from '@/types/
 import { resolveProductStatus } from '@/lib/products';
 import { deleteSellerProduct } from './[productId]/db';
 import { calcRating } from '@/lib/utils';
+import { validateProductFields } from '@/lib/validators';
+
+const BULK_IMPORT_CHUNK_SIZE = 50;
 
 export async function getSellerProducts(sellerId: number, filters: ProductFilters) {
   const {
@@ -431,6 +434,7 @@ export async function bulkImportSellerProducts(sellerId: number, rows: BulkImpor
 
   let successCount = 0;
   const failures: { row: number; reason: string }[] = [];
+  const validRows: { row: number; payload: Record<string, unknown> }[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -470,29 +474,58 @@ export async function bulkImportSellerProducts(sellerId: number, rows: BulkImpor
       continue;
     }
 
-    const { error } = await supabaseAdmin.from('products').insert({
-      seller_id: sellerId,
-      name: row.name,
-      brand: row.brand || null,
-      origin: row.origin,
-      category_id: categoryId,
-      status: resolveProductStatus(row.status || '판매중', row.stock),
+    const status = row.status || '판매중';
+    const discountType = row.discountType || 'none';
+    const fieldError = validateProductFields({
+      status,
       price: row.price,
       stock: row.stock,
-      description: row.description || null,
-      shipping_template_id: shippingTemplateId,
-      return_policy_template_id: returnPolicyTemplateId,
-      discount_type: row.discountType || 'none',
-      discount_value: row.discountValue ?? null,
-      image: row.image,
+      discountType,
+      discountValue: row.discountValue ?? null,
     });
-
-    if (error) {
-      failures.push({ row: i + 1, reason: error.message });
+    if (fieldError) {
+      failures.push({ row: i + 1, reason: fieldError });
       continue;
     }
 
-    successCount += 1;
+    validRows.push({
+      row: i + 1,
+      payload: {
+        seller_id: sellerId,
+        name: row.name,
+        brand: row.brand || null,
+        origin: row.origin,
+        category_id: categoryId,
+        status: resolveProductStatus(status, row.stock),
+        price: row.price,
+        stock: row.stock,
+        description: row.description || null,
+        shipping_template_id: shippingTemplateId,
+        return_policy_template_id: returnPolicyTemplateId,
+        discount_type: discountType,
+        discount_value: row.discountValue ?? null,
+        image: row.image,
+      },
+    });
+  }
+
+  for (let start = 0; start < validRows.length; start += BULK_IMPORT_CHUNK_SIZE) {
+    const chunk = validRows.slice(start, start + BULK_IMPORT_CHUNK_SIZE);
+    const { error } = await supabaseAdmin.from('products').insert(chunk.map((c) => c.payload));
+
+    if (!error) {
+      successCount += chunk.length;
+      continue;
+    }
+
+    for (const c of chunk) {
+      const { error: rowError } = await supabaseAdmin.from('products').insert(c.payload);
+      if (rowError) {
+        failures.push({ row: c.row, reason: rowError.message });
+      } else {
+        successCount += 1;
+      }
+    }
   }
 
   return { successCount, failures };

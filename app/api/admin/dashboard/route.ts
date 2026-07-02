@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
       .from('orders')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', todayStr)
-      .eq('status', '취소'),
+      .in('status', ['취소', '환불']),
 
     supabaseAdmin
       .from('users')
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
 
   const todayRevenue =
     todayOrders
-      ?.filter((o) => o.status !== '취소')
+      ?.filter((o) => o.status !== '취소' && o.status !== '환불')
       .reduce((sum, o) => sum + (o.final_amount ?? 0), 0) ?? 0;
 
   const popularProducts = (popularProductsResult.data ?? []).map((p, i) => ({

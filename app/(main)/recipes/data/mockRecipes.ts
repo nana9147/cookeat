@@ -1,5 +1,3 @@
-import { Review } from '@/components/common/ReviewSection';
-
 export type RecipeCategory =
   | '전체'
   | '한식'
@@ -50,7 +48,6 @@ export interface RecipeDetail extends Recipe {
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
   ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number>;
-  reviews: Review[];
 }
 
 export const MOCK_RECIPES: Recipe[] = [
@@ -98,9 +95,5 @@ export const MOCK_RECIPE_DETAILS: Record<string, RecipeDetail> = {
       { order: 5, description: '삶은 면을 넣어 소스와 잘 버무리고, 면수로 농도를 조절합니다. 파마산 치즈를 뿌려 완성하세요.' },
     ],
     ratingBreakdown: { 5: 100, 4: 21, 3: 5, 2: 3, 1: 1 },
-    reviews: [
-      { id: 'r1', authorName: '연인', rating: 5, content: '정말 맛있었어요! 크림소스가 너무 부드럽고 버섯 향이 가득해서 레스토랑 맛이 났어요.', createdAt: '2026.05.14' },
-      { id: 'r2', authorName: '김종수', rating: 4, content: '생크림 대신 우유로 대체해봤는데도 맛있었습니다. 간을 잘 맞추는 게 포인트인 것 같아요.', createdAt: '2026.05.07' },
-    ],
   },
 };

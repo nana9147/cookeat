@@ -24,7 +24,7 @@ import {
 import api from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
 import { useDebounce } from '@/hooks/useDebounce';
-import { getPageNumbers } from '@/lib/utils';
+import { getPageNumbers, formatDateTime } from '@/lib/utils';
 import { formatWon, formatDate } from '@/lib/format';
 import type { AdminOrder, AdminOrderStatus } from '@/types/admin';
 
@@ -225,7 +225,7 @@ export default function OrdersPage() {
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">주문일시</span>
-                  <span>{selectedOrder.createdAt}</span>
+                  <span>{formatDateTime(selectedOrder.createdAt)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">수령인</span>

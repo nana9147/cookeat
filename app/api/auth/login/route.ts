@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabaseAdmin
     .from('users')
-    .select('role')
+    .select('role, user_id')
     .eq('auth_id', data.user.id)
     .maybeSingle();
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   })
 
   const response = NextResponse.json({
-    user: { ...data.user, _role: role },
+    user: { ...data.user, _role: role, _dbUserId: profile?.user_id ?? 0 },
     session: data.session,
   });
 

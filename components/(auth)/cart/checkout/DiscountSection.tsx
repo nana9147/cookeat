@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import CouponModal from './CouponModal';
 
 export interface AppliedCoupon {
+  userCouponId: number;
   couponId: number;
   code: string;
   discountType: string;

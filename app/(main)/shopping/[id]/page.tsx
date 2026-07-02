@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
-import { MOCK_REVIEWS, MOCK_RATING_BREAKDOWN } from '../data/mockReviews';
 import ProductImageGallery from './_components/ProductImageGallery';
 import ProductTabs from './_components/ProductTabs';
 import ProductPurchasePanel from '@/components/product/ProductPurchasePanel';
@@ -60,6 +59,7 @@ export default async function ProductDetailPage({ params }: Props) {
       </div>
 
       <ProductTabs
+        productId={product.productId}
         descriptionTitle={`${product.seller || '판매자'}에서 직접 보내는 ${product.name}`}
         description={
           product.description ||
@@ -70,10 +70,7 @@ export default async function ProductDetailPage({ params }: Props) {
           { title: '산지직송', desc: '중간 유통 없이 산지에서 바로 보내드립니다.' },
           { title: '친환경 배송', desc: '친환경 포장재를 사용하여 배송합니다.' },
         ]}
-        reviewCount={product.reviewCount}
-        averageRating={product.rating}
-        ratingBreakdown={MOCK_RATING_BREAKDOWN}
-        reviews={MOCK_REVIEWS}
+        productName={product.name}
       />
     </div>
   );

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from('user_coupons')
     .select(
-      'id, issued_at, coupons(coupon_id, discount_type, discount_value, min_order_amount, expired_at)'
+      'id, issued_at, coupons(coupon_id, code, discount_type, discount_value, min_order_amount, expired_at)'
     )
     .eq('user_id', authed.userId)
     .is('used_at', null);
@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
     .map((uc) => {
       const c = uc.coupons as unknown as {
         coupon_id: number;
+        code: string;
         discount_type: 'rate' | 'fixed';
         discount_value: number;
         min_order_amount: number | null;
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
       return {
         userCouponId: uc.id,
         couponId: c.coupon_id,
+        code: c.code,
         discountType: c.discount_type,
         discountValue: c.discount_value,
         minOrderAmount: c.min_order_amount,

@@ -1,7 +1,7 @@
-import { Review, ReviewCard, RatingSummary } from '@/components/common/ReviewSection';
+import { ReviewCard, RatingSummary, type ApiReview } from '@/components/common/ReviewSection';
 
 interface Props {
-  reviews: Review[];
+  reviews: ApiReview[];
   reviewCount: number;
   averageRating: number;
   ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number>;
@@ -37,7 +37,7 @@ export function InfoTabReviewPreview({
       </div>
       <ul className="flex flex-col gap-3">
         {reviews.slice(0, 2).map((review) => (
-          <li key={review.id}>
+          <li key={review.reviewId}>
             <ReviewCard review={review} />
           </li>
         ))}

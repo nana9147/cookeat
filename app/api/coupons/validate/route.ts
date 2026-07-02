@@ -36,11 +36,11 @@ export async function GET(req: NextRequest) {
   }
 
   const { count } = await supabaseAdmin
-    .from('orders')
-    .select('order_id', { count: 'exact', head: true })
+    .from('user_coupons')
+    .select('id', { count: 'exact', head: true })
     .eq('user_id', authed.userId)
     .eq('coupon_id', coupon.coupon_id)
-    .neq('status', '취소');
+    .not('used_at', 'is', null);
 
   if (count && count > 0) {
     return NextResponse.json({ error: '이미 사용한 쿠폰입니다.' }, { status: 400 });

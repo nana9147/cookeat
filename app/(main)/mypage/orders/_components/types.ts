@@ -44,6 +44,7 @@ export type OrderDetail = {
   };
   items: {
     itemId: number;
+    productId: number;
     name: string;
     image: string | null;
     quantity: number;

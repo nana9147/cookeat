@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/serverAuth';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const CID = process.env.KAKAO_CID ?? 'TC0ONETIME';
 const SECRET_KEY = process.env.KAKAO_SECRET_KEY!;
@@ -9,13 +10,28 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  let body: { orderId: string; itemName: string; quantity: number; totalAmount: number };
+  let body: { orderId: string; itemName: string; quantity: number };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
   }
-  const { orderId, itemName, quantity, totalAmount } = body;
+  const { orderId, itemName, quantity } = body;
+
+  // 클라가 보낸 금액은 신뢰하지 않고, 서버가 주문을 다시 읽어 실제 결제 금액을 구한다
+  const { data: order, error } = await supabaseAdmin
+    .from('orders')
+    .select('final_amount, status, user_id')
+    .eq('order_id', orderId)
+    .single();
+
+  if (error || !order) return NextResponse.json({ error: '주문을 찾을 수 없습니다.' }, { status: 404 });
+  if (order.user_id !== authed.userId) return new NextResponse('Forbidden', { status: 403 });
+  if (order.status !== '결제전') {
+    return NextResponse.json({ error: '이미 처리된 주문입니다.' }, { status: 400 });
+  }
+
+  const totalAmount = order.final_amount;
 
   const res = await fetch('https://open-api.kakaopay.com/online/v1/payment/ready', {
     method: 'POST',

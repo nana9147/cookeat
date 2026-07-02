@@ -116,6 +116,7 @@ export async function getSellerOrderDetail(sellerId: number, orderId: string) {
       id: order.order_id,
       orderDate: order.created_at,
       status: order.status,
+      paymentMethod: order.payment_method,
     },
     products,
     payment: {
