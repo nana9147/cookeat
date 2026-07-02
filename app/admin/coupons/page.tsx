@@ -190,7 +190,7 @@ export default function CouponsPage() {
                       {coupon.discountType === 'rate' ? '%' : '원'}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {coupon.minOrderAmount
+                      {coupon.minOrderAmount !== null
                         ? `${coupon.minOrderAmount.toLocaleString()}원 이상`
                         : '제한없음'}
                     </TableCell>
