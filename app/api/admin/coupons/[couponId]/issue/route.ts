@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/serverAuth';
+import { getActiveUserIds, isIssueFailure, issueCouponToUsers } from '@/lib/coupons';
 
 export async function POST(
   req: NextRequest,
@@ -22,17 +23,12 @@ export async function POST(
   let targetUserIds: number[];
 
   if (issueAll) {
-    const { data: users, error: usersError } = await supabaseAdmin
-      .from('users')
-      .select('user_id')
-      .eq('role', 'user')
-      .eq('status', 'active');
-
-    if (usersError) {
+    try {
+      targetUserIds = await getActiveUserIds();
+    } catch (usersError) {
       console.error('[POST /admin/coupons/[id]/issue] users fetch:', usersError);
-      return NextResponse.json({ error: usersError.message }, { status: 500 });
+      return NextResponse.json({ error: '유저 목록을 불러오지 못했습니다.' }, { status: 500 });
     }
-    targetUserIds = (users ?? []).map((u) => u.user_id);
   } else {
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return NextResponse.json({ error: '지급할 유저를 선택해주세요.' }, { status: 400 });
@@ -60,38 +56,10 @@ export async function POST(
     return NextResponse.json({ error: '만료된 쿠폰은 지급할 수 없습니다.' }, { status: 400 });
   }
 
-  if (coupon.max_usage_count !== null) {
-    const { count, error: countError } = await supabaseAdmin
-      .from('user_coupons')
-      .select('id', { count: 'exact', head: true })
-      .eq('coupon_id', id);
-
-    if (countError) {
-      console.error('[POST /admin/coupons/[id]/issue] count:', countError);
-      return NextResponse.json({ error: countError.message }, { status: 500 });
-    }
-    if ((count ?? 0) + targetUserIds.length > coupon.max_usage_count) {
-      return NextResponse.json(
-        { error: `최대 발급 수량(${coupon.max_usage_count}개)을 초과합니다.` },
-        { status: 400 }
-      );
-    }
+  const result = await issueCouponToUsers(id, targetUserIds, coupon.max_usage_count);
+  if (isIssueFailure(result)) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  const rows = targetUserIds.map((userId) => ({
-    user_id: userId,
-    coupon_id: id,
-  }));
-
-  const { data, error } = await supabaseAdmin
-    .from('user_coupons')
-    .upsert(rows, { onConflict: 'user_id,coupon_id', ignoreDuplicates: true })
-    .select('id');
-
-  if (error) {
-    console.error('[POST /admin/coupons/[id]/issue]', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ issuedCount: data?.length ?? 0 });
+  return NextResponse.json(result);
 }
