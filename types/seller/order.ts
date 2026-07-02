@@ -128,8 +128,9 @@ export interface OrderProduct {
   quantity: number;
   unitPrice: number;
   itemTotalPrice: number;
+  itemNetAmount: number;
   img: string;
-  itemStatus: '환불요청' | '환불' | null;
+  itemStatus: '환불요청' | '환불진행중' | '환불' | '취소요청' | '취소' | null;
   refundRequestReason: string | null;
   refundRejectReason: string | null;
 }
@@ -145,6 +146,8 @@ export interface PaymentInfo {
   pointAmount: number; // 사용 포인트
   finalAmount: number; // 최종 결제 금액
   paymentMethod: PaymentMethod; // 결제 수단
+  refundedPointAmount: number; // 취소/환불로 실제 환급된 포인트 합계
+  couponRestored: boolean; // 주문 전체가 닫혀서 쿠폰이 재사용 가능 상태로 복원됐는지
 }
 export const COUPON_DISCOUNT_TYPE_LABEL: Record<'rate' | 'fixed', string> = {
   rate: '%',
@@ -202,11 +205,13 @@ export interface RefundItem {
   productName: string;
   quantity: number;
   unitPrice: number;
-  itemStatus: '환불요청' | '환불' | '취소요청' | '취소';
+  itemStatus: OrderStatus;
   refundRequestReason: string | null;
   refundRejectReason: string | null;
   requestedAt: string;
   processedAt: string | null;
+  returnCourier: string | null;
+  returnTrackingNumber: string | null;
 }
 
 export interface OrderWithRefunds {
@@ -223,6 +228,8 @@ export interface RefundTableProps {
   orders: OrderWithRefunds[];
   onApprove: (refundId: number) => void;
   onReject: (refundId: number) => void;
+  onProcess: (refundId: number) => void;
+  onSaveTracking: (refundId: number, courier: string, trackingNumber: string) => void;
   selectedIds: number[];
   isAllSelectedMode: boolean;
   onSelect: (refundId: number, checked: boolean) => void;
@@ -273,4 +280,9 @@ export interface SellerOrderRpcRow {
   phone: string;
   nickname: string | null;
   total_count: number;
+}
+
+export interface OrderProductSectionProps {
+  products: OrderProduct[];
+  refundTotal: number;
 }

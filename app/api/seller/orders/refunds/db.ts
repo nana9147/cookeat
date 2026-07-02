@@ -7,7 +7,7 @@ export async function getOrdersWithRefundRequests(
   options: {
     page: number;
     limit: number;
-    tab?: '전체' | '취소요청' | '환불요청' | '처리완료';
+    tab?: '전체' | '취소요청' | '환불요청' | '환불진행중' | '처리완료';
     keyword?: string;
     startDate?: string;
     endDate?: string;
@@ -18,7 +18,7 @@ export async function getOrdersWithRefundRequests(
   let refundQuery = supabaseAdmin
     .from('refund_requests')
     .select(
-      'refund_id, item_id, status, request_reason, reject_reason, requested_at, processed_at, order_items!inner(order_id, product_id, quantity, unit_price, seller_id, products(name))'
+      'refund_id, item_id, status, request_reason, reject_reason, requested_at, processed_at, return_courier, return_tracking_number, order_items!inner(order_id, product_id, quantity, unit_price, seller_id, products(name))'
     )
     .eq('order_items.seller_id', sellerId);
 
@@ -47,6 +47,8 @@ export async function getOrdersWithRefundRequests(
     claims = claims.filter((r) => r.status === '취소요청' && !r.reject_reason);
   } else if (tab === '환불요청') {
     claims = claims.filter((r) => r.status === '환불요청' && !r.reject_reason);
+  } else if (tab === '환불진행중') {
+    claims = claims.filter((r) => r.status === '환불진행중');
   } else if (tab === '처리완료') {
     claims = claims.filter((r) => r.status === '취소' || r.status === '환불' || r.reject_reason);
   }
@@ -135,6 +137,8 @@ export async function getOrdersWithRefundRequests(
           refundRejectReason: r.reject_reason,
           requestedAt: r.requested_at,
           processedAt: r.processed_at,
+          returnCourier: r.return_courier,
+          returnTrackingNumber: r.return_tracking_number,
         };
       }),
     };
@@ -153,7 +157,7 @@ export async function getRefundCounts(sellerId: number) {
 
   const sellerItemIds = (sellerItemRows ?? []).map((r) => r.item_id);
 
-  const emptyCounts = { 전체: 0, 취소요청: 0, 환불요청: 0, 처리완료: 0 };
+  const emptyCounts = { 전체: 0, 취소요청: 0, 환불요청: 0, 환불진행중: 0, 처리완료: 0 };
 
   if (sellerItemIds.length === 0) {
     return emptyCounts;
@@ -183,6 +187,8 @@ export async function getRefundCounts(sellerId: number) {
       counts.취소요청 += 1;
     } else if (status === '환불요청') {
       counts.환불요청 += 1;
+    } else if (status === '환불진행중') {
+      counts.환불진행중 += 1;
     }
   }
 
@@ -229,76 +235,189 @@ export async function approveRefund(sellerId: number, refundId: number) {
     throw new Error('구매확정된 항목은 환불 처리할 수 없습니다.');
   }
 
-  const approvedStatus = refund.status === '취소요청' ? '취소' : '환불';
+  const { data: currentItem, error: currentItemError } = await supabaseAdmin
+    .from('order_items')
+    .select('shipping_status')
+    .eq('item_id', refund.item_id)
+    .single();
+
+  if (currentItemError) throw currentItemError;
+  const originalShippingStatus = currentItem.shipping_status;
+
+  const isCancel = refund.status === '취소요청';
+  const approvedStatus = isCancel ? '취소' : '환불진행중';
   const originalStatus = refund.status;
   const processedAt = new Date().toISOString();
 
-  // PG 결제 취소 (payment_key가 있는 경우만 — 없으면 수동 처리 필요)
-  const { payment_method, payment_key } = orderItem.orders;
-  if (payment_key) {
-    const cancelAmount = orderItem.unit_price * orderItem.quantity;
-    await cancelPayment(payment_method, payment_key, cancelAmount);
+  if (isCancel) {
+    const { payment_method, payment_key } = orderItem.orders;
+    if (payment_key) {
+      const cancelAmount = orderItem.unit_price * orderItem.quantity;
+      await cancelPayment(payment_method, payment_key, cancelAmount);
+    }
   }
 
   const { error: updateError } = await supabaseAdmin
     .from('refund_requests')
-    .update({ status: approvedStatus, processed_at: processedAt })
+    .update({ status: approvedStatus, processed_at: isCancel ? processedAt : null })
     .eq('refund_id', refundId);
 
   if (updateError) throw updateError;
 
   try {
+    const { error: shippingStatusError } = await supabaseAdmin
+      .from('order_items')
+      .update({ shipping_status: approvedStatus })
+      .eq('item_id', refund.item_id);
+
+    if (shippingStatusError) throw shippingStatusError;
+
     await logOrderItemStatusHistory(refund.item_id, approvedStatus);
-    await syncOrderStatusIfFullyRefunded(orderItem.order_id);
+    if (isCancel) {
+      await restoreOrderBenefitsForItem(orderItem.order_id, refund.item_id);
+    }
   } catch (err) {
     await supabaseAdmin
       .from('refund_requests')
       .update({ status: originalStatus, processed_at: null })
       .eq('refund_id', refundId);
+
+    await supabaseAdmin
+      .from('order_items')
+      .update({ shipping_status: originalShippingStatus })
+      .eq('item_id', refund.item_id);
+
     throw err;
   }
 
   return { status: approvedStatus };
 }
 
-async function syncOrderStatusIfFullyRefunded(orderId: string) {
-  const { data: allItems, error: allItemsError } = await supabaseAdmin
-    .from('order_items')
-    .select('item_id')
-    .eq('order_id', orderId);
-
-  if (allItemsError) throw allItemsError;
-
-  const allItemIds = (allItems ?? []).map((i) => i.item_id);
-  if (allItemIds.length === 0) return;
-
-  const { data: refunds, error: refundsError } = await supabaseAdmin
+export async function updateReturnTracking(
+  sellerId: number,
+  refundId: number,
+  input: { courier: string; trackingNumber: string }
+) {
+  const { data: refund, error: refundError } = await supabaseAdmin
     .from('refund_requests')
-    .select('item_id, status, reject_reason')
-    .in('item_id', allItemIds)
-    .order('requested_at', { ascending: false });
+    .select('status, order_items(seller_id)')
+    .eq('refund_id', refundId)
+    .maybeSingle();
 
-  if (refundsError) throw refundsError;
-
-  const latestStatusByItem = new Map<number, { status: string; rejectReason: string | null }>();
-  for (const r of refunds ?? []) {
-    if (!latestStatusByItem.has(r.item_id)) {
-      latestStatusByItem.set(r.item_id, { status: r.status, rejectReason: r.reject_reason });
-    }
+  if (refundError) throw refundError;
+  if (!refund) {
+    throw new Error('환불 요청을 찾을 수 없습니다.');
   }
 
-  const allRefunded = allItemIds.every((itemId) => {
-    const entry = latestStatusByItem.get(itemId);
-    return entry?.status === '환불' && !entry.rejectReason;
-  });
+  const orderItem = refund.order_items as unknown as { seller_id: number };
+  if (orderItem.seller_id !== sellerId) {
+    throw new Error('환불 요청을 찾을 수 없습니다.');
+  }
+  if (refund.status !== '환불진행중') {
+    throw new Error('환불진행중 상태에서만 반송 운송장을 입력할 수 있습니다.');
+  }
 
-  if (allRefunded) {
-    const { error: orderUpdateError } = await supabaseAdmin
+  const { error: updateError } = await supabaseAdmin
+    .from('refund_requests')
+    .update({
+      return_courier: input.courier,
+      return_tracking_number: input.trackingNumber,
+    })
+    .eq('refund_id', refundId);
+
+  if (updateError) throw updateError;
+
+  return { returnCourier: input.courier, returnTrackingNumber: input.trackingNumber };
+}
+
+async function syncOrderStatusIfFullyClosed(orderId: string): Promise<boolean> {
+  const { data: items, error: itemsError } = await supabaseAdmin
+    .from('order_items')
+    .select('shipping_status')
+    .eq('order_id', orderId);
+
+  if (itemsError) throw itemsError;
+  if (!items || items.length === 0) return false;
+
+  const allCancelled = items.every((i) => i.shipping_status === '취소');
+  const allClosed = items.every(
+    (i) => i.shipping_status === '취소' || i.shipping_status === '환불'
+  );
+
+  if (allCancelled) {
+    const { error } = await supabaseAdmin
+      .from('orders')
+      .update({ status: '취소' })
+      .eq('order_id', orderId);
+    if (error) throw error;
+  } else if (allClosed) {
+    const { error } = await supabaseAdmin
       .from('orders')
       .update({ status: '환불' })
       .eq('order_id', orderId);
+    if (error) throw error;
+  }
 
-    if (orderUpdateError) throw orderUpdateError;
+  return allClosed;
+}
+
+// 상품(item) 하나가 최종 취소/환불로 확정될 때마다 호출.
+// 이 상품에 배분된 포인트를 즉시 환급하고, 주문 전체가 다 닫혔으면 쿠폰도 미사용 상태로 복원.
+async function restoreOrderBenefitsForItem(orderId: string, itemId: number) {
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from('orders')
+    .select('used_point, user_coupon_id, user_id')
+    .eq('order_id', orderId)
+    .single();
+
+  if (orderError) throw orderError;
+
+  if (order.used_point > 0) {
+    const { data: allItems, error: allItemsError } = await supabaseAdmin
+      .from('order_items')
+      .select('item_id, quantity, unit_price')
+      .eq('order_id', orderId);
+
+    if (allItemsError) throw allItemsError;
+
+    const orderTotalPrice = (allItems ?? []).reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+    const thisItem = (allItems ?? []).find((i) => i.item_id === itemId);
+    const itemPrice = thisItem ? thisItem.quantity * thisItem.unit_price : 0;
+    const pointShare =
+      orderTotalPrice > 0 ? Math.round((itemPrice / orderTotalPrice) * order.used_point) : 0;
+
+    if (pointShare > 0) {
+      const { data: user, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('point')
+        .eq('user_id', order.user_id)
+        .single();
+      if (userError) throw userError;
+
+      const { error: pointUpdateError } = await supabaseAdmin
+        .from('users')
+        .update({ point: (user.point ?? 0) + pointShare })
+        .eq('user_id', order.user_id);
+      if (pointUpdateError) throw pointUpdateError;
+
+      const { error: historyError } = await supabaseAdmin.from('point_history').insert({
+        user_id: order.user_id,
+        type: '적립',
+        amount: pointShare,
+        description: `주문 ${orderId} 취소/환불에 따른 포인트 환급`,
+      });
+      if (historyError) throw historyError;
+    }
+  }
+
+  const allClosed = await syncOrderStatusIfFullyClosed(orderId);
+
+  if (allClosed && order.user_coupon_id) {
+    const { error: couponRestoreError } = await supabaseAdmin
+      .from('user_coupons')
+      .update({ used_at: null })
+      .eq('id', order.user_coupon_id);
+    if (couponRestoreError) throw couponRestoreError;
   }
 }
 
@@ -337,4 +456,83 @@ export async function rejectRefund(sellerId: number, refundId: number, reason: s
   await logOrderItemStatusHistory(refund.item_id, rejectedStatus, reason);
 
   return { status: rejectedStatus };
+}
+
+export async function processRefund(sellerId: number, refundId: number) {
+  const { data: refund, error: refundError } = await supabaseAdmin
+    .from('refund_requests')
+    .select(
+      'status, item_id, order_items!inner(seller_id, order_id, unit_price, quantity, orders!inner(payment_method, payment_key))'
+    )
+    .eq('refund_id', refundId)
+    .maybeSingle();
+
+  if (refundError) throw refundError;
+  if (!refund) {
+    throw new Error('환불 요청을 찾을 수 없습니다.');
+  }
+
+  const orderItem = refund.order_items as unknown as {
+    seller_id: number;
+    order_id: string;
+    unit_price: number;
+    quantity: number;
+    orders: { payment_method: string; payment_key: string | null };
+  };
+  if (orderItem.seller_id !== sellerId) {
+    throw new Error('환불 요청을 찾을 수 없습니다.');
+  }
+  if (refund.status !== '환불진행중') {
+    throw new Error('환불 처리 대상이 아닙니다.');
+  }
+
+  const { data: currentItem, error: currentItemError } = await supabaseAdmin
+    .from('order_items')
+    .select('shipping_status')
+    .eq('item_id', refund.item_id)
+    .single();
+
+  if (currentItemError) throw currentItemError;
+  const originalShippingStatus = currentItem.shipping_status;
+
+  const processedAt = new Date().toISOString();
+
+  const { payment_method, payment_key } = orderItem.orders;
+  if (payment_key) {
+    const cancelAmount = orderItem.unit_price * orderItem.quantity;
+    await cancelPayment(payment_method, payment_key, cancelAmount);
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('refund_requests')
+    .update({ status: '환불', processed_at: processedAt })
+    .eq('refund_id', refundId);
+
+  if (updateError) throw updateError;
+
+  try {
+    const { error: shippingStatusError } = await supabaseAdmin
+      .from('order_items')
+      .update({ shipping_status: '환불' })
+      .eq('item_id', refund.item_id);
+
+    if (shippingStatusError) throw shippingStatusError;
+
+    await logOrderItemStatusHistory(refund.item_id, '환불');
+    await restoreOrderBenefitsForItem(orderItem.order_id, refund.item_id);
+  } catch (err) {
+    await supabaseAdmin
+      .from('refund_requests')
+      .update({ status: '환불진행중', processed_at: null })
+      .eq('refund_id', refundId);
+
+    await supabaseAdmin
+      .from('order_items')
+      .update({ shipping_status: originalShippingStatus })
+      .eq('item_id', refund.item_id);
+
+    throw err;
+  }
+
+  return { status: '환불' };
 }

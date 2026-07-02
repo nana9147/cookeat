@@ -30,9 +30,9 @@ const REFUND_COLOR_MAP = {
   전체: 'text-gray-600',
   취소요청: 'text-amber-500',
   환불요청: 'text-red-500',
+  환불진행중: 'text-blue-500',
   처리완료: 'text-emerald-500',
 };
-
 
 const EXPORT_COLUMNS: ExportColumn<RefundExportRow>[] = [
   { key: 'orderId', label: '주문번호' },
@@ -54,7 +54,9 @@ const EXPORT_COLUMNS: ExportColumn<RefundExportRow>[] = [
 
 export default function CancelRefundPage() {
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
-  const [tab, setTab] = useState<'전체' | '취소요청' | '환불요청' | '처리완료'>('전체');
+  const [tab, setTab] = useState<'전체' | '취소요청' | '환불요청' | '환불진행중' | '처리완료'>(
+    '전체'
+  );
   const [search, setSearch] = useState('');
   const [orders, setOrders] = useState<OrderWithRefunds[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +67,13 @@ export default function CancelRefundPage() {
   const [startDate, setStartDate] = useState(() => getDateRange('전체').startDate);
   const [endDate, setEndDate] = useState(() => getDateRange('전체').endDate);
 
-  const [counts, setCounts] = useState({ 전체: 0, 취소요청: 0, 환불요청: 0, 처리완료: 0 });
+  const [counts, setCounts] = useState({
+    전체: 0,
+    취소요청: 0,
+    환불요청: 0,
+    환불진행중: 0,
+    처리완료: 0,
+  });
 
   const [rejectingRefundId, setRejectingRefundId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -176,6 +184,39 @@ export default function CancelRefundPage() {
     }
   };
 
+  const handleProcess = async (refundId: number) => {
+    try {
+      await api.patch(`/seller/orders/refunds/${refundId}`, { action: 'process' });
+      toast.success('환불 처리가 완료되었습니다.');
+      fetchOrders();
+      fetchCounts();
+    } catch (e) {
+      const message =
+        e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      toast.error(message ?? '환불 처리에 실패했습니다.');
+    }
+  };
+
+  const handleSaveTracking = async (refundId: number, courier: string, trackingNumber: string) => {
+    try {
+      await api.patch(`/seller/orders/refunds/${refundId}`, {
+        action: 'saveTracking',
+        courier,
+        trackingNumber,
+      });
+      toast.success('반송 운송장이 저장되었습니다.');
+      fetchOrders();
+    } catch (e) {
+      const message =
+        e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      toast.error(message ?? '저장에 실패했습니다.');
+    }
+  };
+
   const handleRejectClick = (refundId: number) => {
     setRejectingRefundId(refundId);
     setRejectReason('');
@@ -225,7 +266,9 @@ export default function CancelRefundPage() {
         {!isAdmin && (
           <Button onClick={handleExcelDownload} disabled={isExporting}>
             <Download />
-            {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+            {isExporting
+              ? `다운로드 중... (${progress.current}/${progress.total})`
+              : '엑셀 다운로드'}
           </Button>
         )}
       </div>
@@ -235,15 +278,16 @@ export default function CancelRefundPage() {
           { label: '전체', count: counts.전체, filterValue: '전체' },
           { label: '취소요청', count: counts.취소요청, filterValue: '취소요청' },
           { label: '환불요청', count: counts.환불요청, filterValue: '환불요청' },
+          { label: '환불진행중', count: counts.환불진행중, filterValue: '환불진행중' },
           { label: '처리완료', count: counts.처리완료, filterValue: '처리완료' },
         ]}
         status={tab}
         onStatusChange={(v) => {
-          setTab(v as '전체' | '취소요청' | '환불요청' | '처리완료');
+          setTab(v as '전체' | '취소요청' | '환불요청' | '환불진행중' | '처리완료');
           setPage(1);
         }}
         colorMap={REFUND_COLOR_MAP}
-        cols={4}
+        cols={5}
       />
 
       <div className="flex items-center gap-2 mb-5">
@@ -277,7 +321,9 @@ export default function CancelRefundPage() {
       <RefundTable
         orders={orders}
         onApprove={handleApprove}
+        onProcess={handleProcess}
         onReject={handleRejectClick}
+        onSaveTracking={handleSaveTracking}
         selectedIds={selectedIds}
         isAllSelectedMode={isAllSelectedMode}
         onSelect={handleSelect}
