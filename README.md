@@ -32,15 +32,15 @@
 
 ### 홈
 
-![홈 화면](public/screenshots/home.webp)
+![홈 화면](public/screenshots/main/home.webp)
 
 ### 레시피 목록
 
-![레시피 목록 화면](public/screenshots/recipes.webp)
+![레시피 목록 화면](public/screenshots/main/recipes.webp)
 
 ### 재료 구매 목록
 
-![재료 구매 목록 화면](public/screenshots/shopping.webp)
+![재료 구매 목록 화면](public/screenshots/main/shopping.webp)
 
 ---
 
