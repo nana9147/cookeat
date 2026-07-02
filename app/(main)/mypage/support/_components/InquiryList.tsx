@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import api from '@/lib/api';
 import InquiryForm from './InquiryForm';
-import { formatDate } from '@/lib/format';
+import { formatDateTime } from '@/lib/format';
 
 type Inquiry = { inquiryId: number; category: string; title: string; isAnswered: boolean; createdAt: string };
 
@@ -61,7 +61,7 @@ export default function InquiryList() {
                       </span>
                     </div>
                     <p className="text-sm text-dark-text truncate">{inq.title}</p>
-                    <p className="text-xs text-gray-text">{formatDate(inq.createdAt)}</p>
+                    <p className="text-xs text-gray-text">{formatDateTime(inq.createdAt)}</p>
                   </div>
                   <span className="text-muted shrink-0 ml-2">›</span>
                 </Link>

@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatDateTime } from '@/lib/format';
 
 type InquiryDetail = {
   inquiryId: number; category: string; title: string; content: string;
@@ -69,7 +69,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ inquir
           <div className="max-w-[80%] bg-primary text-white rounded-2xl rounded-tr-sm px-4 py-3">
             <p className="text-sm whitespace-pre-wrap leading-relaxed">{inquiry.content}</p>
           </div>
-          <span className="text-[11px] text-muted pr-1">{formatDate(inquiry.createdAt)}</span>
+          <span className="text-[11px] text-gray-text pr-1">{formatDateTime(inquiry.createdAt)}</span>
         </div>
 
         {/* Cookeat 답변 — 왼쪽 */}
@@ -79,7 +79,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ inquir
             <div className="max-w-[80%] bg-beige border border-border rounded-2xl rounded-tl-sm px-4 py-3">
               <p className="text-sm text-dark-text whitespace-pre-wrap leading-relaxed">{inquiry.reply.content}</p>
             </div>
-            <span className="text-[11px] text-muted pl-1">{formatDate(inquiry.reply.createdAt)}</span>
+            <span className="text-[11px] text-gray-text pl-1">{formatDateTime(inquiry.reply.createdAt)}</span>
           </div>
         ) : (
           <div className="flex flex-col items-start gap-1">
