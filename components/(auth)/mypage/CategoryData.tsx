@@ -16,7 +16,7 @@ export const sections = [
     title: '쇼핑',
     items: [
       { icon: <OrdersIcon />, label: '주문/배송 내역', href: '/mypage' },
-      { icon: <CancelIcon />, label: '취소 / 반품', href: '/mypage/cancel' },
+      { icon: <CancelIcon />, label: '취소 / 환불', href: '/mypage/cancel' },
     ],
   },
   {
