@@ -100,7 +100,7 @@ export default function SettlementTable({
                   </TableCell>
                   <TableCell className="text-center text-sm text-gray-500 whitespace-nowrap">
                     {s.settledAt
-                      ? `${formatDate(s.settledAt)}${s.status === '정산예정' ? ' (예정)' : ''}`
+                      ? `${formatDate(s.settledAt)}${s.status !== '정산완료' ? ' (예정)' : ''}`
                       : '-'}
                   </TableCell>
                 </TableRow>
