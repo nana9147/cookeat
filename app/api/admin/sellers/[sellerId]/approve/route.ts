@@ -69,10 +69,11 @@ export async function PATCH(
 
       // 승인 시 계정 활성화 (suspend가 명시적으로 지정된 경우 우선)
       if (status === 'approved' && !suspend) {
-        await supabaseAdmin
+        const { error: activateError } = await supabaseAdmin
           .from('users')
           .update({ status: 'active', updated_at: new Date().toISOString() })
           .eq('user_id', seller.user_id);
+        if (activateError) return NextResponse.json({ error: activateError.message }, { status: 500 });
       }
     }
 

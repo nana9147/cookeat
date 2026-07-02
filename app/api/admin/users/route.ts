@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const keyword = searchParams.get('keyword') ?? '';
   const status = searchParams.get('status') ?? '';
+  const grade = searchParams.get('grade') ?? '';
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
   const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') ?? '50')));
   const from = (page - 1) * limit;
@@ -26,6 +27,31 @@ export async function GET(req: NextRequest) {
   }
   if (status) {
     query = query.eq('status', status);
+  }
+
+  if (grade === 'VIP' || grade === '일반') {
+    const { data: orderRows, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('user_id');
+    if (orderError) return NextResponse.json({ error: orderError.message }, { status: 500 });
+
+    const orderCountMap = new Map<number, number>();
+    for (const o of orderRows ?? []) {
+      orderCountMap.set(o.user_id, (orderCountMap.get(o.user_id) ?? 0) + 1);
+    }
+    const vipUserIds = [...orderCountMap.entries()]
+      .filter(([, orderCount]) => orderCount >= 10)
+      .map(([userId]) => userId);
+
+    if (grade === 'VIP') {
+      query = query.in('user_id', vipUserIds.length > 0 ? vipUserIds : [-1]);
+    } else {
+      query = query.not(
+        'user_id',
+        'in',
+        `(${vipUserIds.length > 0 ? vipUserIds.join(',') : '-1'})`,
+      );
+    }
   }
 
   const { data, error, count } = await query;
