@@ -361,53 +361,61 @@ async function syncOrderStatusIfFullyClosed(orderId: string): Promise<boolean> {
   return allClosed;
 }
 
-// 상품(item) 하나가 최종 취소/환불로 확정될 때마다 호출.
-// 이 상품에 배분된 포인트를 즉시 환급하고, 주문 전체가 다 닫혔으면 쿠폰도 미사용 상태로 복원.
 async function restoreOrderBenefitsForItem(orderId: string, itemId: number) {
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
-    .select('used_point, user_coupon_id, user_id')
+    .select('used_point, refunded_point, user_coupon_id, user_id')
     .eq('order_id', orderId)
     .single();
 
   if (orderError) throw orderError;
 
-  if (order.used_point > 0) {
-    const { data: allItems, error: allItemsError } = await supabaseAdmin
-      .from('order_items')
-      .select('item_id, quantity, unit_price')
+  const CLOSED_STATUSES = ['취소', '환불'];
+
+  // 주문 전체(멀티셀러 포함)에서, 아직 살아있는(취소/환불 안 된) 상품들의 "쿠폰 반영 후" 금액 합
+  const { data: allItems, error: allItemsError } = await supabaseAdmin
+    .from('order_items')
+    .select('quantity, unit_price, shipping_status, allocated_coupon_discount')
+    .eq('order_id', orderId);
+
+  if (allItemsError) throw allItemsError;
+
+  const remainingBase = (allItems ?? [])
+    .filter((i) => !CLOSED_STATUSES.includes(i.shipping_status ?? ''))
+    .reduce((sum, i) => sum + i.quantity * i.unit_price - (i.allocated_coupon_discount ?? 0), 0);
+
+  const usedPoint = order.used_point ?? 0;
+  const effectivePoints = Math.min(usedPoint, Math.max(0, remainingBase));
+  const targetTotalRefund = usedPoint - effectivePoints;
+  const incrementalRefund = targetTotalRefund - (order.refunded_point ?? 0);
+
+  if (incrementalRefund > 0) {
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('point')
+      .eq('user_id', order.user_id)
+      .single();
+    if (userError) throw userError;
+
+    const { error: pointUpdateError } = await supabaseAdmin
+      .from('users')
+      .update({ point: (user.point ?? 0) + incrementalRefund })
+      .eq('user_id', order.user_id);
+    if (pointUpdateError) throw pointUpdateError;
+
+    const { error: historyError } = await supabaseAdmin.from('point_history').insert({
+      user_id: order.user_id,
+      type: '적립',
+      amount: incrementalRefund,
+      description: `주문 ${orderId} 취소/환불에 따른 포인트 환급`,
+    });
+    if (historyError) throw historyError;
+
+    const { error: orderUpdateError } = await supabaseAdmin
+      .from('orders')
+      .update({ refunded_point: targetTotalRefund })
       .eq('order_id', orderId);
-
-    if (allItemsError) throw allItemsError;
-
-    const orderTotalPrice = (allItems ?? []).reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-    const thisItem = (allItems ?? []).find((i) => i.item_id === itemId);
-    const itemPrice = thisItem ? thisItem.quantity * thisItem.unit_price : 0;
-    const pointShare =
-      orderTotalPrice > 0 ? Math.round((itemPrice / orderTotalPrice) * order.used_point) : 0;
-
-    if (pointShare > 0) {
-      const { data: user, error: userError } = await supabaseAdmin
-        .from('users')
-        .select('point')
-        .eq('user_id', order.user_id)
-        .single();
-      if (userError) throw userError;
-
-      const { error: pointUpdateError } = await supabaseAdmin
-        .from('users')
-        .update({ point: (user.point ?? 0) + pointShare })
-        .eq('user_id', order.user_id);
-      if (pointUpdateError) throw pointUpdateError;
-
-      const { error: historyError } = await supabaseAdmin.from('point_history').insert({
-        user_id: order.user_id,
-        type: '적립',
-        amount: pointShare,
-        description: `주문 ${orderId} 취소/환불에 따른 포인트 환급`,
-      });
-      if (historyError) throw historyError;
-    }
+    if (orderUpdateError) throw orderUpdateError;
   }
 
   const allClosed = await syncOrderStatusIfFullyClosed(orderId);
