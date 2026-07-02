@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export default function UserPointCard() {
   const { accessToken } = useAuthStore();
-  const { nickname, point } = useUserInfo();
+  const { nickname, point, profileImage } = useUserInfo();
   const displayName = accessToken && nickname ? nickname : '쿠킷';
 
   return (
@@ -15,8 +15,12 @@ export default function UserPointCard() {
           <h3 className="font-semibold text-dark-text">안녕하세요, {displayName}님!</h3>
           <p className="text-xs text-gray-text mt-0.5">오늘도 맛있는 하루 되세요 :)</p>
         </div>
-        <div className="w-9 h-9 rounded-full bg-card-bg flex items-center justify-center shrink-0">
-          <span className="text-lg">👤</span>
+        <div className="w-9 h-9 rounded-full bg-card-bg flex items-center justify-center shrink-0 overflow-hidden">
+          {profileImage ? (
+            <img src={profileImage} alt="내 프로필" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-lg">👤</span>
+          )}
         </div>
       </div>
 
