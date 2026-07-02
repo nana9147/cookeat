@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import api from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatWon } from '@/lib/format';
 import type { AdminCoupon, AdminCouponDiscountType } from '@/types/admin';
 
 const DISCOUNT_TYPE_LABEL: Record<AdminCouponDiscountType, string> = {
@@ -36,6 +36,10 @@ const initialForm = {
   minOrderAmount: '',
   expiredAt: '',
 };
+
+function getApiErrorMessage(e: unknown, fallback: string): string {
+  return (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? fallback;
+}
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<AdminCoupon[]>([]);
@@ -109,10 +113,7 @@ export default function CouponsPage() {
       setShowCreate(false);
       alert(`쿠폰이 생성되어 ${coupon.issuedCount}명에게 지급되었습니다.`);
     } catch (e) {
-      const msg =
-        (e as { response?: { data?: { error?: string } } })?.response?.data?.error ??
-        '쿠폰 생성에 실패했습니다.';
-      setFormError(msg);
+      setFormError(getApiErrorMessage(e, '쿠폰 생성에 실패했습니다.'));
     } finally {
       setSaving(false);
     }
@@ -125,10 +126,7 @@ export default function CouponsPage() {
       await api.delete(`/admin/coupons/${coupon.couponId}`);
       setCoupons((prev) => prev.filter((c) => c.couponId !== coupon.couponId));
     } catch (e) {
-      const msg =
-        (e as { response?: { data?: { error?: string } } })?.response?.data?.error ??
-        '삭제에 실패했습니다.';
-      alert(msg);
+      alert(getApiErrorMessage(e, '삭제에 실패했습니다.'));
     } finally {
       setDeletingId(null);
     }
@@ -179,19 +177,17 @@ export default function CouponsPage() {
             ) : (
               coupons.map((coupon) => {
                 const expired = isExpired(coupon.expiredAt);
-                const exhausted =
-                  coupon.maxUsageCount !== null && coupon.issuedCount >= coupon.maxUsageCount;
-                const active = !expired && !exhausted;
                 return (
                   <TableRow key={coupon.couponId}>
                     <TableCell className="font-mono font-medium">{coupon.code}</TableCell>
                     <TableCell>
-                      {coupon.discountValue.toLocaleString()}
-                      {coupon.discountType === 'rate' ? '%' : '원'}
+                      {coupon.discountType === 'rate'
+                        ? `${coupon.discountValue.toLocaleString()}%`
+                        : formatWon(coupon.discountValue)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
                       {coupon.minOrderAmount !== null
-                        ? `${coupon.minOrderAmount.toLocaleString()}원 이상`
+                        ? `${formatWon(coupon.minOrderAmount)} 이상`
                         : '제한없음'}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -200,10 +196,10 @@ export default function CouponsPage() {
                     <TableCell>
                       <span
                         className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          active ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-text'
+                          expired ? 'bg-gray-100 text-gray-text' : 'bg-primary/10 text-primary'
                         }`}
                       >
-                        {expired ? '만료' : exhausted ? '소진' : '사용가능'}
+                        {expired ? '만료' : '사용가능'}
                       </span>
                     </TableCell>
                     <TableCell>
