@@ -23,8 +23,16 @@ export default defineConfig({
       name: 'recipes',
     },
     {
+      path: '/recipes/6',
+      name: 'recipe-detail',
+    },
+    {
       path: '/shopping',
       name: 'shopping',
+    },
+    {
+      path: '/shopping/8',
+      name: 'shopping-detail',
     },
     {
       path: '/search',
