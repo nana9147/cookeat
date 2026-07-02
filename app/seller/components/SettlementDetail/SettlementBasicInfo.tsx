@@ -19,7 +19,7 @@ export default function SettlementBasicInfo({ detail }: SettlementDetailProps) {
             <dt className="text-xs text-light-gray">정산일</dt>
             <dd className="text-sm font-medium text-dark-text">
               {detail.settlementDate}
-              {detail.status === '정산예정' && (
+              {detail.status !== '정산완료' && (
                 <span className="text-light-gray font-normal ml-1">(예정)</span>
               )}
             </dd>

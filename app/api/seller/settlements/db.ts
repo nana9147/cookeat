@@ -198,9 +198,7 @@ export async function getSellerSettlements(
     const cancelledAmount = cancelledAmountBySettlement.get(s.settlement_id) ?? 0;
     const confirmedSalesAmount = s.amount + s.fee;
 
-    const displaySettledAt =
-      s.settled_at ??
-      (s.status === '예정' ? addDays(new Date(s.period_end), 3).toISOString() : null);
+    const displaySettledAt = s.settled_at ?? addDays(new Date(s.period_end), 7).toISOString();
 
     return {
       settlementId: s.settlement_id,
@@ -237,7 +235,7 @@ export async function getSellerSettlementSummary(sellerId: number) {
       completedTotal += s.amount;
     } else if (s.status === '예정') {
       scheduledTotal += s.amount;
-      const settlementDate = addDays(new Date(s.period_end), 3);
+      const settlementDate = addDays(new Date(s.period_end), 7);
       const dateStr = toDateStr(settlementDate);
       if (!nextSettlementDate || dateStr < nextSettlementDate) {
         nextSettlementDate = dateStr;
@@ -383,9 +381,7 @@ export async function getSellerSettlementDetail(sellerId: number, settlementId: 
     periodRange: `${settlement.period_start.slice(5).replace('-', '.')} - ${settlement.period_end.slice(5).replace('-', '.')}`,
     settlementDate: settlement.settled_at
       ? settlement.settled_at.split('T')[0]
-      : settlement.status === '예정'
-        ? toDateStr(addDays(new Date(settlement.period_end), 3))
-        : '',
+      : toDateStr(addDays(new Date(settlement.period_end), 7)),
     status: STATUS_LABEL[settlement.status] ?? settlement.status,
     paymentMethod: '계좌 이체',
     amountDetail: {
