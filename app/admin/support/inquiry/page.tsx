@@ -16,8 +16,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import Pagination from '@/components/ui/Pagination';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/format';
+import { getPageNumbers } from '@/lib/utils';
+import { useDebounce } from '@/hooks/useDebounce';
+
+const PAGE_SIZE = 20;
 
 interface Reply {
   content: string;
@@ -37,9 +42,14 @@ interface InquiryItem {
 
 export default function InquiryPage() {
   const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [stats, setStats] = useState({ waiting: 0, answered: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
+  const prevSearchRef = useRef(debouncedSearch);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -48,9 +58,20 @@ export default function InquiryPage() {
 
   const fetchInquiries = async () => {
     try {
-      const { data } = await api.get('/admin/inquiries', { params: { limit: 100 } });
+      const [{ data }, waitingRes, answeredRes] = await Promise.all([
+        api.get('/admin/inquiries', {
+          params: { keyword: debouncedSearch || undefined, page, limit: PAGE_SIZE },
+        }),
+        api.get('/admin/inquiries', { params: { answered: 'false', limit: 1 } }),
+        api.get('/admin/inquiries', { params: { answered: 'true', limit: 1 } }),
+      ]);
       if (!cancelledRef.current) {
         setInquiries(data.inquiries ?? []);
+        setTotal(data.pagination?.total ?? 0);
+        setStats({
+          waiting: waitingRes.data.pagination?.total ?? 0,
+          answered: answeredRes.data.pagination?.total ?? 0,
+        });
         setError(false);
       }
     } catch (err) {
@@ -65,18 +86,22 @@ export default function InquiryPage() {
 
   useEffect(() => {
     cancelledRef.current = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchInquiries();
+    const isNewSearch = prevSearchRef.current !== debouncedSearch;
+    prevSearchRef.current = debouncedSearch;
+
+    if (isNewSearch && page !== 1) {
+      setPage(1);
+    } else {
+      setLoading(true);
+      fetchInquiries();
+    }
     return () => {
       cancelledRef.current = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, page]);
 
-  const filtered = inquiries.filter((i) => i.title.includes(search) || i.author.includes(search));
-
-  const waiting = inquiries.filter((i) => !i.isAnswered).length;
-  const answered = inquiries.filter((i) => i.isAnswered).length;
-
+  const totalPages = Math.ceil(total / PAGE_SIZE);
   const selectedInquiry = inquiries.find((i) => i.inquiryId === selectedId) ?? null;
 
   function openChat(id: number) {
@@ -122,7 +147,7 @@ export default function InquiryPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold">1:1 문의 관리</h1>
-          <p className="text-sm text-muted-foreground">전체: {inquiries.length}개</p>
+          <p className="text-sm text-muted-foreground">전체: {total}개</p>
         </div>
       </div>
 
@@ -130,13 +155,13 @@ export default function InquiryPage() {
         <Card>
           <CardContent className="pt-2">
             <p className="text-sm text-muted-foreground">답변 대기</p>
-            <p className="text-3xl font-bold text-yellow mt-1">{waiting}건</p>
+            <p className="text-3xl font-bold text-yellow mt-1">{stats.waiting}건</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-2">
             <p className="text-sm text-muted-foreground">답변 완료</p>
-            <p className="text-3xl font-bold mt-1">{answered}건</p>
+            <p className="text-3xl font-bold mt-1">{stats.answered}건</p>
           </CardContent>
         </Card>
       </div>
@@ -179,14 +204,14 @@ export default function InquiryPage() {
                   데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
                 </TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : inquiries.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   문의가 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((inq) => (
+              inquiries.map((inq) => (
                 <TableRow key={inq.inquiryId}>
                   <TableCell className="font-medium">{inq.title}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
@@ -216,6 +241,13 @@ export default function InquiryPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        getPageNumbers={() => getPageNumbers(page, totalPages)}
+      />
 
       <Sheet open={!!selectedInquiry} onOpenChange={() => setSelectedId(null)}>
         <SheetContent side="right" className="w-full sm:w-105 flex flex-col p-0">
