@@ -10,6 +10,7 @@ const STATUS_STYLE: Record<string, string> = {
   배송중: 'bg-orange-50 text-orange-500',
   배송완료: 'bg-gray-100 text-gray-500',
   취소: 'bg-red/10 text-red',
+  환불: 'bg-red/10 text-red',
 };
 
 function InfoRow({ label, value }: { label: string; value: string }) {

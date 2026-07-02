@@ -249,7 +249,7 @@ export async function approveRefund(sellerId: number, refundId: number) {
 
   try {
     await logOrderItemStatusHistory(refund.item_id, approvedStatus);
-    await syncOrderStatusIfFullyRefunded(orderItem.order_id);
+    await syncOrderStatusIfFullyRefunded(orderItem.order_id, approvedStatus);
   } catch (err) {
     await supabaseAdmin
       .from('refund_requests')
@@ -261,7 +261,7 @@ export async function approveRefund(sellerId: number, refundId: number) {
   return { status: approvedStatus };
 }
 
-async function syncOrderStatusIfFullyRefunded(orderId: string) {
+async function syncOrderStatusIfFullyRefunded(orderId: string, approvedStatus: '취소' | '환불') {
   const { data: allItems, error: allItemsError } = await supabaseAdmin
     .from('order_items')
     .select('item_id')
@@ -287,15 +287,15 @@ async function syncOrderStatusIfFullyRefunded(orderId: string) {
     }
   }
 
-  const allRefunded = allItemIds.every((itemId) => {
+  const allMatch = allItemIds.every((itemId) => {
     const entry = latestStatusByItem.get(itemId);
-    return entry?.status === '환불' && !entry.rejectReason;
+    return entry?.status === approvedStatus && !entry.rejectReason;
   });
 
-  if (allRefunded) {
+  if (allMatch) {
     const { error: orderUpdateError } = await supabaseAdmin
       .from('orders')
-      .update({ status: '환불' })
+      .update({ status: approvedStatus })
       .eq('order_id', orderId);
 
     if (orderUpdateError) throw orderUpdateError;

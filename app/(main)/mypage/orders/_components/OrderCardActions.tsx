@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import type { Order } from './types';
 import OrderReviewModal from './OrderReviewModal';
+import OrderCancelModal from './OrderCancelModal';
 
-type Props = { order: Order; onDetailClick: () => void };
+type Props = { order: Order; onDetailClick: () => void; onCancelRequested?: () => void };
 
-export default function OrderCardActions({ order, onDetailClick }: Props) {
+export default function OrderCardActions({ order, onDetailClick, onCancelRequested }: Props) {
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   return (
     <>
@@ -28,11 +30,11 @@ export default function OrderCardActions({ order, onDetailClick }: Props) {
         )}
         {(order.status === '결제완료' || order.status === '주문확인') && (
           <button
-            disabled
-            title="준비 중"
-            className="flex-1 h-9 flex items-center justify-center rounded-xl border border-red/20 text-sm text-red/40 font-medium cursor-not-allowed"
+            onClick={() => setShowCancelModal(true)}
+            disabled={order.hasPendingCancelRequest}
+            className="flex-1 h-9 flex items-center justify-center rounded-xl border border-red/20 text-sm text-red font-medium hover:bg-red/5 transition-colors disabled:text-red/40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
           >
-            취소 신청
+            {order.hasPendingCancelRequest ? '취소 신청됨' : '취소 신청'}
           </button>
         )}
       </div>
@@ -41,6 +43,17 @@ export default function OrderCardActions({ order, onDetailClick }: Props) {
         <OrderReviewModal
           orderId={order.orderId}
           onClose={() => setShowReviewModal(false)}
+        />
+      )}
+
+      {showCancelModal && (
+        <OrderCancelModal
+          orderId={order.orderId}
+          onClose={() => setShowCancelModal(false)}
+          onSuccess={() => {
+            setShowCancelModal(false);
+            onCancelRequested?.();
+          }}
         />
       )}
     </>

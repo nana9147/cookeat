@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import OrderCard from './OrderCard';
 import OrderStatusTabs from './OrderStatusTabs';
@@ -17,20 +17,22 @@ export default function OrderList() {
   const [activeTab, setActiveTab] = useState<StatusTab>('전체');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchOrders = useCallback(() => {
     const statusParam = activeTab === '전체' ? '' : `&status=${encodeURIComponent(activeTab)}`;
-    api
+    return api
       .get<{ orders: Order[]; pagination: Pagination }>(`/orders?page=${page}${statusParam}`)
       .then(({ data }) => {
-        if (cancelled) return;
         setOrders(data.orders);
         setPagination(data.pagination);
       })
-      .catch(() => { if (!cancelled) setOrders([]); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .catch(() => setOrders([]))
+      .finally(() => setLoading(false));
   }, [page, activeTab]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleTabChange = (tab: StatusTab) => { setLoading(true); setActiveTab(tab); setPage(1); };
   const handlePageChange = (p: number) => { setLoading(true); setPage(p); };
@@ -63,6 +65,7 @@ export default function OrderList() {
                 key={order.orderId}
                 order={order}
                 onDetailClick={() => setSelectedOrderId(order.orderId)}
+                onCancelRequested={fetchOrders}
               />
             ))}
           </div>

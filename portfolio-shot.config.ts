@@ -8,31 +8,39 @@ export default defineConfig({
   pages: [
     {
       path: '/',
-      name: 'home',
+      name: 'main/home',
     },
     {
       path: '/login',
-      name: 'login',
+      name: 'main/login',
     },
     {
       path: '/register',
-      name: 'register',
+      name: 'main/register',
     },
     {
       path: '/recipes',
-      name: 'recipes',
+      name: 'main/recipes',
+    },
+    {
+      path: '/recipes/6',
+      name: 'main/recipe-detail',
     },
     {
       path: '/shopping',
-      name: 'shopping',
+      name: 'main/shopping',
+    },
+    {
+      path: '/shopping/8',
+      name: 'main/shopping-detail',
     },
     {
       path: '/search',
-      name: 'search',
+      name: 'main/search',
     },
     {
       path: '/admin/login',
-      name: 'admin-login',
+      name: 'admin/login',
     },
   ],
 
