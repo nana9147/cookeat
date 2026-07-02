@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { calcShipping } from '@/lib/shipping';
+import { calcDiscountedPrice } from '@/lib/productPricing';
 
 interface OrderItem {
   productId: number;
@@ -20,7 +21,16 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  let body: { items: unknown; paymentMethod: string; recipient?: string; phone?: string; address?: string; addressDetail?: string; usePoint?: number; userCouponId?: number };
+  let body: {
+    items: unknown;
+    paymentMethod: string;
+    recipient?: string;
+    phone?: string;
+    address?: string;
+    addressDetail?: string;
+    usePoint?: number;
+    userCouponId?: number;
+  };
   try {
     body = await req.json();
   } catch {
@@ -41,7 +51,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '주문 상품이 없습니다.' }, { status: 400 });
   }
   if (items.length > 50) {
-    return NextResponse.json({ error: '한 번에 주문할 수 있는 상품은 50개까지입니다.' }, { status: 400 });
+    return NextResponse.json(
+      { error: '한 번에 주문할 수 있는 상품은 50개까지입니다.' },
+      { status: 400 }
+    );
   }
 
   const productIds: number[] = items.map((i: OrderItem) => i.productId);
@@ -49,23 +62,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '중복된 상품이 포함되어 있습니다.' }, { status: 400 });
   }
 
-  // DB에서 실제 가격·재고·상태 조회
+  // DB에서 실제 가격·재고·상태·할인정보 조회
   const { data: products, error: productError } = await supabaseAdmin
     .from('products')
-    .select('product_id, price, stock, status, seller_id')
+    .select('product_id, price, stock, status, seller_id, discount_type, discount_value')
     .in('product_id', productIds);
 
   if (productError || !products) {
     return NextResponse.json({ error: '상품 정보를 불러올 수 없습니다.' }, { status: 500 });
   }
 
-  // 상품별 검증 및 서버 사이드 금액 계산
+  // 상품별 검증 및 서버 사이드 금액 계산 (상품 할인을 여기서 실제로 반영)
   let totalAmount = 0;
+  let discountTotal = 0; // 전체 상품 할인 총합
   const validatedItems: {
     product_id: number;
     quantity: number;
     unit_price: number;
     seller_id: number;
+    original_unit_price: number;
   }[] = [];
 
   for (const item of items as OrderItem[]) {
@@ -77,7 +92,10 @@ export async function POST(req: NextRequest) {
     }
     const product = products.find((p) => p.product_id === item.productId);
     if (!product) {
-      return NextResponse.json({ error: '존재하지 않는 상품이 포함되어 있습니다.' }, { status: 400 });
+      return NextResponse.json(
+        { error: '존재하지 않는 상품이 포함되어 있습니다.' },
+        { status: 400 }
+      );
     }
     if (product.status !== '판매중') {
       return NextResponse.json(
@@ -88,16 +106,27 @@ export async function POST(req: NextRequest) {
     if (product.stock < item.quantity) {
       return NextResponse.json({ error: '재고가 부족한 상품이 있습니다.' }, { status: 400 });
     }
-    totalAmount += product.price * item.quantity;
+
+    const original_unit_price = product.price;
+    const unit_price = calcDiscountedPrice(
+      product.price,
+      product.discount_type,
+      product.discount_value
+    ); // 상품할인이 적용된 1개당 단가
+
+    totalAmount += original_unit_price * item.quantity;
+    discountTotal += (original_unit_price - unit_price) * item.quantity;
+
     validatedItems.push({
       product_id: item.productId,
       quantity: item.quantity,
-      unit_price: product.price,
+      unit_price,
       seller_id: product.seller_id,
+      original_unit_price,
     });
   }
 
-  const shippingFee = calcShipping(totalAmount);
+  const shippingFee = calcShipping(totalAmount - discountTotal);
 
   // 포인트 검증
   const usedPoint = Math.floor(Number(usePoint) || 0);
@@ -151,9 +180,12 @@ export async function POST(req: NextRequest) {
     if (!c || new Date(c.expired_at) < new Date()) {
       return NextResponse.json({ error: '만료된 쿠폰입니다.' }, { status: 400 });
     }
-    if (c.min_order_amount !== null && totalAmount < c.min_order_amount) {
+    const discountAppliedTotal = totalAmount - discountTotal; //쿠폰 최소 주문금액 기준 상품 할인 적용 후 인지 체크
+    if (c.min_order_amount !== null && discountAppliedTotal < c.min_order_amount) {
       return NextResponse.json(
-        { error: `최소 주문 금액 ${c.min_order_amount.toLocaleString()}원 이상 시 사용 가능한 쿠폰입니다.` },
+        {
+          error: `최소 주문 금액 ${c.min_order_amount.toLocaleString()}원 이상 시 사용 가능한 쿠폰입니다.`,
+        },
         { status: 400 }
       );
     }
@@ -161,11 +193,15 @@ export async function POST(req: NextRequest) {
     resolvedUserCouponId = parsedId;
     couponDiscount =
       c.discount_type === 'rate'
-        ? Math.floor(totalAmount * c.discount_value / 100)
+        ? Math.floor((discountAppliedTotal * c.discount_value) / 100)
         : c.discount_value;
   }
 
-  const finalAmount = Math.max(0, totalAmount + shippingFee - usedPoint - couponDiscount);
+  // 최종결제금액 = 상품금액(정가총합) + 배송비 - 쿠폰할인 - 포인트사용 - 상품할인
+  const finalAmount = Math.max(
+    0,
+    totalAmount + shippingFee - usedPoint - couponDiscount - discountTotal
+  );
 
   const now = new Date();
   const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');

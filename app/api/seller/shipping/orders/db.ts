@@ -2,10 +2,10 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { logOrderItemStatusHistory } from '@/lib/orderItemStatusHistory';
 
 const SHIPPING_STATUS_TRANSITIONS: Record<string, string[]> = {
-  결제완료: ['배송준비', '취소'],
+  결제완료: ['배송준비'],
   배송준비: ['배송중'],
-  배송중: ['배송완료', '환불'],
-  배송완료: ['환불'],
+  배송중: ['배송완료'],
+  배송완료: [],
   취소: [],
   환불: [],
 };

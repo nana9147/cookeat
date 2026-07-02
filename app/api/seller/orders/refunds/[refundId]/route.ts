@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
-import { approveRefund, rejectRefund } from '../db';
+import { approveRefund, rejectRefund, processRefund, updateReturnTracking } from '../db';
 
 export async function PATCH(
   req: NextRequest,
@@ -11,11 +11,14 @@ export async function PATCH(
 
   const { refundId } = await params;
   const body = await req.json();
-  const { action, reason } = body;
+  const { action, reason, courier, trackingNumber } = body;
 
-  if (!action || !['approve', 'reject'].includes(action)) {
+  if (!action || !['approve', 'reject', 'process', 'saveTracking'].includes(action)) {
     return NextResponse.json(
-      { success: false, error: 'action은 approve 또는 reject여야 합니다.' },
+      {
+        success: false,
+        error: 'action은 approve, reject, process, saveTracking 중 하나여야 합니다.',
+      },
       { status: 400 }
     );
   }
@@ -27,11 +30,25 @@ export async function PATCH(
     );
   }
 
+  if (action === 'saveTracking' && (!courier || !trackingNumber)) {
+    return NextResponse.json(
+      { success: false, error: '택배사와 운송장번호를 입력해주세요.' },
+      { status: 400 }
+    );
+  }
+
   try {
     const result =
       action === 'approve'
         ? await approveRefund(sellerCtx.sellerId, Number(refundId))
-        : await rejectRefund(sellerCtx.sellerId, Number(refundId), reason);
+        : action === 'process'
+          ? await processRefund(sellerCtx.sellerId, Number(refundId))
+          : action === 'saveTracking'
+            ? await updateReturnTracking(sellerCtx.sellerId, Number(refundId), {
+                courier,
+                trackingNumber,
+              })
+            : await rejectRefund(sellerCtx.sellerId, Number(refundId), reason);
 
     return NextResponse.json({ success: true, data: result });
   } catch (err) {

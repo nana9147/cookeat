@@ -126,26 +126,31 @@ export interface OrderProduct {
   id: string;
   itemName: string;
   quantity: number;
-  unitPrice: number;
-  itemTotalPrice: number;
+  unitPrice: number; // [할인 적용 단가] originalUnitPrice - (productDiscount / quantity) (예: 18,800원)
+  originalUnitPrice: number; // [기본 단가] UI의 '단가'에 해당 (예: 23,800원)
+  productDiscount: number; // [상품할인] 단가에서 할인된 총액 (예: 5,000원)
+  couponDiscount: number; // [쿠폰할인] 해당 상품에 분배된 쿠폰 할인액 (예: 1,880원)
+  itemTotalPrice: number; // [결제금액] UI의 개별 상품 '결제금액' 항목
   img: string;
-  itemStatus: OrderStatus | null;
+  itemStatus: '환불요청' | '환불진행중' | '환불' | '취소요청' | '취소' | null;
   refundRequestReason: string | null;
   refundRejectReason: string | null;
 }
 
 // 주문 상세 내역 - 결제 정보
 export interface PaymentInfo {
-  totalPrice: number; // 전체 상품금액
+  totalPrice: number; //단가의 총합
   shippingFee: number; // 배송비
   couponCode: string | null; // 사용된 쿠폰 코드
   couponDiscountType: 'rate' | 'fixed' | null; // 정률/정액
   couponDiscountValue: number | null; // 할인 값 (rate면 %, fixed면 원)
-  couponDiscount: number; // 사용 쿠폰금액
+  couponDiscount: number; // 전체 쿠폰 할인 총합
+  productDiscount: number; // 전체 상품할인 총합
   pointAmount: number; // 사용 포인트
-  finalAmount: number; // 최종 결제 금액
+  finalAmount: number; // 최종 결제 금액 총
   paymentMethod: PaymentMethod; // 결제 수단
 }
+
 export const COUPON_DISCOUNT_TYPE_LABEL: Record<'rate' | 'fixed', string> = {
   rate: '%',
   fixed: '원',
@@ -202,11 +207,13 @@ export interface RefundItem {
   productName: string;
   quantity: number;
   unitPrice: number;
-  itemStatus: '환불요청' | '환불' | '취소요청' | '취소';
+  itemStatus: OrderStatus;
   refundRequestReason: string | null;
   refundRejectReason: string | null;
   requestedAt: string;
   processedAt: string | null;
+  returnCourier: string | null;
+  returnTrackingNumber: string | null;
 }
 
 export interface OrderWithRefunds {
@@ -223,6 +230,8 @@ export interface RefundTableProps {
   orders: OrderWithRefunds[];
   onApprove: (refundId: number) => void;
   onReject: (refundId: number) => void;
+  onProcess: (refundId: number) => void;
+  onSaveTracking: (refundId: number, courier: string, trackingNumber: string) => void;
   selectedIds: number[];
   isAllSelectedMode: boolean;
   onSelect: (refundId: number, checked: boolean) => void;
@@ -273,4 +282,9 @@ export interface SellerOrderRpcRow {
   phone: string;
   nickname: string | null;
   total_count: number;
+}
+
+export interface OrderProductSectionProps {
+  products: OrderProduct[];
+  refundTotal: number;
 }

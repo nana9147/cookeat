@@ -2,19 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { COUPON_DISCOUNT_TYPE_LABEL, PaymentInfo } from '@/types/seller/order';
-import { Receipt, Truck, Ticket, Coins, RotateCcw } from 'lucide-react';
+import { Receipt, Truck, Ticket, Coins, Percent } from 'lucide-react'; // 👈 Percent 아이콘 추가
 
 interface OrderPaymentSectionProps {
   payment: PaymentInfo;
-  refundTotal?: number;
 }
 
-export default function OrderPaymentSection({
-  payment,
-  refundTotal = 0,
-}: OrderPaymentSectionProps) {
-  const finalAfterRefund = payment.finalAmount - refundTotal;
-
+export default function OrderPaymentSection({ payment }: OrderPaymentSectionProps) {
   return (
     <Card>
       <CardHeader className="border-b">
@@ -29,13 +23,33 @@ export default function OrderPaymentSection({
             <dt className="text-sm text-gray-500">상품 금액</dt>
             <dd className="text-sm text-gray-800">{payment.totalPrice.toLocaleString()}원</dd>
           </div>
+
           <div className="flex justify-between items-center">
             <dt className="text-sm text-gray-500 flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5" />
               배송비
             </dt>
-            <dd className="text-sm text-gray-800">+ {payment.shippingFee.toLocaleString()}원</dd>
+            <dd className="text-sm text-gray-800">
+              {payment.shippingFee === 0 ? (
+                <span className="text-blue-600 font-medium">무료배송</span>
+              ) : (
+                `+ ${payment.shippingFee.toLocaleString()}원`
+              )}
+            </dd>
           </div>
+
+          {payment.productDiscount > 0 && (
+            <div className="flex justify-between items-center">
+              <dt className="text-sm text-gray-500 flex items-center gap-1.5">
+                <Percent className="w-3.5 h-3.5 text-red-400" />
+                상품 할인
+              </dt>
+              <dd className="text-sm text-red-500">
+                - {payment.productDiscount.toLocaleString()}원
+              </dd>
+            </div>
+          )}
+
           {payment.couponDiscount > 0 && (
             <div className="flex justify-between items-center">
               <dt className="text-sm text-gray-500 flex items-center gap-2">
@@ -61,6 +75,7 @@ export default function OrderPaymentSection({
               </dd>
             </div>
           )}
+
           {payment.pointAmount > 0 && (
             <div className="flex justify-between items-center">
               <dt className="text-sm text-gray-500 flex items-center gap-1.5">
@@ -80,24 +95,6 @@ export default function OrderPaymentSection({
             {payment.finalAmount.toLocaleString()}원
           </span>
         </div>
-
-        {refundTotal > 0 && (
-          <>
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-sm text-amber-700 flex items-center gap-1.5">
-                <RotateCcw className="w-3.5 h-3.5" />
-                환불 대상 금액
-              </span>
-              <span className="text-sm text-amber-700">- {refundTotal.toLocaleString()}원</span>
-            </div>
-            <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-              <span className="text-sm font-semibold text-gray-800">환불 적용 후 금액</span>
-              <span className="text-lg font-bold text-gray-900">
-                {finalAfterRefund.toLocaleString()}원
-              </span>
-            </div>
-          </>
-        )}
       </CardContent>
     </Card>
   );
