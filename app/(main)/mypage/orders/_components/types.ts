@@ -16,6 +16,7 @@ export type Order = {
   createdAt: string;
   itemCount: number;
   previewItems: PreviewItem[];
+  hasPendingCancelRequest: boolean;
 };
 
 export type Pagination = {
