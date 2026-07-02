@@ -129,7 +129,7 @@ export interface OrderProduct {
   unitPrice: number;
   itemTotalPrice: number;
   img: string;
-  itemStatus: '환불요청' | '환불' | null;
+  itemStatus: OrderStatus | null;
   refundRequestReason: string | null;
   refundRejectReason: string | null;
 }
