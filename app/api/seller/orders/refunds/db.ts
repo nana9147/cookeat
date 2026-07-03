@@ -671,18 +671,16 @@ async function recalcShippingFeeForOrder(
     .filter((i) => i.shipping_status !== '취소' && i.shipping_status !== '환불')
     .reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
 
-  const { data: shipping, error: shippingError } = await supabaseAdmin
+  const { data: shippingRows, error: shippingError } = await supabaseAdmin
     .from('shippings')
     .select('shipping_id, shipping_fee')
     .eq('order_id', orderId)
-    .eq('seller_id', sellerId)
-    .limit(1)
-    .maybeSingle();
+    .eq('seller_id', sellerId);
 
   if (shippingError) throw shippingError;
-  if (!shipping) return 0;
+  if (!shippingRows || shippingRows.length === 0) return 0;
 
-  const currentFee = shipping.shipping_fee ?? 0;
+  const currentFee = shippingRows[0].shipping_fee ?? 0;
   const shouldChargeNow =
     currentFee === 0 && remainingTotal > 0 && remainingTotal < FREE_SHIPPING_THRESHOLD;
 
@@ -691,7 +689,8 @@ async function recalcShippingFeeForOrder(
   const { error: updateError } = await supabaseAdmin
     .from('shippings')
     .update({ shipping_fee: SHIPPING_FEE })
-    .eq('shipping_id', shipping.shipping_id);
+    .eq('order_id', orderId)
+    .eq('seller_id', sellerId);
 
   if (updateError) throw updateError;
 
