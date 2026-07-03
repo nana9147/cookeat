@@ -544,3 +544,84 @@ export async function processRefund(sellerId: number, refundId: number) {
 
   return { status: '환불' };
 }
+
+export async function getOrderRefundDetail(sellerId: number, orderId: string) {
+  const { data: refunds, error: refundsError } = await supabaseAdmin
+    .from('refund_requests')
+    .select(
+      `refund_id, item_id, status, request_reason, reject_reason, requested_at, processed_at,
+       return_courier, return_tracking_number,
+       order_items!inner(order_id, quantity, unit_price, original_unit_price, allocated_coupon_discount, allocated_point, seller_id, products(name, image))`
+    )
+    .eq('order_items.seller_id', sellerId)
+    .eq('order_items.order_id', orderId)
+    .order('requested_at', { ascending: false });
+
+  if (refundsError) throw refundsError;
+  if (!refunds || refunds.length === 0) return null;
+
+  const latestByItem = new Map<number, (typeof refunds)[number]>();
+  for (const r of refunds) {
+    if (!latestByItem.has(r.item_id)) {
+      latestByItem.set(r.item_id, r);
+    }
+  }
+  const claims = [...latestByItem.values()];
+
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from('orders')
+    .select('order_id, created_at, status, recipient, phone, users(nickname)')
+    .eq('order_id', orderId)
+    .maybeSingle();
+
+  if (orderError) throw orderError;
+  if (!order) return null;
+
+  const user = order.users as unknown as { nickname: string } | null;
+
+  return {
+    id: order.order_id,
+    orderDate: order.created_at,
+    orderStatus: order.status,
+    customer: user?.nickname ?? '알 수 없음',
+    recipient: order.recipient ?? '',
+    phone: order.phone ?? '',
+    refundItems: claims.map((r) => {
+      const orderItem = r.order_items as unknown as {
+        quantity: number;
+        unit_price: number;
+        original_unit_price: number;
+        allocated_coupon_discount: number | null;
+        allocated_point: number | null;
+        products: { name: string; image: string | null } | null;
+      };
+
+      const productDiscount =
+        (orderItem.original_unit_price - orderItem.unit_price) * orderItem.quantity;
+      const couponDiscount = orderItem.allocated_coupon_discount ?? 0;
+      const allocatedPoint = orderItem.allocated_point ?? 0;
+      const refundAmount = orderItem.quantity * orderItem.unit_price - couponDiscount;
+
+      return {
+        itemId: r.item_id,
+        refundId: r.refund_id,
+        productName: orderItem.products?.name ?? '알 수 없음',
+        img: orderItem.products?.image ?? null,
+        quantity: orderItem.quantity,
+        unitPrice: orderItem.unit_price,
+        originalUnitPrice: orderItem.original_unit_price,
+        productDiscount,
+        couponDiscount,
+        allocatedPoint,
+        refundAmount,
+        itemStatus: r.status,
+        refundRequestReason: r.request_reason,
+        refundRejectReason: r.reject_reason,
+        requestedAt: r.requested_at,
+        processedAt: r.processed_at,
+        returnCourier: r.return_courier,
+        returnTrackingNumber: r.return_tracking_number,
+      };
+    }),
+  };
+}

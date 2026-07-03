@@ -205,8 +205,14 @@ export interface RefundItem {
   itemId: number;
   refundId: number;
   productName: string;
+  img: string | null;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number; // 할인 적용 후 단가
+  originalUnitPrice: number; // 할인 전 정상 단가
+  productDiscount: number; // 상품할인 총액
+  couponDiscount: number; // 이 상품에 분배된 쿠폰할인액
+  allocatedPoint: number; // 이 상품에 사용된 포인트
+  refundAmount: number; // 결제수단으로 환급되는 금액 (수량*단가 - 쿠폰할인)
   itemStatus: OrderStatus;
   refundRequestReason: string | null;
   refundRejectReason: string | null;
@@ -228,10 +234,6 @@ export interface OrderWithRefunds {
 
 export interface RefundTableProps {
   orders: OrderWithRefunds[];
-  onApprove: (refundId: number) => void;
-  onReject: (refundId: number) => void;
-  onProcess: (refundId: number) => void;
-  onSaveTracking: (refundId: number, courier: string, trackingNumber: string) => void;
   selectedIds: number[];
   isAllSelectedMode: boolean;
   onSelect: (refundId: number, checked: boolean) => void;
