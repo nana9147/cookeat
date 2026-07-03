@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { logOrderItemStatusHistory } from '@/lib/orderItemStatusHistory';
 import { cancelPayment } from '@/lib/pgCancel';
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from '@/lib/shipping';
 
 export async function getOrdersWithRefundRequests(
   sellerId: number,
@@ -195,7 +196,11 @@ export async function getRefundCounts(sellerId: number) {
   return counts;
 }
 
-export async function approveRefund(sellerId: number, refundId: number) {
+export async function approveRefund(
+  sellerId: number,
+  refundId: number,
+  faultType: '구매자귀책' | '판매자귀책'
+) {
   const { data: refund, error: refundError } = await supabaseAdmin
     .from('refund_requests')
     .select(
@@ -249,17 +254,31 @@ export async function approveRefund(sellerId: number, refundId: number) {
   const originalStatus = refund.status;
   const processedAt = new Date().toISOString();
 
+  const shippingFeeCharged = await recalcShippingFeeForOrder(
+    orderItem.order_id,
+    sellerId,
+    refund.item_id
+  );
+
   if (isCancel) {
     const { payment_method, payment_key } = orderItem.orders;
     if (payment_key) {
-      const cancelAmount = orderItem.unit_price * orderItem.quantity;
+      let cancelAmount = orderItem.unit_price * orderItem.quantity;
+      if (shippingFeeCharged > 0 && faultType === '구매자귀책') {
+        cancelAmount = Math.max(0, cancelAmount - shippingFeeCharged);
+      }
       await cancelPayment(payment_method, payment_key, cancelAmount);
     }
   }
 
   const { error: updateError } = await supabaseAdmin
     .from('refund_requests')
-    .update({ status: approvedStatus, processed_at: isCancel ? processedAt : null })
+    .update({
+      status: approvedStatus,
+      processed_at: isCancel ? processedAt : null,
+      fault_type: faultType,
+      shipping_fee_charged: shippingFeeCharged,
+    })
     .eq('refund_id', refundId);
 
   if (updateError) throw updateError;
@@ -470,7 +489,7 @@ export async function processRefund(sellerId: number, refundId: number) {
   const { data: refund, error: refundError } = await supabaseAdmin
     .from('refund_requests')
     .select(
-      'status, item_id, order_items!inner(seller_id, order_id, unit_price, quantity, orders!inner(payment_method, payment_key))'
+      'status, item_id, fault_type, shipping_fee_charged, order_items!inner(seller_id, order_id, unit_price, quantity, orders!inner(payment_method, payment_key))'
     )
     .eq('refund_id', refundId)
     .maybeSingle();
@@ -504,10 +523,15 @@ export async function processRefund(sellerId: number, refundId: number) {
   const originalShippingStatus = currentItem.shipping_status;
 
   const processedAt = new Date().toISOString();
+  const faultType = refund.fault_type as '구매자귀책' | '판매자귀책' | null;
+  const shippingFeeCharged = refund.shipping_fee_charged ?? 0;
 
   const { payment_method, payment_key } = orderItem.orders;
   if (payment_key) {
-    const cancelAmount = orderItem.unit_price * orderItem.quantity;
+    let cancelAmount = orderItem.unit_price * orderItem.quantity;
+    if (shippingFeeCharged > 0 && faultType === '구매자귀책') {
+      cancelAmount = Math.max(0, cancelAmount - shippingFeeCharged);
+    }
     await cancelPayment(payment_method, payment_key, cancelAmount);
   }
 
@@ -549,9 +573,9 @@ export async function getOrderRefundDetail(sellerId: number, orderId: string) {
   const { data: refunds, error: refundsError } = await supabaseAdmin
     .from('refund_requests')
     .select(
-      `refund_id, item_id, status, request_reason, reject_reason, requested_at, processed_at,
-       return_courier, return_tracking_number,
-       order_items!inner(order_id, quantity, unit_price, original_unit_price, allocated_coupon_discount, allocated_point, seller_id, products(name, image))`
+      `refund_id, item_id, status, request_reason, request_detail, reject_reason, requested_at, processed_at,
+    return_courier, return_tracking_number, fault_type, shipping_fee_charged,
+    order_items!inner(order_id, quantity, unit_price, original_unit_price, allocated_coupon_discount, allocated_point, seller_id, products(name, image))`
     )
     .eq('order_items.seller_id', sellerId)
     .eq('order_items.order_id', orderId)
@@ -614,8 +638,11 @@ export async function getOrderRefundDetail(sellerId: number, orderId: string) {
         couponDiscount,
         allocatedPoint,
         refundAmount,
+        faultType: r.fault_type,
+        shippingFeeCharged: r.shipping_fee_charged ?? 0,
         itemStatus: r.status,
         refundRequestReason: r.request_reason,
+        refundRequestDetail: r.request_detail,
         refundRejectReason: r.reject_reason,
         requestedAt: r.requested_at,
         processedAt: r.processed_at,
@@ -624,4 +651,49 @@ export async function getOrderRefundDetail(sellerId: number, orderId: string) {
       };
     }),
   };
+}
+
+async function recalcShippingFeeForOrder(
+  orderId: string,
+  sellerId: number,
+  excludeItemId: number
+): Promise<number> {
+  const { data: remainingItems, error: itemsError } = await supabaseAdmin
+    .from('order_items')
+    .select('quantity, unit_price, shipping_status')
+    .eq('order_id', orderId)
+    .eq('seller_id', sellerId)
+    .neq('item_id', excludeItemId);
+
+  if (itemsError) throw itemsError;
+
+  const remainingTotal = (remainingItems ?? [])
+    .filter((i) => i.shipping_status !== '취소' && i.shipping_status !== '환불')
+    .reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+
+  const { data: shipping, error: shippingError } = await supabaseAdmin
+    .from('shippings')
+    .select('shipping_id, shipping_fee')
+    .eq('order_id', orderId)
+    .eq('seller_id', sellerId)
+    .limit(1)
+    .maybeSingle();
+
+  if (shippingError) throw shippingError;
+  if (!shipping) return 0;
+
+  const currentFee = shipping.shipping_fee ?? 0;
+  const shouldChargeNow =
+    currentFee === 0 && remainingTotal > 0 && remainingTotal < FREE_SHIPPING_THRESHOLD;
+
+  if (!shouldChargeNow) return 0;
+
+  const { error: updateError } = await supabaseAdmin
+    .from('shippings')
+    .update({ shipping_fee: SHIPPING_FEE })
+    .eq('shipping_id', shipping.shipping_id);
+
+  if (updateError) throw updateError;
+
+  return SHIPPING_FEE;
 }

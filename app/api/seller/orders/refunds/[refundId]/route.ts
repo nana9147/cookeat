@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
 import { approveRefund, rejectRefund, processRefund, updateReturnTracking } from '../db';
 
+const FAULT_TYPES = ['구매자귀책', '판매자귀책'] as const;
+type FaultType = (typeof FAULT_TYPES)[number];
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ refundId: string }> }
@@ -11,13 +14,23 @@ export async function PATCH(
 
   const { refundId } = await params;
   const body = await req.json();
-  const { action, reason, courier, trackingNumber } = body;
+  const { action, reason, courier, trackingNumber, faultType } = body;
 
   if (!action || !['approve', 'reject', 'process', 'saveTracking'].includes(action)) {
     return NextResponse.json(
       {
         success: false,
         error: 'action은 approve, reject, process, saveTracking 중 하나여야 합니다.',
+      },
+      { status: 400 }
+    );
+  }
+
+  if (action === 'approve' && !FAULT_TYPES.includes(faultType)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: '귀책 구분(faultType)을 구매자귀책 또는 판매자귀책 중 선택해주세요.',
       },
       { status: 400 }
     );
@@ -40,7 +53,7 @@ export async function PATCH(
   try {
     const result =
       action === 'approve'
-        ? await approveRefund(sellerCtx.sellerId, Number(refundId))
+        ? await approveRefund(sellerCtx.sellerId, Number(refundId), faultType as FaultType)
         : action === 'process'
           ? await processRefund(sellerCtx.sellerId, Number(refundId))
           : action === 'saveTracking'
