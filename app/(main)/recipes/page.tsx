@@ -25,7 +25,7 @@ export default async function RecipesPage({ searchParams }: Props) {
           </p>
         </div>
         <Link
-          href="/recipes/new"
+          href="/recipes/write"
           className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors shrink-0"
         >
           <PenSquare className="w-4 h-4" />
