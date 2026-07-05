@@ -17,7 +17,10 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default function OrderCard({ order, onDetailClick, onCancelRequested }: Props) {
-  const statusStyle = STATUS_STYLE[order.status] ?? 'bg-muted/30 text-gray-text';
+  const displayStatus = order.hasPendingCancelRequest ? '취소 신청됨' : order.status;
+  const statusStyle = order.hasPendingCancelRequest
+    ? STATUS_STYLE['취소']
+    : STATUS_STYLE[order.status] ?? 'bg-muted/30 text-gray-text';
   const extraCount = order.itemCount - order.previewItems.length;
 
   return (
@@ -28,7 +31,7 @@ export default function OrderCard({ order, onDetailClick, onCancelRequested }: P
           <span className="text-xs text-muted shrink-0">|</span>
           <span className="text-xs font-medium text-dark-text truncate">{order.orderId}</span>
         </div>
-        <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${statusStyle}`}>{order.status}</span>
+        <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${statusStyle}`}>{displayStatus}</span>
       </div>
       <div className="px-4 py-4 flex flex-col gap-3">
         {order.previewItems.map((item) => (

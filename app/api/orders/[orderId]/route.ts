@@ -43,9 +43,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
   const r = orderRes.data as unknown as Row;
   const shippings = shippingsRes.data ?? [];
 
+  const itemIds = (r.order_items ?? []).map((i) => i.item_id);
+  let hasPendingCancelRequest = false;
+  if (itemIds.length > 0) {
+    const { data: pendingRefunds } = await supabaseAdmin
+      .from('refund_requests')
+      .select('item_id')
+      .in('item_id', itemIds)
+      .eq('status', '취소요청')
+      .is('reject_reason', null);
+    hasPendingCancelRequest = (pendingRefunds ?? []).length > 0;
+  }
+
   return NextResponse.json({
     orderId: r.order_id,
     status: r.status,
+    hasPendingCancelRequest,
     createdAt: r.created_at,
     totalAmount: r.total_amount,
     shippingFee: r.shipping_fee,
