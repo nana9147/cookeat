@@ -16,7 +16,7 @@ import type {
 } from '@/types/seller/order';
 import { ORDER_STATUS_LABEL, PAYMENT_LABEL } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
-import { toDateStr, getDateRange } from '@/lib/dateRange';
+import { getDateRange } from '@/lib/dateRange';
 import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
 import OrderTable from '../components/OrderList/OrderTable';
 import StatusCards from '@/components/ui/StatusCards';
@@ -25,18 +25,24 @@ import { toast } from 'sonner';
 import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
 import { useAuthStore } from '@/store/authStore';
 
-const statuses: (OrderStatus | '전체')[] = ['전체', '결제완료', '배송준비', '배송중', '배송완료'];
+const statuses: (OrderStatus | '전체')[] = [
+  '전체',
+  '결제완료',
+  '배송준비',
+  '배송중',
+  '배송완료',
+  '구매확정',
+];
 
 const ORDER_COLOR_MAP = {
   신규주문: 'text-emerald-500',
   배송준비중: 'text-amber-500',
   배송중: 'text-blue-500',
   배송완료: 'text-taupe-500',
-  '취소/환불': 'text-red-500',
+  구매확정: 'text-violet-500',
 };
 
 const LIMIT = 10;
-
 
 const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
   { key: 'id', label: '주문번호' },
@@ -97,6 +103,7 @@ export default function OrdersPage() {
     배송준비: 0,
     배송중: 0,
     배송완료: 0,
+    구매확정: 0,
   });
 
   const { exportToExcel, isExporting, progress } = useExcelExport<OrderExportRow>({
@@ -210,6 +217,7 @@ export default function OrdersPage() {
       count: counts.배송완료,
       filterValue: '배송완료',
     },
+    { label: ORDER_STATUS_LABEL.구매확정, count: counts.구매확정, filterValue: '구매확정' },
   ];
 
   const handleSortChange = (newSortBy: OrderSortBy) => {
@@ -269,7 +277,9 @@ export default function OrdersPage() {
         {!isAdmin && (
           <Button onClick={handleExcelDownload} disabled={isExporting}>
             <Download />
-            {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+            {isExporting
+              ? `다운로드 중... (${progress.current}/${progress.total})`
+              : '엑셀 다운로드'}
           </Button>
         )}
       </div>
@@ -281,7 +291,7 @@ export default function OrdersPage() {
           setPage(1);
         }}
         colorMap={ORDER_COLOR_MAP}
-        cols={5}
+        cols={6}
       />
       <OrderSearchFilter
         search={search}
