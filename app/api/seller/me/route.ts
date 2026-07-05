@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const users = seller.users as unknown as { email: string; phone: string } | null;
+
   return NextResponse.json({
     success: true,
     data: {
@@ -25,6 +27,8 @@ export async function GET(req: NextRequest) {
       representative_name: seller.representative_name,
       cs_phone: seller.cs_phone,
       store_name: seller.store_name,
+      email: users?.email ?? '',
+      phone: users?.phone ?? '',
       business_number: seller.business_number,
       business_address: seller.business_address,
       bank_name: seller.bank_name,

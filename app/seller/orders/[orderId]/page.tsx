@@ -103,10 +103,10 @@ export default function OrderDetailPage() {
               <RotateCcw className="w-4 h-4" />이 주문에 처리 중인 취소·환불 요청이 있어요.
             </p>
             <Link
-              href={`/seller/orders/cancel-refund?keyword=${order.info.id}`}
+              href={`/seller/orders/cancel-refund/${order.info.id}`}
               className="text-sm font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900"
             >
-              취소·환불 관리에서 보기
+              환불 상세내역 보기
             </Link>
           </div>
         )}
