@@ -47,7 +47,7 @@ export default async function RecipeDetailPage({ params }: Props) {
         rating={recipe.rating}
       />
       <RecipeAuthor author={recipe.author} />
-      <RecipeIngredients ingredients={recipe.recipeIngredients} />
+      <RecipeIngredients ingredients={recipe.recipeIngredients} recipeId={idNum} />
       <RecipeSteps steps={recipe.steps} />
 
       <div className="mt-8">

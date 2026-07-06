@@ -66,6 +66,7 @@ export default function OrderList() {
                 order={order}
                 onDetailClick={() => setSelectedOrderId(order.orderId)}
                 onCancelRequested={fetchOrders}
+                onRefundRequested={fetchOrders}
               />
             ))}
           </div>

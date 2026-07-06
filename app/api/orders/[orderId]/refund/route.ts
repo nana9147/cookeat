@@ -16,5 +16,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
     // 본문 없이 호출된 경우 사유 없이 진행
   }
 
-  return createOrderClaim('취소', orderId, authed.userId, reason);
+  return createOrderClaim('환불', orderId, authed.userId, reason);
 }

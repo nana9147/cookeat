@@ -13,6 +13,16 @@ const STATUS_STYLE: Record<string, string> = {
   환불: 'bg-red/10 text-red',
 };
 
+const CLAIM_STATUS_LABEL: Record<string, string> = {
+  취소요청: '취소 신청',
+  취소거부: '취소 거부',
+  취소: '취소 완료',
+  환불요청: '환불 신청',
+  환불거부: '환불 거부',
+  환불진행중: '환불 진행중',
+  환불: '환불 완료',
+};
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
@@ -23,8 +33,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function OrderDetailContent({ detail }: { detail: OrderDetail }) {
-  const displayStatus = detail.hasPendingCancelRequest ? '취소 신청됨' : detail.status;
-  const statusStyle = detail.hasPendingCancelRequest
+  const displayStatus = detail.hasPendingCancelRequest
+    ? '취소 신청됨'
+    : detail.hasPendingRefundRequest
+      ? '환불 신청됨'
+      : detail.status;
+  const statusStyle = detail.hasPendingCancelRequest || detail.hasPendingRefundRequest
     ? STATUS_STYLE['취소']
     : STATUS_STYLE[detail.status] ?? 'bg-muted/30 text-gray-text';
 
@@ -46,22 +60,37 @@ export default function OrderDetailContent({ detail }: { detail: OrderDetail }) 
         <h3 className="text-sm font-semibold text-dark-text">주문 상품</h3>
         <ul className="flex flex-col gap-3">
           {detail.items.map((item) => (
-            <li key={item.itemId} className="flex items-center gap-3">
-              <div className="relative w-14 h-14 rounded-xl bg-card-bg shrink-0 overflow-hidden">
-                {item.image
-                  ? <Image src={item.image} alt={item.name} fill className="object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01" />
-                      </svg>
-                    </div>
-                }
+            <li key={item.itemId} className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <div className="relative w-14 h-14 rounded-xl bg-card-bg shrink-0 overflow-hidden">
+                  {item.image
+                    ? <Image src={item.image} alt={item.name} fill className="object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01" />
+                        </svg>
+                      </div>
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-dark-text truncate">{item.name}</p>
+                  <p className="text-xs text-gray-text mt-0.5">{item.quantity}개 · {formatWon(item.unitPrice)}</p>
+                </div>
+                <span className="text-sm font-semibold text-dark-text shrink-0">{formatWon(item.unitPrice * item.quantity)}</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-dark-text truncate">{item.name}</p>
-                <p className="text-xs text-gray-text mt-0.5">{item.quantity}개 · {formatWon(item.unitPrice)}</p>
-              </div>
-              <span className="text-sm font-semibold text-dark-text shrink-0">{formatWon(item.unitPrice * item.quantity)}</span>
+              {item.claim && (
+                <div className="ml-17 flex flex-col gap-0.5 rounded-lg bg-beige px-3 py-2">
+                  <p className="text-xs font-semibold text-red">
+                    {CLAIM_STATUS_LABEL[item.claim.status] ?? item.claim.status}
+                  </p>
+                  {item.claim.requestReason && (
+                    <p className="text-xs text-gray-text">사유: {item.claim.requestReason}</p>
+                  )}
+                  {item.claim.rejectReason && (
+                    <p className="text-xs text-red">거부 사유: {item.claim.rejectReason}</p>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>

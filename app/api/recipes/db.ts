@@ -229,20 +229,6 @@ export async function updateRecipe(
     }
     if (!thumbnailUrl) throw new Error('대표 이미지가 필요합니다.');
 
-    const { error: updateError } = await supabaseAdmin
-      .from('recipes')
-      .update({
-        recipe_category_id: input.recipeCategoryId,
-        title: input.title,
-        difficulty: input.difficulty,
-        cooking_time: input.cookingTime,
-        servings: input.servings,
-        description: input.description,
-        thumbnail: thumbnailUrl,
-      })
-      .eq('recipe_id', recipeId);
-    if (updateError) throw updateError;
-
     const stepRows = [];
     for (const step of steps) {
       let imageUrl: string | null = step.existingImage;
@@ -251,7 +237,6 @@ export async function updateRecipe(
         uploadedUrls.push(imageUrl);
       }
       stepRows.push({
-        recipe_id: recipeId,
         step_order: step.order,
         title: step.title,
         description: step.description,
@@ -264,28 +249,26 @@ export async function updateRecipe(
       if (old.image && !keptImages.has(old.image)) staleUrls.push(old.image);
     }
 
-    const { error: deleteStepsError } = await supabaseAdmin
-      .from('recipe_steps')
-      .delete()
-      .eq('recipe_id', recipeId);
-    if (deleteStepsError) throw deleteStepsError;
+    const ingredientRows =
+      ingredients.length > 0 ? await resolveIngredientRows(recipeId, ingredients) : [];
 
-    const { error: stepsError } = await supabaseAdmin.from('recipe_steps').insert(stepRows);
-    if (stepsError) throw stepsError;
-
-    const { error: deleteIngredientsError } = await supabaseAdmin
-      .from('recipe_ingredients')
-      .delete()
-      .eq('recipe_id', recipeId);
-    if (deleteIngredientsError) throw deleteIngredientsError;
-
-    if (ingredients.length > 0) {
-      const ingredientRows = await resolveIngredientRows(recipeId, ingredients);
-      const { error: ingredientsError } = await supabaseAdmin
-        .from('recipe_ingredients')
-        .insert(ingredientRows);
-      if (ingredientsError) throw ingredientsError;
-    }
+    // 본문 수정 + 조리순서 교체 + 재료 교체를 하나의 DB 트랜잭션으로 처리
+    // 중간 실패 시 DB가 delete까지 전체 롤백하므로 조리순서/재료가 0개로 남는 일이 없다
+    const { error: rpcError } = await supabaseAdmin.rpc('update_recipe_tx', {
+      p_recipe_id: recipeId,
+      p_recipe: {
+        recipe_category_id: input.recipeCategoryId,
+        title: input.title,
+        difficulty: input.difficulty,
+        cooking_time: input.cookingTime,
+        servings: input.servings,
+        description: input.description,
+        thumbnail: thumbnailUrl,
+      },
+      p_steps: stepRows,
+      p_ingredients: ingredientRows,
+    });
+    if (rpcError) throw rpcError;
 
     await Promise.allSettled(staleUrls.map((url) => deleteRecipeImageFile(url)));
 

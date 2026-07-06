@@ -45,20 +45,39 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
 
   const itemIds = (r.order_items ?? []).map((i) => i.item_id);
   let hasPendingCancelRequest = false;
+  let hasPendingRefundRequest = false;
+  const claimByItemId = new Map<
+    number,
+    { status: string; requestReason: string | null; rejectReason: string | null }
+  >();
   if (itemIds.length > 0) {
-    const { data: pendingRefunds } = await supabaseAdmin
+    // 아이템별 최근 취소/환불 신청 이력 — 신청 사유·거부 사유를 주문상세에 노출하기 위함
+    const { data: claims } = await supabaseAdmin
       .from('refund_requests')
-      .select('item_id')
+      .select('item_id, status, request_reason, reject_reason, requested_at')
       .in('item_id', itemIds)
-      .eq('status', '취소요청')
-      .is('reject_reason', null);
-    hasPendingCancelRequest = (pendingRefunds ?? []).length > 0;
+      .order('requested_at', { ascending: false });
+
+    for (const c of claims ?? []) {
+      if (!claimByItemId.has(c.item_id)) {
+        claimByItemId.set(c.item_id, {
+          status: c.status,
+          requestReason: c.request_reason,
+          rejectReason: c.reject_reason,
+        });
+      }
+    }
+    hasPendingCancelRequest = [...claimByItemId.values()].some((c) => c.status === '취소요청');
+    hasPendingRefundRequest = [...claimByItemId.values()].some(
+      (c) => c.status === '환불요청' || c.status === '환불진행중'
+    );
   }
 
   return NextResponse.json({
     orderId: r.order_id,
     status: r.status,
     hasPendingCancelRequest,
+    hasPendingRefundRequest,
     createdAt: r.created_at,
     totalAmount: r.total_amount,
     shippingFee: r.shipping_fee,
@@ -73,14 +92,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
       addressDetail: r.address_detail ?? null,
       request: r.shipping_request ?? null,
     },
-    items: (r.order_items ?? []).map((i) => ({
-      itemId: i.item_id,
-      productId: i.product_id,
-      name: i.products?.name ?? '',
-      image: i.products?.image ?? null,
-      quantity: i.quantity,
-      unitPrice: i.unit_price,
-    })),
+    items: (r.order_items ?? []).map((i) => {
+      const claim = claimByItemId.get(i.item_id);
+      return {
+        itemId: i.item_id,
+        productId: i.product_id,
+        name: i.products?.name ?? '',
+        image: i.products?.image ?? null,
+        quantity: i.quantity,
+        unitPrice: i.unit_price,
+        claim: claim
+          ? {
+              status: claim.status,
+              requestReason: claim.requestReason,
+              rejectReason: claim.rejectReason,
+            }
+          : null,
+      };
+    }),
     trackings: shippings.map((s) => ({
       carrier: s.carrier,
       trackingNumber: s.tracking_number,

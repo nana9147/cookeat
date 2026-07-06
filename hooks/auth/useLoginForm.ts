@@ -28,8 +28,8 @@ export function useLoginForm() {
       router.push('/')
     } catch (err) {
       const msg = err instanceof Error ? err.message : null
-      // Supabase 오류 메시지 기준으로 한글 안내
-      setSubmitError(msg?.includes('Invalid login') ? '이메일 또는 비밀번호가 올바르지 않습니다.' : '로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
+      // Supabase 오류는 영문이라 한글로 치환, 서버(API)가 직접 내려준 한글 메시지는 그대로 사용
+      setSubmitError(msg?.includes('Invalid login') ? '이메일 또는 비밀번호가 올바르지 않습니다.' : msg ?? '로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
       setIsLoading(false)
     }

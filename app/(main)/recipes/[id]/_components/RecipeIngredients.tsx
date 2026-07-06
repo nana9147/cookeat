@@ -1,14 +1,32 @@
+'use client';
+
 import { ShoppingCart } from 'lucide-react';
 import { RecipeIngredient } from '../../types';
 import RecipeIngredientItem from './RecipeIngredientItem';
+import { useCartStore } from '@/store/cartStore';
+import { toast } from 'sonner';
 
 interface RecipeIngredientsProps {
   ingredients: RecipeIngredient[];
+  recipeId: number;
 }
 
-export default function RecipeIngredients({ ingredients }: RecipeIngredientsProps) {
+export default function RecipeIngredients({ ingredients, recipeId }: RecipeIngredientsProps) {
+  const addItems = useCartStore((s) => s.addItems);
   const total = ingredients.reduce((sum, i) => sum + (i.product?.price ?? 0), 0);
-  const hasPurchasable = ingredients.some((i) => i.product !== null);
+  const purchasableIngredients = ingredients.filter((i) => i.product !== null);
+  const hasPurchasable = purchasableIngredients.length > 0;
+
+  const handleAddAll = () => {
+    addItems(
+      purchasableIngredients.map((i) => ({
+        productId: i.product!.productId,
+        quantity: 1,
+        recipeId,
+      }))
+    );
+    toast.success('재료를 모두 장바구니에 담았습니다.');
+  };
 
   return (
     <section className="mb-10">
@@ -27,7 +45,7 @@ export default function RecipeIngredients({ ingredients }: RecipeIngredientsProp
 
       <div className="border border-border rounded-xl overflow-hidden bg-card-bg">
         {ingredients.map((item) => (
-          <RecipeIngredientItem key={item.id} ingredient={item} />
+          <RecipeIngredientItem key={item.id} ingredient={item} recipeId={recipeId} />
         ))}
       </div>
 
@@ -37,7 +55,10 @@ export default function RecipeIngredients({ ingredients }: RecipeIngredientsProp
             <p className="text-sm text-gray-text">재료 합계 금액</p>
             <p className="text-base font-bold text-dark-text">{total.toLocaleString()}원</p>
           </div>
-          <button className="w-full mt-3 h-11 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors flex items-center justify-center gap-2">
+          <button
+            onClick={handleAddAll}
+            className="w-full mt-3 h-11 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors flex items-center justify-center gap-2"
+          >
             <ShoppingCart className="w-4 h-4" />
             장바구니에 모두 담기
           </button>
