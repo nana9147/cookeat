@@ -7,6 +7,7 @@ import { calcDiscountedPrice } from '@/lib/productPricing';
 interface OrderItem {
   productId: number;
   quantity: number;
+  recipeId?: number;
 }
 
 const PAYMENT_METHOD_MAP: Record<string, string> = {
@@ -236,6 +237,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '보유 포인트가 부족합니다.' }, { status: 400 });
     }
     return NextResponse.json({ error: '주문 생성 실패' }, { status: 500 });
+  }
+
+  // 레시피 재료 화면에서 담아온 상품은 경유한 레시피를 기록해둔다(추천 포인트는 구매확정 시점에 지급).
+  // create_order RPC는 건드리지 않고 생성된 order_items를 개별 업데이트한다.
+  const itemsWithRecipe = (items as OrderItem[]).filter(
+    (i) => Number.isInteger(i.recipeId) && (i.recipeId as number) > 0
+  );
+  if (itemsWithRecipe.length > 0) {
+    await Promise.all(
+      itemsWithRecipe.map((i) =>
+        supabaseAdmin
+          .from('order_items')
+          .update({ recipe_id: i.recipeId })
+          .eq('order_id', orderId)
+          .eq('product_id', i.productId)
+      )
+    );
   }
 
   return NextResponse.json({ orderId, finalAmount });

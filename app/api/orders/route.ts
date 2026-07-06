@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { ensurePurchaseConfirmations } from '@/lib/purchaseConfirmation';
 
 export async function GET(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
+
+  // 배송완료 후 일정 기간 지난 레시피 경유 주문을 지연 구매확정 처리(판매자 정산과 동일한 지연 방식)
+  await ensurePurchaseConfirmations(authed.userId);
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, Number(searchParams.get('page') ?? '1'));

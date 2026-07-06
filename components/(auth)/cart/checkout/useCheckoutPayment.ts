@@ -59,7 +59,11 @@ export function useCheckoutPayment(
     }
     try {
       const { data: order } = await api.post<{ orderId: string; finalAmount: number }>('/order', {
-        items: cartItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        items: cartItems.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          recipeId: i.recipeId,
+        })),
         paymentMethod,
         recipient: deliveryInfo?.recipient ?? '',
         phone: deliveryInfo?.phone ?? '',

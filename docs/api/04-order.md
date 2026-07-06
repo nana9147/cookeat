@@ -22,6 +22,7 @@
 | ------------------------ | -------- | ---- | ------------------------------------ |
 | `items[].productId`      | `int`    | ✓    | 상품 ID                              |
 | `items[].quantity`       | `int`    | ✓    | 수량                                 |
+| `items[].recipeId`       | `int`    | ✗    | 레시피 재료 화면에서 담은 경우 경유 레시피 ID (추천 포인트 집계용) |
 | `shipping.recipient`     | `string` | ✓    | 수령인 이름                          |
 | `shipping.phone`         | `string` | ✓    | 수령인 연락처                        |
 | `shipping.address`       | `string` | ✓    | 배송지 주소                          |

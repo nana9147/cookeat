@@ -1,7 +1,17 @@
+'use client';
+
 import { ShoppingCart } from 'lucide-react';
 import { RecipeIngredient } from '../../types';
+import { useAddToCart } from '@/hooks/useAddToCart';
 
-export default function RecipeIngredientItem({ ingredient }: { ingredient: RecipeIngredient }) {
+export default function RecipeIngredientItem({
+  ingredient,
+  recipeId,
+}: {
+  ingredient: RecipeIngredient;
+  recipeId: number;
+}) {
+  const addToCart = useAddToCart();
   const amountText = `${ingredient.amount}${ingredient.unit}`;
   const price = ingredient.product?.price ?? null;
 
@@ -24,6 +34,7 @@ export default function RecipeIngredientItem({ ingredient }: { ingredient: Recip
       )}
       {ingredient.product && (
         <button
+          onClick={() => addToCart(ingredient.product!.productId, 1, recipeId)}
           className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-gray-text hover:border-primary hover:text-primary transition-colors shrink-0"
           aria-label="장바구니 담기"
         >
