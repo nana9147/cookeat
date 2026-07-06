@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import ProductForm from '@/app/seller/components/ProductForm';
 import api from '@/lib/api';
 import type { ProductFormData } from '@/types/seller/product';
@@ -9,6 +9,9 @@ import type { ProductFormData } from '@/types/seller/product';
 export default function ProductEditPage() {
   const params = useParams<{ productId: string }>();
   const productId = params.productId;
+
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get('page') ?? '1';
 
   const [initialData, setInitialData] = useState<ProductFormData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,6 @@ export default function ProductEditPage() {
               {
                 id: crypto.randomUUID(),
                 preview: product.image,
-                // 대표이미지는 product_images 테이블 행이 아니라 products.image 컬럼이라 imageId 없음
               },
               ...subImages.map((img: { image_id: number; url: string }) => ({
                 id: crypto.randomUUID(),
@@ -91,7 +93,7 @@ export default function ProductEditPage() {
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-h2 font-bold text-dark-text max-mobile:text-h3">상품 수정</h1>
       </div>
-      <ProductForm mode="edit" initialData={initialData} />
+      <ProductForm mode="edit" initialData={initialData} fromPage={fromPage} />
     </div>
   );
 }

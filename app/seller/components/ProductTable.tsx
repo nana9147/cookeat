@@ -32,6 +32,7 @@ export default function ProductTable({
   products,
   isLoading = false,
   pageSize = 10,
+  currentPage = 1,
   sortBy,
   sortOrder,
   onSortChange,
@@ -40,7 +41,7 @@ export default function ProductTable({
   onSelect,
   onSelectAll,
   onStatusChanged,
-}: ProductTableProps) {
+}: ProductTableProps & { currentPage?: number }) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
@@ -90,175 +91,185 @@ export default function ProductTable({
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden py-3">
       <div className="overflow-x-auto whitespace-nowrap">
-      <Table>
-        <TableHeader>
-          <TableRow className="border-b border-gray-100">
-            <TableHead className="text-center w-10">
-              <input
-                type="checkbox"
-                checked={
-                  isAllSelectedMode ||
-                  (selectedIds.length === products.length && products.length > 0)
-                }
-                onChange={(e) => onSelectAll(e.target.checked)}
-              />
-            </TableHead>
-            <TableHead className="text-center text-sm font-semibold text-gray-600">상품</TableHead>
-            <TableHead className="text-center text-sm font-semibold text-gray-600">
-              카테고리
-            </TableHead>
-            <TableHead
-              className="text-center text-sm font-semibold text-gray-600 cursor-pointer select-none"
-              onClick={() => onSortChange?.('price')}
-            >
-              가격{renderSortIcon('price')}
-            </TableHead>
-            <TableHead
-              className="text-center text-sm font-semibold text-gray-600 cursor-pointer select-none"
-              onClick={() => onSortChange?.('stock')}
-            >
-              재고{renderSortIcon('stock')}
-            </TableHead>
-            <TableHead className="text-center text-sm font-semibold text-gray-600">
-              레시피 연동
-            </TableHead>
-            <TableHead className="text-center text-sm font-semibold text-gray-600">리뷰</TableHead>
-            <TableHead className="text-center text-sm font-semibold text-gray-600">상태</TableHead>
-            <TableHead className="text-center text-sm font-semibold text-gray-600">관리</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            Array.from({ length: pageSize }).map((_, i) => (
-              <TableRow key={i} className="border-b border-gray-50">
-                <TableCell className="px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 animate-pulse" />
-                    <div className="h-4 w-32 rounded bg-gray-100 animate-pulse" />
-                  </div>
-                </TableCell>
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <TableCell key={j} className="text-center">
-                    <div className="h-4 w-16 rounded bg-gray-100 animate-pulse mx-auto" />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : products.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={9} className="text-center py-16 text-gray-400 text-sm">
-                등록된 상품이 존재하지 않습니다.
-              </TableCell>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b border-gray-100">
+              <TableHead className="text-center w-10">
+                <input
+                  type="checkbox"
+                  checked={
+                    isAllSelectedMode ||
+                    (selectedIds.length === products.length && products.length > 0)
+                  }
+                  onChange={(e) => onSelectAll(e.target.checked)}
+                />
+              </TableHead>
+              <TableHead className="text-center text-sm font-semibold text-gray-600">
+                상품
+              </TableHead>
+              <TableHead className="text-center text-sm font-semibold text-gray-600">
+                카테고리
+              </TableHead>
+              <TableHead
+                className="text-center text-sm font-semibold text-gray-600 cursor-pointer select-none"
+                onClick={() => onSortChange?.('price')}
+              >
+                가격{renderSortIcon('price')}
+              </TableHead>
+              <TableHead
+                className="text-center text-sm font-semibold text-gray-600 cursor-pointer select-none"
+                onClick={() => onSortChange?.('stock')}
+              >
+                재고{renderSortIcon('stock')}
+              </TableHead>
+              <TableHead className="text-center text-sm font-semibold text-gray-600">
+                레시피 연동
+              </TableHead>
+              <TableHead className="text-center text-sm font-semibold text-gray-600">
+                리뷰
+              </TableHead>
+              <TableHead className="text-center text-sm font-semibold text-gray-600">
+                상태
+              </TableHead>
+              <TableHead className="text-center text-sm font-semibold text-gray-600">
+                관리
+              </TableHead>
             </TableRow>
-          ) : (
-            <>
-              {products.map((product) => (
-                <TableRow
-                  key={product.productId}
-                  className="border-b border-gray-50 last:border-b-0"
-                >
-                  <TableCell className="text-center">
-                    <input
-                      type="checkbox"
-                      checked={isAllSelectedMode || selectedIds.includes(product.productId)}
-                      onChange={(e) => onSelect(product.productId, e.target.checked)}
-                    />
-                  </TableCell>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: pageSize }).map((_, i) => (
+                <TableRow key={i} className="border-b border-gray-50">
                   <TableCell className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-10 h-10 rounded-lg object-cover"
-                      />
-                      <span className="text-sm font-medium text-gray-800">{product.name}</span>
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 animate-pulse" />
+                      <div className="h-4 w-32 rounded bg-gray-100 animate-pulse" />
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-gray-600 text-center">
-                    {product.categories?.name ?? '-'}
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-800 text-center">
-                    {product.price.toLocaleString()}원
-                  </TableCell>
-                  <TableCell className="text-sm text-center">
-                    <span
-                      className={
-                        (product.stock ?? 0) === 0 ? 'text-red-500 font-medium' : 'text-gray-800'
-                      }
-                    >
-                      {product.stock ?? 0}개
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-600 text-center">
-                    {product.linkedRecipeCount}개
-                  </TableCell>
-                  <TableCell className="text-sm text-center">
-                    {product.reviewCount > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-gray-700">
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                        {product.rating.toFixed(1)}
-                        <span className="text-gray-400">({product.reviewCount})</span>
-                      </span>
-                    ) : (
-                      <span className="text-gray-300">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        asChild
-                        disabled={isAdmin || changingId === product.productId}
-                      >
-                        <button className="cursor-pointer disabled:cursor-default">
-                          <StatusBadge status={product.status ?? '판매중'} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      {!isAdmin && (
-                        <DropdownMenuContent align="center">
-                          {ALL_STATUSES.map((s) => (
-                            <DropdownMenuItem
-                              key={s}
-                              disabled={s === product.status}
-                              onClick={() => handleStatusChange(product.productId, s)}
-                            >
-                              {s}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      )}
-                    </DropdownMenu>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-center gap-2 text-gray-400">
-                      {!isAdmin && (
-                        <Link href={`/seller/products/${product.productId}/edit`}>
-                          <SquarePen className="text-dark-text/70" />
-                        </Link>
-                      )}
-                      <button onClick={() => setPreviewId(product.productId)}>
-                        <Eye />
-                      </button>
-                      {!isAdmin && (
-                        <button
-                          onClick={() => handleDelete(product.productId, product.name)}
-                          disabled={deletingId === product.productId}
-                        >
-                          <Trash2
-                            className={
-                              deletingId === product.productId ? 'text-gray-300' : 'text-red-400'
-                            }
-                          />
-                        </button>
-                      )}
-                    </div>
-                  </TableCell>
+                  {Array.from({ length: 6 }).map((_, j) => (
+                    <TableCell key={j} className="text-center">
+                      <div className="h-4 w-16 rounded bg-gray-100 animate-pulse mx-auto" />
+                    </TableCell>
+                  ))}
                 </TableRow>
-              ))}
-              <EmptyRows count={Math.max(0, pageSize - products.length)} colSpan={9} />
-            </>
-          )}
-        </TableBody>
-      </Table>
+              ))
+            ) : products.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-16 text-gray-400 text-sm">
+                  등록된 상품이 존재하지 않습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              <>
+                {products.map((product) => (
+                  <TableRow
+                    key={product.productId}
+                    className="border-b border-gray-50 last:border-b-0"
+                  >
+                    <TableCell className="text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelectedMode || selectedIds.includes(product.productId)}
+                        onChange={(e) => onSelect(product.productId, e.target.checked)}
+                      />
+                    </TableCell>
+                    <TableCell className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-10 h-10 rounded-lg object-cover"
+                        />
+                        <span className="text-sm font-medium text-gray-800">{product.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600 text-center">
+                      {product.categories?.name ?? '-'}
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-800 text-center">
+                      {product.price.toLocaleString()}원
+                    </TableCell>
+                    <TableCell className="text-sm text-center">
+                      <span
+                        className={
+                          (product.stock ?? 0) === 0 ? 'text-red-500 font-medium' : 'text-gray-800'
+                        }
+                      >
+                        {product.stock ?? 0}개
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600 text-center">
+                      {product.linkedRecipeCount}개
+                    </TableCell>
+                    <TableCell className="text-sm text-center">
+                      {product.reviewCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-gray-700">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          {product.rating.toFixed(1)}
+                          <span className="text-gray-400">({product.reviewCount})</span>
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          asChild
+                          disabled={isAdmin || changingId === product.productId}
+                        >
+                          <button className="cursor-pointer disabled:cursor-default">
+                            <StatusBadge status={product.status ?? '판매중'} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        {!isAdmin && (
+                          <DropdownMenuContent align="center">
+                            {ALL_STATUSES.map((s) => (
+                              <DropdownMenuItem
+                                key={s}
+                                disabled={s === product.status}
+                                onClick={() => handleStatusChange(product.productId, s)}
+                              >
+                                {s}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        )}
+                      </DropdownMenu>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-center gap-2 text-gray-400">
+                        {!isAdmin && (
+                          <Link
+                            href={`/seller/products/${product.productId}/edit?page=${currentPage}`}
+                          >
+                            <SquarePen className="text-dark-text/70" />
+                          </Link>
+                        )}
+                        <button onClick={() => setPreviewId(product.productId)}>
+                          <Eye />
+                        </button>
+                        {!isAdmin && (
+                          <button
+                            onClick={() => handleDelete(product.productId, product.name)}
+                            disabled={deletingId === product.productId}
+                          >
+                            <Trash2
+                              className={
+                                deletingId === product.productId ? 'text-gray-300' : 'text-red-400'
+                              }
+                            />
+                          </button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <EmptyRows count={Math.max(0, pageSize - products.length)} colSpan={9} />
+              </>
+            )}
+          </TableBody>
+        </Table>
       </div>
       <Dialog open={previewId !== null} onOpenChange={(open) => !open && setPreviewId(null)}>
         <DialogContent className="max-w-6xl sm:max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden max-mobile:w-full max-mobile:max-w-[calc(100%-2rem)] max-mobile:h-[85vh]">

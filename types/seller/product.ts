@@ -114,6 +114,7 @@ export type ProductFormMode = 'create' | 'edit';
 export interface ProductFormProps {
   mode: ProductFormMode;
   initialData?: ProductFormData;
+  fromPage?: string;
 }
 
 //  상품등록 - 전체 폼 데이터

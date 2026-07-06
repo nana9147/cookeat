@@ -41,11 +41,11 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData();
 
-  const name = formData.get('name') as string | null;
+  const name = formData.get('name') as string;
   const brand = (formData.get('brand') as string | null) ?? '';
-  const origin = formData.get('origin') as string | null;
-  const categoryId = formData.get('categoryId') as string | null;
-  const status = formData.get('status') as string | null;
+  const origin = formData.get('origin') as string;
+  const categoryId = formData.get('categoryId') as string;
+  const status = formData.get('status') as string;
   const price = formData.get('price') as string | null;
   const stock = formData.get('stock') as string | null;
   const description = (formData.get('description') as string | null) ?? '';
@@ -60,20 +60,34 @@ export async function POST(req: NextRequest) {
   const representativeImage = formData.get('image');
   const subImages = formData.getAll('subImages').filter((f): f is File => f instanceof File);
 
-  if (!name || !origin || !categoryId || !status || !price || !stock) {
+  const requiredFields: { key: string; value: string | null; label: string }[] = [
+    { key: 'name', value: name, label: '상품명' },
+    { key: 'origin', value: origin, label: '원산지' },
+    { key: 'categoryId', value: categoryId, label: '카테고리' },
+    { key: 'status', value: status, label: '판매 상태' },
+    { key: 'price', value: price, label: '가격' },
+    { key: 'stock', value: stock, label: '재고 수량' },
+    { key: 'shippingTemplateId', value: shippingTemplateId, label: '배송 템플릿' },
+    { key: 'returnPolicyTemplateId', value: returnPolicyTemplateId, label: '반품정책' },
+  ];
+
+  const missingLabels = requiredFields
+    .filter(
+      (field) => !field.value || (typeof field.value === 'string' && field.value.trim() === '')
+    )
+    .map((field) => field.label);
+
+  if (missingLabels.length > 0) {
     return NextResponse.json(
-      { success: false, error: '필수 항목이 누락되었습니다.' },
-      { status: 400 }
-    );
-  }
-  if (!shippingTemplateId || !returnPolicyTemplateId) {
-    return NextResponse.json(
-      { success: false, error: '배송 템플릿과 반품정책을 선택해주세요.' },
+      {
+        success: false,
+        error: `다음 필수 항목이 누락되었습니다: ${missingLabels.join(', ')}`,
+      },
       { status: 400 }
     );
   }
 
-  if (!(representativeImage instanceof File)) {
+  if (!(representativeImage instanceof File) || representativeImage.size === 0) {
     return NextResponse.json(
       { success: false, error: '대표 이미지가 필요합니다.' },
       { status: 400 }

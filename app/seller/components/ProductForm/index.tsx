@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { ReturnPolicyTemplateOption, ShippingTemplateOption } from '@/types/seller/shipping';
 
-export default function ProductForm({ mode, initialData }: ProductFormProps) {
+export default function ProductForm({ mode, initialData, fromPage }: ProductFormProps) {
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [form, setForm] = useState<ProductFormData>(initialData ?? initialProductForm);
@@ -130,8 +130,10 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         await api.patch(`/seller/products/${form.productId}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+
+        window.dispatchEvent(new Event('product-stock-updated'));
         toast.success('상품이 수정되었습니다.');
-        router.push('/seller/products');
+        router.push(`/seller/products?page=${fromPage}`);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : '처리에 실패했습니다.';

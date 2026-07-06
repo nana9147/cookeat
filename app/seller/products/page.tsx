@@ -1,19 +1,18 @@
 'use client';
 
 import * as XLSX from 'xlsx';
-import { Upload } from 'lucide-react';
 import { useRef } from 'react';
 import { useExcelExport } from '@/hooks/useExcelExport';
-import { Download } from 'lucide-react';
 import type { ProductExportRow } from '@/types/seller/product';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Filter, Plus } from 'lucide-react';
+import { Upload, Download, Filter, Plus } from 'lucide-react';
 import ProductTable from '@/app/seller/components/ProductTable';
 import FilterTabs from '@/app/seller/components/FilterTabs';
 import Pagination from '@/components/ui/Pagination';
 import StatusCards from '@/components/ui/StatusCards';
+import { useSearchParams } from 'next/navigation';
 import { getPageNumbers } from '@/lib/utils';
 import type {
   ProductStatus,
@@ -66,12 +65,14 @@ const PRODUCT_COLOR_MAP: Record<string, string> = {
 
 export default function ProductsPage() {
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
+  const searchParams = useSearchParams();
+  const urlPage = Number(searchParams.get('page') ?? '1');
   const [status, setStatus] = useState<ProductStatus | '전체'>('전체');
   const [search, setSearch] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(urlPage);
   const [isLoading, setIsLoading] = useState(true);
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
@@ -94,6 +95,33 @@ export default function ProductsPage() {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    setPage(urlPage);
+  }, [urlPage]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      try {
+        const { data } = await api.get(`/seller/products?page=${page}&limit=10`);
+        if (cancelled) return;
+        setProducts(data.data.products || []);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page]);
 
   const handleTemplateDownload = () => {
     const sheetData = [
@@ -336,7 +364,8 @@ export default function ProductsPage() {
         const { data } = await api.get('/categories');
         setCategories(data.data);
       } catch (e) {
-        console.error(e);
+        const msg = e instanceof Error ? e.message : '실시간 재고 알림 갱신에 실패했습니다.';
+        toast.error(msg, { id: msg });
       }
     }
     loadCategories();
@@ -576,6 +605,7 @@ export default function ProductsPage() {
         <ProductTable
           products={products}
           isLoading={isLoading}
+          currentPage={page}
           sortBy={sortBy}
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
