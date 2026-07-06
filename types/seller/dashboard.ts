@@ -16,6 +16,7 @@ export interface DashboardStats {
 export interface DashboardOrderTrendPoint {
   date: string; // 'YYYY-MM-DD'
   count: number;
+  amount: number;
 }
 
 export interface DashboardReviewSummary {

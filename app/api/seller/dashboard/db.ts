@@ -112,37 +112,49 @@ export async function getSellerDashboardStats(sellerOrderIds: string[]) {
   };
 }
 
-export async function getSellerDashboardOrderTrend(sellerId: number, sellerOrderIds: string[]) {
+type DashboardTrendRow = {
+  order_id: string;
+  quantity: number;
+  unit_price: number;
+  orders: { created_at: string } | null;
+};
+
+export async function getSellerDashboardOrderTrend(sellerId: number) {
   const today = startOfDay(new Date());
   const thirtyDaysAgo = addDays(today, -29);
 
-  const days: { date: string; count: number }[] = [];
+  const days: { date: string; count: number; amount: number }[] = [];
   for (let i = 0; i < 30; i++) {
     const d = addDays(thirtyDaysAgo, i);
-    days.push({ date: toDateStr(d), count: 0 });
+    days.push({ date: toDateStr(d), count: 0, amount: 0 });
   }
 
-  if (sellerOrderIds.length === 0) {
-    return days.map((d) => ({ date: d.date, count: 0 }));
-  }
-
-  const { data: orders, error } = await supabaseAdmin
-    .from('orders')
-    .select('order_id, created_at')
-    .in('order_id', sellerOrderIds)
-    .gte('created_at', thirtyDaysAgo.toISOString());
+  const { data: rows, error } = await supabaseAdmin
+    .from('order_items')
+    .select('order_id, quantity, unit_price, orders!inner(created_at)')
+    .eq('seller_id', sellerId)
+    .gte('orders.created_at', thirtyDaysAgo.toISOString())
+    .returns<DashboardTrendRow[]>();
 
   if (error) throw error;
 
-  const countByDate = new Map<string, number>();
-  for (const o of orders ?? []) {
-    const dateStr = toDateStr(new Date(o.created_at));
-    countByDate.set(dateStr, (countByDate.get(dateStr) ?? 0) + 1);
+  const orderIdsByDate = new Map<string, Set<string>>();
+  const amountByDate = new Map<string, number>();
+
+  for (const row of rows ?? []) {
+    if (!row.orders?.created_at) continue;
+    const dateStr = toDateStr(new Date(row.orders.created_at));
+
+    if (!orderIdsByDate.has(dateStr)) orderIdsByDate.set(dateStr, new Set());
+    orderIdsByDate.get(dateStr)!.add(row.order_id);
+
+    amountByDate.set(dateStr, (amountByDate.get(dateStr) ?? 0) + row.quantity * row.unit_price);
   }
 
   return days.map((d) => ({
     date: d.date,
-    count: countByDate.get(d.date) ?? 0,
+    count: orderIdsByDate.get(d.date)?.size ?? 0,
+    amount: amountByDate.get(d.date) ?? 0,
   }));
 }
 
@@ -155,7 +167,7 @@ export async function getSellerDashboard(sellerId: number) {
 
   const [stats, orderTrend, settlementSummary, reviewSummary] = await Promise.all([
     getSellerDashboardStats(sellerOrderIds),
-    getSellerDashboardOrderTrend(sellerId, sellerOrderIds),
+    getSellerDashboardOrderTrend(sellerId),
     getSellerSettlementSummary(sellerId),
     getSellerReviewSummary(sellerId),
   ]);
