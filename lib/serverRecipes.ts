@@ -5,17 +5,24 @@ import type { RecipeDetail } from '@/app/(main)/recipes/types';
 
 type RawStep = {
   step_order: number;
+  title: string | null;
   description: string;
+  tip: string | null;
   image: string | null;
 };
 
 type RawIngredient = {
+  id: number;
   ingredient_id: number;
   product_id: number | null;
+  name: string | null;
   amount: number;
   unit: string;
   ingredients: { category: string } | { category: string }[] | null;
-  products: { product_id: number; price: number } | { product_id: number; price: number }[] | null;
+  products:
+    | { product_id: number; name: string; price: number }
+    | { product_id: number; name: string; price: number }[]
+    | null;
 };
 
 type RawRecipe = {
@@ -56,10 +63,10 @@ export async function fetchRecipeDetail(
        like_count, scrap_count,
        users!inner(user_id, nickname, profile_image),
        recipe_categories!inner(recipe_category_id, name),
-       recipe_steps(step_order, description, image),
-       recipe_ingredients(ingredient_id, product_id, amount, unit,
+       recipe_steps(step_order, title, description, tip, image),
+       recipe_ingredients(id, ingredient_id, product_id, name, amount, unit,
          ingredients(category),
-         products(product_id, price)
+         products(product_id, name, price)
        )`,
     )
     .eq('recipe_id', id)
@@ -118,14 +125,21 @@ export async function fetchRecipeDetail(
 
   const steps = [...(recipe.recipe_steps ?? [])]
     .sort((a, b) => a.step_order - b.step_order)
-    .map((s) => ({ order: s.step_order, description: s.description, image: s.image ?? null }));
+    .map((s) => ({
+      order: s.step_order,
+      title: s.title ?? null,
+      description: s.description,
+      tip: s.tip ?? null,
+      image: s.image ?? null,
+    }));
 
   const recipeIngredients = (recipe.recipe_ingredients ?? []).map((ri) => {
     const ingredient = first(ri.ingredients);
     const product = first(ri.products);
     return {
+      id: ri.id,
       ingredientId: ri.ingredient_id,
-      name: ingredient?.category ?? '',
+      name: product?.name ?? ri.name ?? ingredient?.category ?? '',
       unit: ri.unit,
       amount: ri.amount,
       product: product ? { productId: product.product_id, price: product.price } : null,

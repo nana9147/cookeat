@@ -234,7 +234,7 @@ export default function ImageUploadField({ data, onChange }: ImageUploadFieldPro
               items={data.images.map((img) => img.id)}
               strategy={rectSortingStrategy}
             >
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-5 gap-3 max-tablet:grid-cols-4 max-mobile:grid-cols-3">
                 {data.images.map((img, index) => (
                   <SortableImage
                     key={img.id}

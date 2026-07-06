@@ -12,6 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
     const detail = await getSellerOrderDetail(sellerCtx.sellerId, orderId);
     return NextResponse.json({ success: true, data: detail });
   } catch (err) {
+    console.error('[GET /seller/orders/:orderId] error:', err);
     const message = err instanceof Error ? err.message : '주문 조회에 실패했습니다.';
     const status = message === '주문을 찾을 수 없습니다.' ? 404 : 500;
     return NextResponse.json({ success: false, error: message }, { status });

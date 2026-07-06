@@ -30,12 +30,15 @@ export interface AdminMember {
 
 // ─── 주문 ───────────────────────────────────────────────────────────────────
 export type AdminOrderStatus =
+  | '결제전'
   | '결제완료'
   | '주문확인'
   | '배송준비'
   | '배송중'
   | '배송완료'
-  | '취소';
+  | '구매확정'
+  | '취소'
+  | '환불';
 
 export interface AdminOrderItem {
   itemId: number;
@@ -53,7 +56,7 @@ export interface AdminOrder {
   totalAmount: number;
   shippingFee: number;
   usedPoint: number;
-  couponId: number | null;
+  userCouponId: number | null;
   couponDiscount: number;
   finalAmount: number;
   paymentMethod: string;
@@ -139,6 +142,22 @@ export interface AdminSettlementStats {
   completedCount: number;
   completedAmount: number;
   totalFee: number;
+}
+
+// ─── 쿠폰 ───────────────────────────────────────────────────────────────────
+export type AdminCouponDiscountType = 'rate' | 'fixed';
+
+export interface AdminCoupon {
+  couponId: number;
+  code: string;
+  discountType: AdminCouponDiscountType;
+  discountValue: number;
+  minOrderAmount: number | null;
+  maxUsageCount: number | null;
+  issuedCount: number;
+  usedCount: number;
+  expiredAt: string;
+  createdAt: string;
 }
 
 // ─── 레시피·포인트 ───────────────────────────────────────────────────────────

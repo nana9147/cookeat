@@ -13,7 +13,7 @@ export default function SellerBasicInfo({ data, isEditing, onChange }: SellerApp
       </CardHeader>
       <CardContent className="pt-5">
         <dl className="flex flex-col gap-4">
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">상점명</dt>
             <dd className="text-sm text-gray-800">
               {isEditing ? (
@@ -27,7 +27,7 @@ export default function SellerBasicInfo({ data, isEditing, onChange }: SellerApp
               )}
             </dd>
           </div>
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">CS 연락처</dt>
             <dd className="text-sm text-gray-800">
               {isEditing ? (
@@ -41,14 +41,14 @@ export default function SellerBasicInfo({ data, isEditing, onChange }: SellerApp
               )}
             </dd>
           </div>
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">승인 상태</dt>
             <dd>
               <StatusBadge status={data.approve_status} />
             </dd>
           </div>
           {data.approve_status === 'rejected' && (
-            <div className="grid grid-cols-[160px_1fr] items-start">
+            <div className="grid grid-cols-[160px_1fr] items-start max-mobile:grid-cols-1 max-mobile:gap-1">
               <dt className="text-sm text-gray-400 pt-0.5">승인 거절 사유</dt>
               <dd className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {data.rejected_reason}

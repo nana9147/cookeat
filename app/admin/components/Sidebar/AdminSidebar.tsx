@@ -18,6 +18,7 @@ const menuItems = [
   { label: '상품관리', href: '/admin/products' },
   { label: '주문관리', href: '/admin/orders' },
   { label: '정산관리', href: '/admin/settlements' },
+  { label: '쿠폰관리', href: '/admin/coupons' },
   { label: '레시피/포인트', href: '/admin/recipes' },
   { label: '리뷰/신고', href: '/admin/reviews' },
   { label: '고객센터', href: '/admin/support' },
@@ -31,7 +32,7 @@ export default function AdminSidebar() {
     <Sidebar
       collapsible="none"
       className="hidden md:flex bg-white"
-      style={{ top: '6.25rem', height: 'calc(100svh - 6.25rem)' }}
+      style={{ minHeight: 'calc(100svh - 6.25rem)' }}
     >
       <SidebarContent>
         <SidebarGroup>

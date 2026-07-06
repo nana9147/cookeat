@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/serverAuth';
+import { escapeOrValue } from '@/lib/utils';
 
-const VALID_STATUSES = ['결제완료', '주문확인', '배송준비', '배송중', '배송완료', '취소'] as const;
+const VALID_STATUSES = ['결제전', '결제완료', '주문확인', '배송준비', '배송중', '배송완료', '구매확정', '취소', '환불'] as const;
 type OrderStatus = (typeof VALID_STATUSES)[number];
 
 export async function GET(req: NextRequest) {
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin
     .from('orders')
     .select(
-      `order_id, user_id, total_amount, shipping_fee, used_point, coupon_id, coupon_discount,
+      `order_id, user_id, total_amount, shipping_fee, used_point, user_coupon_id, coupon_discount,
        final_amount, payment_method, status, recipient, phone, address, address_detail,
        shipping_request, created_at, updated_at,
        order_items(item_id, product_id, seller_id, quantity, unit_price,
@@ -35,7 +36,8 @@ export async function GET(req: NextRequest) {
   }
 
   if (keyword) {
-    query = query.or(`order_id.ilike.%${keyword}%,recipient.ilike.%${keyword}%`);
+    const pattern = escapeOrValue(`%${keyword}%`);
+    query = query.or(`order_id.ilike.${pattern},recipient.ilike.${pattern}`);
   }
 
   const { data, error, count } = await query;
@@ -61,7 +63,7 @@ export async function GET(req: NextRequest) {
       totalAmount: o.total_amount,
       shippingFee: o.shipping_fee,
       usedPoint: o.used_point,
-      couponId: o.coupon_id,
+      userCouponId: o.user_coupon_id,
       couponDiscount: o.coupon_discount,
       finalAmount: o.final_amount,
       paymentMethod: o.payment_method,

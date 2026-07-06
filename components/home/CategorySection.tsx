@@ -27,6 +27,10 @@ const categoryImageMap: Record<string, string> = {
   음료: '/images/categories/drink.png',
   베이킹: '/images/categories/baking.png',
   식단: '/images/categories/salad.png',
+  동남아: '/images/categories/chinese.png',
+  분식: '/images/categories/korean.png',
+  다이어트: '/images/categories/salad.png',
+  술안주: '/images/categories/snack.png',
 };
 
 export default function CategorySection() {

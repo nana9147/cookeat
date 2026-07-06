@@ -29,6 +29,7 @@ export interface RecipeListItem {
 }
 
 export interface RecipeIngredient {
+  id: number;
   ingredientId: number;
   name: string;
   unit: string;
@@ -38,7 +39,9 @@ export interface RecipeIngredient {
 
 export interface RecipeStep {
   order: number;
+  title: string | null;
   description: string;
+  tip: string | null;
   image: string | null;
 }
 

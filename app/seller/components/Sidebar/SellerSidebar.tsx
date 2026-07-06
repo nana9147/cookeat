@@ -49,11 +49,12 @@ const menuItems = [
   },
   { label: '리뷰관리', href: '/seller/reviews' },
   { label: '정산관리', href: '/seller/settlements' },
+  { label: '통계', href: '/seller/statistics' },
   { label: '판매자정보', href: '/seller/info' },
 ];
 
 interface SellerMe {
-  storeName: string;
+  store_name: string;
   email: string;
 }
 
@@ -68,7 +69,7 @@ export default function SellerSidebar() {
     const fetchMe = async () => {
       try {
         const { data } = await api.get('/seller/me');
-        setSellerInfo({ storeName: data.data.storeName, email: data.data.email });
+        setSellerInfo({ store_name: data.data.store_name, email: data.data.email });
       } catch (e) {
         const msg = e instanceof Error ? e.message : '판매자 정보를 불러오지 못했습니다.';
         toast.error(msg, { id: msg });
@@ -94,7 +95,7 @@ export default function SellerSidebar() {
   };
 
   return (
-    <Sidebar collapsible="none" className="hidden md:flex bg-primary text-white">
+    <Sidebar collapsible="none" className="hidden desktop:flex bg-primary text-white">
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
@@ -139,7 +140,7 @@ export default function SellerSidebar() {
             <button className="flex items-center gap-4 w-full text-left hover:bg-white/10 rounded-lg p-1 transition-colors">
               <CircleUser size={36} className="text-white opacity-70 shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm truncate">{sellerInfo?.storeName ?? '불러오는 중...'}</p>
+                <p className="text-sm truncate">{sellerInfo?.store_name ?? '불러오는 중...'}</p>
                 <p className="text-xs truncate">{sellerInfo?.email ?? ''}</p>
               </div>
             </button>

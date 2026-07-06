@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { getPageNumbers } from '@/lib/utils';
 
 export function usePagination<T>(items: T[], pageSize: number) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [prevItemsLength, setPrevItemsLength] = useState(items.length);
 
-  useEffect(() => {
+  if (items.length !== prevItemsLength) {
+    setPrevItemsLength(items.length);
     setCurrentPage(1);
-  }, [items.length]);
+  }
 
   const totalPages = Math.ceil(items.length / pageSize);
   const paginated = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);

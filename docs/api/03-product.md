@@ -126,6 +126,35 @@
 
 ---
 
+### GET `/products/:productId/inquiries`
+
+> 상품 상세 "상품 문의" 탭에 쓰이는 공개 Q&A 목록. 인증 없이 조회 가능하며, 작성자 본인이 아니면 닉네임을 마스킹한다.
+> 문의 등록은 별도 엔드포인트가 아니라 `POST /inquiries`에 `category: "상품문의"`, `productId`를 넘겨서 처리한다
+> ([05. Inquiry](./05-social.md#inquiry-문의) 참고).
+
+`Query Parameters`
+
+| 파라미터 | 타입  | 필수 | 설명                        |
+| -------- | ----- | ---- | --------------------------- |
+| `page`   | `int` | ✗    | 페이지 번호 (기본 1)        |
+| `limit`  | `int` | ✗    | 페이지당 개수 (기본 10, 최대 50) |
+
+`Response 200`
+
+| 필드                    | 타입      | 설명                                          |
+| ----------------------- | --------- | --------------------------------------------- |
+| `inquiries[].inquiryId` | `int`     | 문의 ID                                       |
+| `inquiries[].title`     | `string`  | 문의 제목                                     |
+| `inquiries[].content`   | `string`  | 문의 내용                                     |
+| `inquiries[].author`    | `string`  | 작성자 닉네임 (본인이 아니면 마스킹, 예: `홍*동`) |
+| `inquiries[].isMine`    | `boolean` | 요청자가 작성자 본인인지 여부                 |
+| `inquiries[].isAnswered`| `boolean` | 답변 완료 여부                                |
+| `inquiries[].reply`     | `object \| null` | `{ content, createdAt }`                |
+| `inquiries[].createdAt` | `string`  | 등록일시 (ISO 8601)                           |
+| `totalCount`            | `int`     | 전체 문의 수                                  |
+
+---
+
 ## Cart · 장바구니
 
 > 장바구니는 `Zustand + LocalStorage persist`로 프론트에서 관리.

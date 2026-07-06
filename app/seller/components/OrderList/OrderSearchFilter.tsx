@@ -28,7 +28,7 @@ export default function OrderSearchFilter({
 
   return (
     <div className="flex flex-col gap-4 mb-5">
-      <div className="flex gap-2">
+      <div className="flex gap-2 max-tablet:flex-col">
         <Input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -46,7 +46,7 @@ export default function OrderSearchFilter({
         <Button
           onClick={() => setIsFilterOpen((prev) => !prev)}
           variant="outline"
-          className="flex items-center gap-1.5 px-4 shrink-0 py-5 bg-card"
+          className="flex items-center gap-1.5 px-4 shrink-0 py-5 bg-card max-tablet:w-full"
         >
           <Filter />
           필터

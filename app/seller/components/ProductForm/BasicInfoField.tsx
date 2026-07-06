@@ -27,7 +27,7 @@ export default function BasicInfoField({ data, categories, onChange }: BasicInfo
           <label className="block text-sm font-medium text-gray-700 mb-1">
             카테고리 <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-4">
+          <div className="flex gap-4 max-tablet:flex-col">
             <Select
               value={data.parentCategoryId}
               onValueChange={(value) => {
@@ -80,7 +80,7 @@ export default function BasicInfoField({ data, categories, onChange }: BasicInfo
         </div>
 
         {/* 제조사 + 원산지 */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 max-tablet:grid-cols-1">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">제조사</label>
             <Input

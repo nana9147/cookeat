@@ -2,6 +2,7 @@ export type OrderDetail = {
   orderId: string;
   totalAmount: number;
   shippingFee: number;
+  usedPoint: number;
   couponDiscount: number;
   finalAmount: number;
   paymentMethod: string;

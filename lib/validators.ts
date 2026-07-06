@@ -6,6 +6,7 @@ const ALLOWED_PRODUCT_STATUSES = ['판매중', '품절', '판매종료', '숨김
 const ALLOWED_DISCOUNT_TYPES = ['none', 'rate', 'amount'];
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_DIFFICULTIES = ['쉬움', '보통', '어려움'];
 
 export function validateProductFields(input: {
   status: string;
@@ -23,6 +24,26 @@ export function validateProductFields(input: {
       return '할인율은 0~100 사이여야 합니다.';
     }
   }
+  return null;
+}
+
+export function validateRecipeFields(input: {
+  title: string;
+  recipeCategoryId: number;
+  difficulty: string;
+  cookingTime: number;
+  servings: number;
+  description: string;
+}): string | null {
+  if (!input.title.trim()) return '레시피 제목을 입력해주세요.';
+  if (!Number.isInteger(input.recipeCategoryId) || input.recipeCategoryId <= 0)
+    return '카테고리를 선택해주세요.';
+  if (!ALLOWED_DIFFICULTIES.includes(input.difficulty)) return '유효하지 않은 난이도입니다.';
+  if (!Number.isInteger(input.cookingTime) || input.cookingTime <= 0)
+    return '조리 시간을 올바르게 입력해주세요.';
+  if (!Number.isInteger(input.servings) || input.servings <= 0)
+    return '인분 수를 올바르게 입력해주세요.';
+  if (!input.description.trim()) return '레시피 설명을 입력해주세요.';
   return null;
 }
 

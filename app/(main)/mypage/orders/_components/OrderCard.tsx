@@ -3,7 +3,12 @@ import type { Order } from './types';
 import OrderCardActions from './OrderCardActions';
 import { formatDate, formatWon } from '@/lib/format';
 
-type Props = { order: Order; onDetailClick: () => void };
+type Props = {
+  order: Order;
+  onDetailClick: () => void;
+  onCancelRequested?: () => void;
+  onRefundRequested?: () => void;
+};
 
 const STATUS_STYLE: Record<string, string> = {
   결제전: 'bg-muted/30 text-gray-text',
@@ -13,10 +18,18 @@ const STATUS_STYLE: Record<string, string> = {
   배송중: 'bg-orange-50 text-orange-500',
   배송완료: 'bg-gray-100 text-gray-500',
   취소: 'bg-red/10 text-red',
+  환불: 'bg-red/10 text-red',
 };
 
-export default function OrderCard({ order, onDetailClick }: Props) {
-  const statusStyle = STATUS_STYLE[order.status] ?? 'bg-muted/30 text-gray-text';
+export default function OrderCard({ order, onDetailClick, onCancelRequested, onRefundRequested }: Props) {
+  const displayStatus = order.hasPendingCancelRequest
+    ? '취소 신청됨'
+    : order.hasPendingRefundRequest
+      ? '환불 신청됨'
+      : order.status;
+  const statusStyle = order.hasPendingCancelRequest || order.hasPendingRefundRequest
+    ? STATUS_STYLE['취소']
+    : STATUS_STYLE[order.status] ?? 'bg-muted/30 text-gray-text';
   const extraCount = order.itemCount - order.previewItems.length;
 
   return (
@@ -27,7 +40,7 @@ export default function OrderCard({ order, onDetailClick }: Props) {
           <span className="text-xs text-muted shrink-0">|</span>
           <span className="text-xs font-medium text-dark-text truncate">{order.orderId}</span>
         </div>
-        <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${statusStyle}`}>{order.status}</span>
+        <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${statusStyle}`}>{displayStatus}</span>
       </div>
       <div className="px-4 py-4 flex flex-col gap-3">
         {order.previewItems.map((item) => (
@@ -66,7 +79,12 @@ export default function OrderCard({ order, onDetailClick }: Props) {
             <span className="text-base font-bold text-primary">{formatWon(order.finalAmount)}</span>
           </div>
         </div>
-        <OrderCardActions order={order} onDetailClick={onDetailClick} />
+        <OrderCardActions
+          order={order}
+          onDetailClick={onDetailClick}
+          onCancelRequested={onCancelRequested}
+          onRefundRequested={onRefundRequested}
+        />
       </div>
     </div>
   );

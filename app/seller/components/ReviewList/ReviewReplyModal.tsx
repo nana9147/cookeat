@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,10 +19,12 @@ export default function ReviewReplyModal({
   onSubmit,
 }: ReviewReplyModalProps) {
   const [reply, setReply] = useState('');
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) setReply(review?.reply?.content ?? '');
-  }, [open, review]);
+  }
 
   const handleSubmit = () => {
     if (!review || !reply.trim()) return;
@@ -32,7 +34,7 @@ export default function ReviewReplyModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>답글 작성</DialogTitle>
         </DialogHeader>

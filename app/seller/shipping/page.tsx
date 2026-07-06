@@ -57,6 +57,7 @@ export default function ShippingPage() {
   const [endDate, setEndDate] = useState(() => getDateRange('전체').endDate);
   const isAllStage = status === '전체';
   const isPaymentInfoStage = status === '결제완료';
+  const [prevStatus, setPrevStatus] = useState(status);
 
   const handleDatePresetChange = (preset: DateRangePreset) => {
     setDatePreset(preset);
@@ -90,13 +91,34 @@ export default function ShippingPage() {
     fetchCounts();
   };
 
-  useEffect(() => {
+  if (status !== prevStatus) {
+    setPrevStatus(status);
     setSearch('');
     setPage(1);
-  }, [status]);
+  }
 
   useEffect(() => {
-    fetchCounts();
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const res = await api.get('/seller/shipping/orders/counts', {
+          params: { startDate, endDate },
+        });
+        if (!cancelled) setCounts(res.data.data);
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
+        }
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
   }, [startDate, endDate]);
 
   useEffect(() => {
@@ -293,9 +315,9 @@ export default function ShippingPage() {
   };
 
   return (
-    <div className="bg-background p-8">
-      <div className="mb-8">
-        <h1 className="text-h2 font-bold text-dark-text">
+    <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
+      <div className="mb-8 max-mobile:mb-5">
+        <h1 className="text-h2 font-bold text-dark-text max-mobile:text-h3">
           배송 관리
           <span className="text-light-gray font-normal mx-2">/</span>
           <span className="text-h4 font-medium">배송 처리</span>
@@ -312,7 +334,7 @@ export default function ShippingPage() {
         cols={5}
       />
 
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-5 max-tablet:flex-col max-tablet:items-stretch">
         <Input
           value={search}
           onChange={(e) => {
@@ -320,7 +342,7 @@ export default function ShippingPage() {
             setPage(1);
           }}
           placeholder="주문번호, 주문자로 검색"
-          className="flex-1 py-5 bg-card"
+          className="flex-1 py-5 bg-card max-tablet:w-full"
         />
         <DateRangeFilter
           datePreset={datePreset}

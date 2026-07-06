@@ -9,7 +9,13 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const page = Number(searchParams.get('page') ?? '1');
   const limit = Number(searchParams.get('limit') ?? '10');
-  const tab = searchParams.get('tab') as '전체' | '취소요청' | '환불요청' | '처리완료' | undefined;
+  const tab = searchParams.get('tab') as
+    | '전체'
+    | '취소요청'
+    | '환불요청'
+    | '환불진행중'
+    | '처리완료'
+    | undefined;
   const keyword = searchParams.get('keyword') ?? undefined;
   const startDate = searchParams.get('startDate') || undefined;
   const endDate = searchParams.get('endDate') || undefined;

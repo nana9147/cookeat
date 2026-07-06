@@ -12,6 +12,7 @@
 | GET    | `/orders`                 | 주문 목록 조회        | ✓    |
 | GET    | `/orders/:orderId`        | 주문 상세 조회        | ✓    |
 | POST   | `/orders/:orderId/cancel` | 주문 취소             | ✓    |
+| POST   | `/orders/:orderId/refund` | 배송완료 주문 환불 신청 | ✓    |
 
 ### POST `/orders`
 
@@ -21,6 +22,7 @@
 | ------------------------ | -------- | ---- | ------------------------------------ |
 | `items[].productId`      | `int`    | ✓    | 상품 ID                              |
 | `items[].quantity`       | `int`    | ✓    | 수량                                 |
+| `items[].recipeId`       | `int`    | ✗    | 레시피 재료 화면에서 담은 경우 경유 레시피 ID (추천 포인트 집계용) |
 | `shipping.recipient`     | `string` | ✓    | 수령인 이름                          |
 | `shipping.phone`         | `string` | ✓    | 수령인 연락처                        |
 | `shipping.address`       | `string` | ✓    | 배송지 주소                          |
@@ -28,7 +30,7 @@
 | `shipping.request`       | `string` | ✗    | 배송 요청사항                        |
 | `payment.method`         | `string` | ✓    | 결제 수단 (`card`, `point`, `kakao`) |
 | `payment.usePoint`       | `int`    | ✗    | 사용할 포인트 (기본 0)               |
-| `payment.couponCode`     | `string` | ✗    | 쿠폰 코드 (없으면 생략)              |
+| `payment.userCouponId`   | `int`    | ✗    | 사용할 user_coupons.id (없으면 생략) |
 
 ```json
 {
@@ -40,7 +42,7 @@
     "addressDetail": "101호",
     "request": "문 앞에 놔주세요"
   },
-  "payment": { "method": "card", "usePoint": 1000, "couponCode": "SUMMER2026" }
+  "payment": { "method": "card", "usePoint": 1000, "userCouponId": 42 }
 }
 ```
 

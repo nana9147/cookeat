@@ -31,15 +31,20 @@ export function useCartItems() {
     if (!idsKey || idsKey === cachedProductsKey) return;
 
     let cancelled = false;
-    setLoading(true);
-    setError(false);
-    api
-      .get<{ items: CartProduct[] }>(`/cart?ids=${idsKey}`)
-      .then(({ data }) => { if (!cancelled) setCachedProducts(idsKey, data.items); })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
+
+    const fetchItems = () => {
+      setLoading(true);
+      setError(false);
+      api
+        .get<{ items: CartProduct[] }>(`/cart?ids=${idsKey}`)
+        .then(({ data }) => { if (!cancelled) setCachedProducts(idsKey, data.items); })
+        .catch(() => {
+          if (!cancelled) setError(true);
+        })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    };
+
+    fetchItems();
 
     return () => { cancelled = true; };
   }, [idsKey, cachedProductsKey, setCachedProducts]);

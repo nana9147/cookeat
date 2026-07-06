@@ -83,8 +83,8 @@ export default function SellerInfoPage() {
   }
 
   return (
-    <div className="bg-background p-8 flex flex-col gap-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-background p-8 flex flex-col gap-4 max-tablet:p-6 max-mobile:p-4">
+      <div className="flex items-center justify-between mb-4 max-mobile:flex-col max-mobile:items-start max-mobile:gap-3">
         <h1 className="text-h2 font-bold text-dark-text">판매자 정보</h1>
         {!isAdmin && (
           <div className="flex gap-2">

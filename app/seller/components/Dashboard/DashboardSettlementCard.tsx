@@ -18,7 +18,7 @@ export default function DashboardSettlementCard({ settlement }: DashboardSettlem
           </Link>
         </div>
       </CardHeader>
-      <CardContent className="pt-6 space-y-5">
+      <CardContent className="pt-6 space-y-5 max-mobile:pt-4 max-mobile:space-y-4">
         <div>
           <p className="text-xs text-light-gray mb-2">다음 정산 예정 금액</p>
           <p className="text-2xl font-bold text-dark-text leading-none">

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { AddressFormProps } from '@/types/seller/shipping';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import DaumPostcode from 'react-daum-postcode';
 
 export default function AddressForm({
@@ -22,15 +22,18 @@ export default function AddressForm({
     detailAddress: address?.detailAddress ?? '',
     isDefault: address?.isDefault ?? false,
   });
+  const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
 
-  useEffect(() => {
+  const [prevSync, setPrevSync] = useState({ isOpen, address, defaultType });
+  if (
+    prevSync.isOpen !== isOpen ||
+    prevSync.address !== address ||
+    prevSync.defaultType !== defaultType
+  ) {
+    setPrevSync({ isOpen, address, defaultType });
     if (!isOpen) {
       setIsPostcodeOpen(false);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen) {
+    } else {
       setForm({
         type: address?.type ?? defaultType ?? '출고지',
         name: address?.name ?? '',
@@ -40,7 +43,7 @@ export default function AddressForm({
         isDefault: address?.isDefault ?? false,
       });
     }
-  }, [isOpen, address, defaultType]);
+  }
 
   const handleSubmit = () => {
     if (!form.name || !form.zipCode || !form.baseAddress) {
@@ -50,8 +53,6 @@ export default function AddressForm({
     onSubmit(form);
     onClose();
   };
-
-  const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -104,8 +105,8 @@ export default function AddressForm({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               우편번호 <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-2">
-              <Input value={form.zipCode} readOnly className="w-32" />
+            <div className="flex gap-2 max-mobile:flex-wrap">
+              <Input value={form.zipCode} readOnly className="w-32 max-mobile:w-full" />
               <Button
                 type="button"
                 variant="outline"

@@ -14,7 +14,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inqu
 
   const { data, error } = await supabaseAdmin
     .from('inquiries')
-    .select(`inquiry_id, category, title, content, created_at, inquiry_replies(reply_id, content, created_at)`)
+    .select(
+      `inquiry_id, category, title, content, created_at,
+       inquiry_replies(reply_id, content, created_at),
+       inquiry_images(url)`
+    )
     .eq('inquiry_id', id)
     .eq('user_id', authed.userId)
     .single();
@@ -22,9 +26,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inqu
   if (error || !data) return NextResponse.json({ error: '문의를 찾을 수 없습니다.' }, { status: 404 });
 
   type ReplyRow = { reply_id: number; content: string; created_at: string };
+  type ImageRow = { url: string };
   type Row = {
     inquiry_id: number; category: string; title: string; content: string; created_at: string;
     inquiry_replies: ReplyRow[] | ReplyRow | null;
+    inquiry_images: ImageRow[] | null;
   };
   const r = data as unknown as Row;
   const raw = r.inquiry_replies;
@@ -34,5 +40,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inqu
     inquiryId: r.inquiry_id, category: r.category, title: r.title, content: r.content,
     createdAt: r.created_at, isAnswered: replies.length > 0,
     reply: replies[0] ? { content: replies[0].content, createdAt: replies[0].created_at } : null,
+    images: (r.inquiry_images ?? []).map((img) => img.url),
   });
 }

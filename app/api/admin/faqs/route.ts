@@ -2,52 +2,93 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/serverAuth';
 
+type RawUser = { nickname: string; email: string };
+type RawReply = { reply_id: number; content: string; created_at: string };
+
 export async function GET(req: NextRequest) {
   const authed = await requireAdmin(req);
   if (authed instanceof NextResponse) return authed;
 
   const { searchParams } = new URL(req.url);
-  const category = searchParams.get('category') ?? '';
   const keyword = searchParams.get('keyword') ?? '';
+  const category = searchParams.get('category') ?? '';
+  const answered = searchParams.get('answered');
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
+  const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') ?? '20')));
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
 
   let query = supabaseAdmin
     .from('faqs')
-    .select('*', { count: 'exact' })
+    .select(
+      `faq_id, category, title, content, created_at,
+       users!inner(nickname, email),
+       faq_replies(reply_id, content, created_at)`,
+      { count: 'exact' }
+    )
+    .not('user_id', 'is', null)
     .order('created_at', { ascending: false });
 
-  if (category) query = query.eq('category', category);
   if (keyword) query = query.ilike('title', `%${keyword}%`);
+  if (category) query = query.eq('category', category);
 
-  const { data, error, count } = await query;
+  if (answered !== null) {
+    const { data, error } = await query;
+    if (error) {
+      console.error('[GET /api/admin/faqs]', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const all = (data ?? []).map(toInquiry);
+    const filtered =
+      answered === 'true' ? all.filter((i) => i.isAnswered) : all.filter((i) => !i.isAnswered);
+    const total = filtered.length;
+    const paginated = filtered.slice(from, to + 1);
+
+    return NextResponse.json({
+      inquiries: paginated,
+      pagination: { page, limit, total, hasNext: page * limit < total },
+    });
+  }
+
+  const { data, error, count } = await query.range(from, to);
   if (error) {
     console.error('[GET /api/admin/faqs]', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ faqs: data ?? [], total: count ?? 0 });
+  return NextResponse.json({
+    inquiries: (data ?? []).map(toInquiry),
+    pagination: { page, limit, total: count ?? 0, hasNext: page * limit < (count ?? 0) },
+  });
 }
 
-export async function POST(req: NextRequest) {
-  const authed = await requireAdmin(req);
-  if (authed instanceof NextResponse) return authed;
-
-  const body = await req.json();
-  const { category, title, content, is_public } = body;
-
-  if (!category || !title || !content) {
-    return NextResponse.json({ error: '필수 항목이 누락되었습니다.' }, { status: 400 });
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from('faqs')
-    .insert({ category, title, content, is_public: is_public ?? true })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('[POST /api/admin/faqs]', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ faq: data }, { status: 201 });
+function toInquiry(i: {
+  faq_id: number;
+  category: string;
+  title: string;
+  content: string;
+  created_at: string;
+  users: unknown;
+  faq_replies: unknown;
+}) {
+  const user = i.users as RawUser | null;
+  const raw = i.faq_replies;
+  const replies: RawReply[] = raw === null || raw === undefined
+    ? []
+    : Array.isArray(raw)
+      ? (raw as RawReply[])
+      : [raw as RawReply];
+  const isAnswered = replies.length > 0;
+  return {
+    inquiryId: i.faq_id,
+    author: user?.nickname ?? '(알 수 없음)',
+    authorEmail: user?.email ?? '',
+    category: i.category,
+    title: i.title,
+    content: i.content,
+    isAnswered,
+    reply: isAnswered ? { content: replies[0].content, createdAt: replies[0].created_at } : null,
+    createdAt: i.created_at,
+  };
 }

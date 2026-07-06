@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSellerContext } from '@/lib/sellerContext';
 import { getSellerBySellerId, updateSeller } from './db';
 
+// app/api/seller/me/route.ts
 export async function GET(req: NextRequest) {
   const sellerCtx = await requireSellerContext(req);
   if (sellerCtx instanceof NextResponse) return sellerCtx;
@@ -20,16 +21,22 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     success: true,
     data: {
-      sellerId: seller.seller_id,
-      storeName: seller.store_name,
+      seller_id: seller.seller_id,
+      user_id: seller.user_id,
+      is_co_representative: seller.is_co_representative,
+      representative_name: seller.representative_name,
+      cs_phone: seller.cs_phone,
+      store_name: seller.store_name,
       email: users?.email ?? '',
       phone: users?.phone ?? '',
-      businessNumber: seller.business_number,
-      bankName: seller.bank_name,
-      bankAccount: seller.bank_account,
-      approveStatus: seller.approve_status,
-      rejectedReason: seller.rejected_reason,
-      createdAt: seller.created_at,
+      business_number: seller.business_number,
+      business_address: seller.business_address,
+      bank_name: seller.bank_name,
+      bank_account: seller.bank_account,
+      commission_rate: seller.commission_rate,
+      approve_status: seller.approve_status,
+      rejected_reason: seller.rejected_reason,
+      created_at: seller.created_at,
     },
   });
 }

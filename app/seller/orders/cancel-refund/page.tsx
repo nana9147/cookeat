@@ -18,7 +18,7 @@ import StatusCards from '@/components/ui/StatusCards';
 import DateRangeFilter from '../../components/DateRangeFilter';
 import type { OrderWithRefunds } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
-import { toDateStr, getDateRange } from '@/lib/dateRange';
+import { getDateRange } from '@/lib/dateRange';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Download } from 'lucide-react';
@@ -30,9 +30,9 @@ const REFUND_COLOR_MAP = {
   전체: 'text-gray-600',
   취소요청: 'text-amber-500',
   환불요청: 'text-red-500',
+  환불진행중: 'text-blue-500',
   처리완료: 'text-emerald-500',
 };
-
 
 const EXPORT_COLUMNS: ExportColumn<RefundExportRow>[] = [
   { key: 'orderId', label: '주문번호' },
@@ -54,7 +54,9 @@ const EXPORT_COLUMNS: ExportColumn<RefundExportRow>[] = [
 
 export default function CancelRefundPage() {
   const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
-  const [tab, setTab] = useState<'전체' | '취소요청' | '환불요청' | '처리완료'>('전체');
+  const [tab, setTab] = useState<'전체' | '취소요청' | '환불요청' | '환불진행중' | '처리완료'>(
+    '전체'
+  );
   const [search, setSearch] = useState('');
   const [orders, setOrders] = useState<OrderWithRefunds[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +67,13 @@ export default function CancelRefundPage() {
   const [startDate, setStartDate] = useState(() => getDateRange('전체').startDate);
   const [endDate, setEndDate] = useState(() => getDateRange('전체').endDate);
 
-  const [counts, setCounts] = useState({ 전체: 0, 취소요청: 0, 환불요청: 0, 처리완료: 0 });
+  const [counts, setCounts] = useState({
+    전체: 0,
+    취소요청: 0,
+    환불요청: 0,
+    환불진행중: 0,
+    처리완료: 0,
+  });
 
   const [rejectingRefundId, setRejectingRefundId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -102,7 +110,10 @@ export default function CancelRefundPage() {
   }, []);
 
   useEffect(() => {
-    fetchCounts();
+    const run = () => {
+      fetchCounts();
+    };
+    run();
   }, [fetchCounts]);
 
   const fetchOrders = async () => {
@@ -129,7 +140,10 @@ export default function CancelRefundPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    const run = () => {
+      fetchOrders();
+    };
+    run();
   }, [page, tab, search, startDate, endDate]);
 
   const handleSelect = (refundId: number, checked: boolean) => {
@@ -176,6 +190,39 @@ export default function CancelRefundPage() {
     }
   };
 
+  const handleProcess = async (refundId: number) => {
+    try {
+      await api.patch(`/seller/orders/refunds/${refundId}`, { action: 'process' });
+      toast.success('환불 처리가 완료되었습니다.');
+      fetchOrders();
+      fetchCounts();
+    } catch (e) {
+      const message =
+        e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      toast.error(message ?? '환불 처리에 실패했습니다.');
+    }
+  };
+
+  const handleSaveTracking = async (refundId: number, courier: string, trackingNumber: string) => {
+    try {
+      await api.patch(`/seller/orders/refunds/${refundId}`, {
+        action: 'saveTracking',
+        courier,
+        trackingNumber,
+      });
+      toast.success('반송 운송장이 저장되었습니다.');
+      fetchOrders();
+    } catch (e) {
+      const message =
+        e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      toast.error(message ?? '저장에 실패했습니다.');
+    }
+  };
+
   const handleRejectClick = (refundId: number) => {
     setRejectingRefundId(refundId);
     setRejectReason('');
@@ -215,9 +262,9 @@ export default function CancelRefundPage() {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="bg-background p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-h2 font-bold text-dark-text">
+    <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
+      <div className="mb-8 flex items-center justify-between max-mobile:flex-col max-mobile:items-start max-mobile:gap-3">
+        <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
           주문 관리
           <span className="text-light-gray font-normal mx-2">/</span>
           <span className="text-h4 font-medium">취소·환불 관리</span>
@@ -225,7 +272,9 @@ export default function CancelRefundPage() {
         {!isAdmin && (
           <Button onClick={handleExcelDownload} disabled={isExporting}>
             <Download />
-            {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+            {isExporting
+              ? `다운로드 중... (${progress.current}/${progress.total})`
+              : '엑셀 다운로드'}
           </Button>
         )}
       </div>
@@ -235,18 +284,19 @@ export default function CancelRefundPage() {
           { label: '전체', count: counts.전체, filterValue: '전체' },
           { label: '취소요청', count: counts.취소요청, filterValue: '취소요청' },
           { label: '환불요청', count: counts.환불요청, filterValue: '환불요청' },
+          { label: '환불진행중', count: counts.환불진행중, filterValue: '환불진행중' },
           { label: '처리완료', count: counts.처리완료, filterValue: '처리완료' },
         ]}
         status={tab}
         onStatusChange={(v) => {
-          setTab(v as '전체' | '취소요청' | '환불요청' | '처리완료');
+          setTab(v as '전체' | '취소요청' | '환불요청' | '환불진행중' | '처리완료');
           setPage(1);
         }}
         colorMap={REFUND_COLOR_MAP}
-        cols={4}
+        cols={5}
       />
 
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-5 max-tablet:flex-col max-tablet:items-stretch">
         <Input
           value={search}
           onChange={(e) => {
@@ -276,8 +326,6 @@ export default function CancelRefundPage() {
 
       <RefundTable
         orders={orders}
-        onApprove={handleApprove}
-        onReject={handleRejectClick}
         selectedIds={selectedIds}
         isAllSelectedMode={isAllSelectedMode}
         onSelect={handleSelect}

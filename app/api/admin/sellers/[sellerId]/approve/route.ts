@@ -47,43 +47,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'seller not found' }, { status: 404 });
     }
 
-    // 정지 / 정지 해제
-    if (suspend !== undefined) {
-      const { error } = await supabaseAdmin
-        .from('users')
-        .update({ status: suspend ? 'suspended' : 'active', updated_at: new Date().toISOString() })
-        .eq('user_id', seller.user_id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    // 승인 상태 변경
-    if (status !== undefined) {
-      const sellerUpdate: Record<string, string | null> = { approve_status: status };
-      sellerUpdate.rejected_reason = status === 'rejected' ? (reason ?? null) : null;
-
-      const { error } = await supabaseAdmin
-        .from('sellers')
-        .update(sellerUpdate)
-        .eq('seller_id', sellerIdNum);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-      // 승인 시 계정 활성화 (suspend가 명시적으로 지정된 경우 우선)
-      if (status === 'approved' && !suspend) {
-        await supabaseAdmin
-          .from('users')
-          .update({ status: 'active', updated_at: new Date().toISOString() })
-          .eq('user_id', seller.user_id);
-      }
-    }
-
-    // 수수료율 변경
-    if (commissionRate !== undefined) {
-      const { error } = await supabaseAdmin
-        .from('sellers')
-        .update({ commission_rate: commissionRate })
-        .eq('seller_id', sellerIdNum);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    // users.status / sellers.approve_status / commission_rate를 하나의 트랜잭션(RPC)으로 처리
+    // — 개별 update로 나누면 중간 실패 시 두 테이블 상태가 어긋날 수 있어 원자적으로 묶음
+    const { error } = await supabaseAdmin.rpc('admin_update_seller_status', {
+      p_seller_id: sellerIdNum,
+      p_user_id: seller.user_id,
+      p_suspend: suspend ?? null,
+      p_approve_status: status ?? null,
+      p_rejected_reason: reason ?? null,
+      p_commission_rate: commissionRate ?? null,
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     return NextResponse.json({ ok: true });
   } catch (e) {

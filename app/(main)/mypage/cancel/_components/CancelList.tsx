@@ -7,7 +7,7 @@ import OrderDetailModal from '../../orders/_components/OrderDetailModal';
 import OrderPagination from '../../orders/_components/OrderPagination';
 import type { Order, Pagination } from '../../orders/_components/types';
 
-const CANCEL_TABS = ['취소', '반품'] as const;
+const CANCEL_TABS = ['취소', '환불'] as const;
 type CancelTab = (typeof CANCEL_TABS)[number];
 
 export default function CancelList() {
@@ -41,7 +41,7 @@ export default function CancelList() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-dark-text">취소 / 반품</h3>
+        <h3 className="font-bold text-dark-text">취소 / 환불</h3>
         {pagination && <span className="text-xs text-gray-text">총 {pagination.total}건</span>}
       </div>
       <div className="flex gap-1.5">

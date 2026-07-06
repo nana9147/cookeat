@@ -11,10 +11,10 @@ interface OrderDetailHeaderProps {
 
 export default function OrderDetailHeader({ info, paymentMethod }: OrderDetailHeaderProps) {
   return (
-    <div className="flex items-start justify-between mb-5">
+    <div className="flex items-start justify-between mb-5 max-mobile:flex-col max-mobile:items-start max-mobile:gap-2">
       <div>
         <p className="text-sm font-mono text-gray-800 font-medium">{info.id}</p>
-        <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1.5">
+        <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1.5 max-mobile:flex-wrap">
           <span>{new Date(info.orderDate).toLocaleString()} 주문</span>
           <span className="text-gray-300">·</span>
           <span className="flex items-center gap-1">

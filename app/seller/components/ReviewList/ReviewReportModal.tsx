@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,13 +24,15 @@ export default function ReviewReportModal({
 }: ReviewReportModalProps) {
   const [reason, setReason] = useState('');
   const [detail, setDetail] = useState('');
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setReason('');
       setDetail('');
     }
-  }, [open]);
+  }
 
   const handleSubmit = () => {
     if (!review || !reason) return;
@@ -41,7 +43,7 @@ export default function ReviewReportModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>리뷰 신고</DialogTitle>
         </DialogHeader>

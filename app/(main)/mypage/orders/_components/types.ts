@@ -16,6 +16,8 @@ export type Order = {
   createdAt: string;
   itemCount: number;
   previewItems: PreviewItem[];
+  hasPendingCancelRequest: boolean;
+  hasPendingRefundRequest: boolean;
 };
 
 export type Pagination = {
@@ -28,6 +30,8 @@ export type Pagination = {
 export type OrderDetail = {
   orderId: string;
   status: string;
+  hasPendingCancelRequest: boolean;
+  hasPendingRefundRequest: boolean;
   createdAt: string;
   totalAmount: number;
   shippingFee: number;
@@ -44,10 +48,16 @@ export type OrderDetail = {
   };
   items: {
     itemId: number;
+    productId: number;
     name: string;
     image: string | null;
     quantity: number;
     unitPrice: number;
+    claim: {
+      status: string;
+      requestReason: string | null;
+      rejectReason: string | null;
+    } | null;
   }[];
   trackings: {
     carrier: string | null;

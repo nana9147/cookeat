@@ -32,15 +32,15 @@
 
 ### 홈
 
-> 스크린샷 추가 예정
+![홈 화면](public/screenshots/main/home.webp)
 
 ### 레시피 목록
 
-> 스크린샷 추가 예정
+![레시피 목록 화면](public/screenshots/main/recipes.webp)
 
 ### 재료 구매 목록
 
-> 스크린샷 추가 예정
+![재료 구매 목록 화면](public/screenshots/main/shopping.webp)
 
 ---
 
@@ -80,18 +80,19 @@
 
 ### 📦 주요 라이브러리
 
-| 라이브러리                       | 버전         | 용도                 |
-| :------------------------------- | :----------- | :------------------- |
-| `@supabase/supabase-js`          | ^2.107.0     | DB 클라이언트        |
-| `axios`                          | ^1.16.1      | HTTP 통신            |
-| `zustand`                        | ^5.0.14      | 전역 상태 관리       |
-| `@tiptap/react` + extensions     | ^3.26.0      | 리치 텍스트 에디터   |
-| `@tosspayments/tosspayments-sdk` | ^2.7.0       | 토스페이 결제 SDK    |
-| `react-daum-postcode`            | ^4.0.0       | 카카오 주소 검색     |
-| `@dnd-kit/core` + sortable       | ^6.3 / ^10   | 드래그 앤 드롭       |
-| `shadcn` / `radix-ui`            | ^4.10 / ^1.4 | UI 컴포넌트          |
-| `lucide-react`                   | ^1.17.0      | 아이콘               |
-| `tailwind-merge` / `clsx`        | ^3.6 / ^2.1  | Tailwind 클래스 유틸 |
+| 라이브러리                       | 버전         | 용도                     |
+| :------------------------------- | :----------- | :----------------------- |
+| `@supabase/supabase-js`          | ^2.107.0     | DB 클라이언트            |
+| `axios`                          | ^1.17.0      | HTTP 통신                |
+| `zustand`                        | ^5.0.14      | 전역 상태 관리           |
+| `@tiptap/react` + extensions     | ^3.26.0      | 리치 텍스트 에디터       |
+| `@tosspayments/tosspayments-sdk` | ^2.7.0       | 토스페이 결제 SDK        |
+| `react-daum-postcode`            | ^4.0.0       | 카카오 주소 검색         |
+| `@dnd-kit/core` + sortable       | ^6.3 / ^10   | 드래그 앤 드롭           |
+| `shadcn` / `radix-ui`            | ^4.10 / ^1.4 | UI 컴포넌트              |
+| `lucide-react`                   | ^1.17.0      | 아이콘                   |
+| `tailwind-merge` / `clsx`        | ^3.6 / ^2.1  | Tailwind 클래스 유틸     |
+| `portfolio-shot`                 | ^1.5.0       | 스크린샷 관련 라이브러리 |
 
 ---
 

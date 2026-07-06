@@ -41,6 +41,7 @@ export default function CompleteOrderInfo({
           paymentMethodLabel={paymentMethodLabel}
           productTotal={orderDetail?.totalAmount ?? 0}
           shippingFee={orderDetail?.shippingFee ?? 0}
+          usedPoint={orderDetail?.usedPoint ?? 0}
           couponDiscount={orderDetail?.couponDiscount ?? 0}
           productDiscount={0}
         />

@@ -10,6 +10,11 @@ export function calcRating(sum: number, count: number): number {
   return count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
 }
 
+/** 사용자 입력을 PostgREST or() 필터에 안전하게 삽입한다 (쉼표·괄호로 인한 필터 조작 방지). */
+export function escapeOrValue(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
 /**페이지 넘버처리 */
 export function getPageNumbers(currentPage: number, totalPages: number) {
   if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);

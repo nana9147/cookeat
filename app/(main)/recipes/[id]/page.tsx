@@ -7,8 +7,9 @@ import RecipeMetaRow from './_components/RecipeMetaRow';
 import RecipeAuthor from './_components/RecipeAuthor';
 import RecipeIngredients from './_components/RecipeIngredients';
 import RecipeSteps from './_components/RecipeSteps';
-import ReviewSection from '@/components/common/ReviewSection';
+import ReviewSectionClient from '@/components/common/ReviewSectionClient';
 import RecipeBookmarkButton from './_components/RecipeBookmarkButton';
+import RecipeOwnerActions from './_components/RecipeOwnerActions';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -35,7 +36,8 @@ export default async function RecipeDetailPage({ params }: Props) {
       </nav>
 
       <RecipeHero title={recipe.title} description={recipe.description} imageUrl={recipe.thumbnail ?? undefined} />
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <RecipeOwnerActions recipeId={idNum} authorUserId={recipe.author.userId} />
         <RecipeBookmarkButton recipeId={idNum} />
       </div>
       <RecipeMetaRow
@@ -45,15 +47,14 @@ export default async function RecipeDetailPage({ params }: Props) {
         rating={recipe.rating}
       />
       <RecipeAuthor author={recipe.author} />
-      <RecipeIngredients ingredients={recipe.recipeIngredients} />
+      <RecipeIngredients ingredients={recipe.recipeIngredients} recipeId={idNum} />
       <RecipeSteps steps={recipe.steps} />
 
-      <div className="mt-2">
-        <ReviewSection
-          averageRating={recipe.rating}
-          totalCount={recipe.reviewCount}
-          ratingBreakdown={recipe.ratingBreakdown}
-          reviews={[]}
+      <div className="mt-8">
+        <ReviewSectionClient
+          type="recipe"
+          targetId={idNum}
+          targetName={recipe.title}
         />
       </div>
     </div>

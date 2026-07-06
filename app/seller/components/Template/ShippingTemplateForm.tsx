@@ -36,7 +36,9 @@ export default function ShippingTemplateForm({
     isDefault: false,
   });
 
-  useEffect(() => {
+  const [prevFormSync, setPrevFormSync] = useState({ template, isOpen });
+  if (prevFormSync.template !== template || prevFormSync.isOpen !== isOpen) {
+    setPrevFormSync({ template, isOpen });
     setForm({
       name: template?.name ?? '',
       feeType: template?.feeType ?? '무료',
@@ -47,7 +49,7 @@ export default function ShippingTemplateForm({
       returnAddress: template?.returnAddress ?? '',
       isDefault: template?.isDefault ?? false,
     });
-  }, [template, isOpen]);
+  }
 
   useEffect(() => {
     if (!isOpen) return;
@@ -199,7 +201,7 @@ export default function ShippingTemplateForm({
 
             {/* 조건부 무료 */}
             {form.feeType === '조건부 무료' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 max-mobile:grid-cols-1">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-gray-700">
                     기본 배송비<span className="text-red-500">*</span>
@@ -256,7 +258,7 @@ export default function ShippingTemplateForm({
 
             {/* 출고지 주소 */}
             <div className="flex flex-col gap-1.5">
-              <div className="flex justify-between">
+              <div className="flex justify-between max-mobile:flex-col max-mobile:items-start max-mobile:gap-2">
                 <label className="text-sm font-medium text-gray-700">
                   출고지 주소<span className="text-red-500">*</span>
                 </label>
@@ -273,7 +275,7 @@ export default function ShippingTemplateForm({
 
             {/* 반품/교환지 주소 */}
             <div className="flex flex-col gap-1.5">
-              <div className="flex justify-between">
+              <div className="flex justify-between max-mobile:flex-col max-mobile:items-start max-mobile:gap-2">
                 <label className="text-sm font-medium text-gray-700">
                   반품/교환지 주소<span className="text-red-500">*</span>
                 </label>

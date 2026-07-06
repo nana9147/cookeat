@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabaseAdmin
     .from('users')
-    .select('role')
+    .select('role, user_id')
     .eq('auth_id', data.user.id)
     .maybeSingle()
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const response = NextResponse.json({
     accessToken: access_token,
     refreshToken: refresh_token,
-    user: toAuthUser(data.user, role),
+    user: toAuthUser({ ...data.user, _dbUserId: profile?.user_id ?? 0 }, role),
   })
 
   response.cookies.set('sb-access-token', access_token, { ...COOKIE_OPTS, maxAge: 3600 })

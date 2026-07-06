@@ -15,9 +15,14 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabaseAdmin
     .from('users')
-    .select('role')
+    .select('role, user_id, status')
     .eq('auth_id', data.user.id)
     .maybeSingle();
+
+  if (profile?.status === 'suspended') {
+    await supabaseAdmin.auth.admin.signOut(data.user.id).catch(() => {});
+    return NextResponse.json({ error: '정지된 계정입니다. 고객센터로 문의해주세요.' }, { status: 403 });
+  }
 
   // users 테이블에 해당 계정 행이 없으면(수동 생성 계정 등) 기존 app_metadata.role 사용
   const VALID_ROLES = ['user', 'seller', 'admin'] as const;
@@ -32,7 +37,7 @@ export async function POST(req: NextRequest) {
   })
 
   const response = NextResponse.json({
-    user: { ...data.user, _role: role },
+    user: { ...data.user, _role: role, _dbUserId: profile?.user_id ?? 0 },
     session: data.session,
   });
 

@@ -6,9 +6,13 @@ import { CreditCard, Building2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/common/StatusBadge';
+import Pagination from '@/components/ui/Pagination';
 import api from '@/lib/api';
 import { formatWon } from '@/lib/format';
+import { getPageNumbers } from '@/lib/utils';
 import type { AdminSettlement, AdminSettlementStats, AdminSettlementRawStatus } from '@/types/admin';
+
+const PAGE_SIZE = 20;
 
 type SettlementDisplayStatus = '정산대기' | '정산완료';
 
@@ -28,11 +32,17 @@ function toDisplayStatus(status: AdminSettlementRawStatus): SettlementDisplaySta
   return status === '대기' ? '정산대기' : '정산완료';
 }
 
+function toRawStatus(tab: SettlementDisplayStatus): AdminSettlementRawStatus {
+  return tab === '정산대기' ? '대기' : '완료';
+}
+
 export default function SettlementsPage() {
   const [activeTab, setActiveTab] = useState<SettlementDisplayStatus>('정산대기');
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const [settlements, setSettlements] = useState<AdminSettlement[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [stats, setStats] = useState<AdminSettlementStats>({
     pendingCount: 0,
     pendingAmount: 0,
@@ -42,85 +52,65 @@ export default function SettlementsPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchSettlements() {
-      try {
-        setLoading(true);
-        const res = await api.get('/admin/settlements');
-        setSettlements(res.data.settlements);
-        setStats(res.data.stats);
-      } catch (err) {
-        console.error('정산 목록 조회 실패:', err);
-      } finally {
-        setLoading(false);
-      }
+  async function fetchSettlements() {
+    try {
+      setLoading(true);
+      const res = await api.get('/admin/settlements', {
+        params: { status: toRawStatus(activeTab), page, limit: PAGE_SIZE },
+      });
+      setSettlements(res.data.settlements);
+      setTotal(res.data.pagination?.total ?? 0);
+      setStats(res.data.stats);
+    } catch (err) {
+      console.error('정산 목록 조회 실패:', err);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSettlements();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, page]);
+
+  function handleTabChange(tab: SettlementDisplayStatus) {
+    setActiveTab(tab);
+    setPage(1);
+  }
 
   async function handleSettle(settlementId: number) {
-    const target = settlements.find((s) => s.settlementId === settlementId);
-    if (!target) return;
-
-    await api.patch(`/admin/settlements/${settlementId}`, { status: '완료' });
-
-    setSettlements((prev) =>
-      prev.map((s) =>
-        s.settlementId === settlementId
-          ? { ...s, status: '완료' as const, settledAt: new Date().toISOString() }
-          : s
-      )
-    );
-    setStats((prev) => ({
-      ...prev,
-      pendingCount: prev.pendingCount - 1,
-      pendingAmount: prev.pendingAmount - target.amount,
-      completedCount: prev.completedCount + 1,
-      completedAmount: prev.completedAmount + target.amount,
-    }));
-    setSelectedId(null);
+    try {
+      await api.patch(`/admin/settlements/${settlementId}`, { status: '완료' });
+      setSelectedId(null);
+      await fetchSettlements();
+    } catch {
+      alert('정산 처리에 실패했습니다. 다시 시도해주세요.');
+    }
   }
 
   async function handleBulkSettle() {
-    const pending = settlements.filter((s) => s.status === '대기');
-    if (pending.length === 0) return;
+    const { data } = await api.get('/admin/settlements', {
+      params: { bulkIds: true },
+    });
+    const pendingIds = data.settlementIds as number[];
+    if (pendingIds.length === 0) return;
+    if (!window.confirm(`대기 중인 정산 ${pendingIds.length}건을 일괄 처리합니다. 계속하시겠습니까?`))
+      return;
 
     const results = await Promise.allSettled(
-      pending.map((s) => api.patch(`/admin/settlements/${s.settlementId}`, { status: '완료' }))
+      pendingIds.map((id) => api.patch(`/admin/settlements/${id}`, { status: '완료' }))
     );
-
-    const succeededIds = pending
-      .filter((_, i) => results[i].status === 'fulfilled')
-      .map((s) => s.settlementId);
 
     const failCount = results.filter((r) => r.status === 'rejected').length;
     if (failCount > 0) {
       alert(`${failCount}건 처리에 실패했습니다. 목록을 다시 확인해주세요`);
     }
 
-    const now = new Date().toISOString();
-    setSettlements((prev) =>
-      prev.map((s) =>
-        succeededIds.includes(s.settlementId)
-          ? { ...s, status: '완료' as const, settledAt: now }
-          : s
-      )
-    );
-
-    const succeededAmount = pending
-      .filter((s) => succeededIds.includes(s.settlementId))
-      .reduce((sum, s) => sum + s.amount, 0);
-
-    setStats((prev) => ({
-      pendingCount: prev.pendingCount - succeededIds.length,
-      pendingAmount: prev.pendingAmount - succeededAmount,
-      completedCount: prev.completedCount + succeededIds.length,
-      completedAmount: prev.completedAmount + succeededAmount,
-      totalFee: prev.totalFee,
-    }));
+    await fetchSettlements();
   }
 
-  const filtered = settlements.filter((s) => toDisplayStatus(s.status) === activeTab);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
   const selectedSettlement = settlements.find((s) => s.settlementId === selectedId) ?? null;
 
   const statCards = [
@@ -172,7 +162,7 @@ export default function SettlementsPage() {
       <div className="space-y-4">
         <div className="flex gap-2">
           <button
-            onClick={() => setActiveTab('정산대기')}
+            onClick={() => handleTabChange('정산대기')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === '정산대기'
                 ? 'bg-primary text-white'
@@ -182,7 +172,7 @@ export default function SettlementsPage() {
             정산 대기 ({stats.pendingCount})
           </button>
           <button
-            onClick={() => setActiveTab('정산완료')}
+            onClick={() => handleTabChange('정산완료')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === '정산완료'
                 ? 'bg-primary text-white'
@@ -194,7 +184,7 @@ export default function SettlementsPage() {
         </div>
 
         <div className="space-y-3">
-          {filtered.map((s) => (
+          {settlements.map((s) => (
             <Card
               onClick={() => setSelectedId(s.settlementId)}
               key={s.settlementId}
@@ -252,6 +242,13 @@ export default function SettlementsPage() {
             </Card>
           ))}
         </div>
+
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          getPageNumbers={() => getPageNumbers(page, totalPages)}
+        />
       </div>
 
       <Dialog open={!!selectedSettlement} onOpenChange={() => setSelectedId(null)}>

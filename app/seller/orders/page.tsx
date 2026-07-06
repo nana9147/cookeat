@@ -16,7 +16,7 @@ import type {
 } from '@/types/seller/order';
 import { ORDER_STATUS_LABEL, PAYMENT_LABEL } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
-import { toDateStr, getDateRange } from '@/lib/dateRange';
+import { getDateRange } from '@/lib/dateRange';
 import OrderSearchFilter from '../components/OrderList/OrderSearchFilter';
 import OrderTable from '../components/OrderList/OrderTable';
 import StatusCards from '@/components/ui/StatusCards';
@@ -25,18 +25,24 @@ import { toast } from 'sonner';
 import { useExcelExport, ExportColumn } from '@/hooks/useExcelExport';
 import { useAuthStore } from '@/store/authStore';
 
-const statuses: (OrderStatus | '전체')[] = ['전체', '결제완료', '배송준비', '배송중', '배송완료'];
+const statuses: (OrderStatus | '전체')[] = [
+  '전체',
+  '결제완료',
+  '배송준비',
+  '배송중',
+  '배송완료',
+  '구매확정',
+];
 
 const ORDER_COLOR_MAP = {
   신규주문: 'text-emerald-500',
   배송준비중: 'text-amber-500',
   배송중: 'text-blue-500',
   배송완료: 'text-taupe-500',
-  '취소/환불': 'text-red-500',
+  구매확정: 'text-violet-500',
 };
 
 const LIMIT = 10;
-
 
 const EXPORT_COLUMNS: ExportColumn<OrderExportRow>[] = [
   { key: 'id', label: '주문번호' },
@@ -90,6 +96,8 @@ export default function OrdersPage() {
   const [endDate, setEndDate] = useState(
     searchParams.get('endDate') || getDateRange('전체').endDate
   );
+  const selectionFilterKey = `${page}-${status}-${search}-${startDate}-${endDate}`;
+  const [prevSelectionFilterKey, setPrevSelectionFilterKey] = useState(selectionFilterKey);
 
   const [counts, setCounts] = useState({
     전체: 0,
@@ -97,6 +105,7 @@ export default function OrdersPage() {
     배송준비: 0,
     배송중: 0,
     배송완료: 0,
+    구매확정: 0,
   });
 
   const { exportToExcel, isExporting, progress } = useExcelExport<OrderExportRow>({
@@ -119,7 +128,7 @@ export default function OrdersPage() {
     if (endDate) params.set('endDate', endDate);
 
     router.replace(`/seller/orders?${params.toString()}`, { scroll: false });
-  }, [page, status, search, sortBy, sortOrder, datePreset, startDate, endDate]);
+  }, [page, status, search, sortBy, sortOrder, datePreset, startDate, endDate, router]);
 
   const handleDatePresetChange = (preset: DateRangePreset) => {
     setDatePreset(preset);
@@ -131,20 +140,28 @@ export default function OrdersPage() {
     }
   };
 
-  const fetchCounts = async () => {
-    try {
-      const res = await api.get('/seller/orders/counts', {
-        params: { startDate, endDate },
-      });
-      setCounts(res.data.data);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
-      toast.error(msg, { id: msg });
-    }
-  };
-
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchCounts = async () => {
+      try {
+        const res = await api.get('/seller/orders/counts', {
+          params: { startDate, endDate },
+        });
+        if (!cancelled) setCounts(res.data.data);
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
+        }
+      }
+    };
+
     fetchCounts();
+
+    return () => {
+      cancelled = true;
+    };
   }, [startDate, endDate]);
 
   useEffect(() => {
@@ -210,6 +227,7 @@ export default function OrdersPage() {
       count: counts.배송완료,
       filterValue: '배송완료',
     },
+    { label: ORDER_STATUS_LABEL.구매확정, count: counts.구매확정, filterValue: '구매확정' },
   ];
 
   const handleSortChange = (newSortBy: OrderSortBy) => {
@@ -237,10 +255,11 @@ export default function OrdersPage() {
     }
   };
 
-  useEffect(() => {
+  if (selectionFilterKey !== prevSelectionFilterKey) {
+    setPrevSelectionFilterKey(selectionFilterKey);
     setSelectedIds([]);
     setIsAllSelectedMode(false);
-  }, [page, status, search, startDate, endDate]);
+  }
 
   const handleExcelDownload = () => {
     if (!isAllSelectedMode && selectedIds.length === 0) {
@@ -263,13 +282,17 @@ export default function OrdersPage() {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="bg-background p-8">
-      <div className="flex flex-row justify-between items-center mb-8">
-        <h1 className="text-h2 font-bold text-dark-text">주문 관리</h1>
+    <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
+      <div className="flex flex-row justify-between items-center mb-8 max-mobile:flex-col max-mobile:items-start max-mobile:gap-3">
+        <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
+          주문 관리
+        </h1>
         {!isAdmin && (
           <Button onClick={handleExcelDownload} disabled={isExporting}>
             <Download />
-            {isExporting ? `다운로드 중... (${progress.current}/${progress.total})` : '엑셀 다운로드'}
+            {isExporting
+              ? `다운로드 중... (${progress.current}/${progress.total})`
+              : '엑셀 다운로드'}
           </Button>
         )}
       </div>
@@ -281,7 +304,7 @@ export default function OrdersPage() {
           setPage(1);
         }}
         colorMap={ORDER_COLOR_MAP}
-        cols={5}
+        cols={6}
       />
       <OrderSearchFilter
         search={search}

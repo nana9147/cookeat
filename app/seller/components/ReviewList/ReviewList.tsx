@@ -10,11 +10,15 @@ export default function ReviewList({
   onImageClick,
 }: ReviewListProps) {
   if (reviews.length === 0) {
-    return <p className="text-center text-sm text-light-gray py-16">등록된 리뷰가 없습니다.</p>;
+    return (
+      <p className="text-center text-sm text-light-gray py-16 max-mobile:py-10">
+        등록된 리뷰가 없습니다.
+      </p>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 max-mobile:gap-2">
       {reviews.map((review) => (
         <ReviewCard
           key={review.reviewId}

@@ -38,7 +38,7 @@ export default function DashboardOrderTrendChart({ data }: DashboardOrderTrendCh
   return (
     <Card className="border-border shadow-sm h-full">
       <CardHeader className="pb-3 border-b border-border">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between max-mobile:flex-col max-mobile:items-start max-mobile:gap-2">
           <CardTitle className="text-h5 font-semibold text-dark-text">
             주문 현황 (최근 {period}일)
           </CardTitle>
@@ -61,7 +61,7 @@ export default function DashboardOrderTrendChart({ data }: DashboardOrderTrendCh
         </div>
       </CardHeader>
       <CardContent className="pt-6">
-        <ChartContainer config={chartConfig} className="h-72 w-full">
+        <ChartContainer config={chartConfig} className="h-72 w-full max-mobile:h-56">
           <AreaChart data={visibleData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="orderTrendFill" x1="0" y1="0" x2="0" y2="1">

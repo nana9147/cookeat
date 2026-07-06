@@ -9,11 +9,17 @@ export async function POST(req: NextRequest) {
   const authed = await requireAuth(req);
   if (authed instanceof NextResponse) return authed;
 
-  const { tid, pgToken, orderId } = await req.json();
+  let body: { tid: string; pgToken: string; orderId: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
+  }
+  const { tid, pgToken, orderId } = body;
 
   const { data: order, error } = await supabaseAdmin
     .from('orders')
-    .select('user_id, status')
+    .select('final_amount, user_id, status')
     .eq('order_id', orderId)
     .single();
 
@@ -42,6 +48,12 @@ export async function POST(req: NextRequest) {
   }
 
   const kakaoData = await res.json();
+
+  // 카카오가 실제로 승인한 금액이 서버 주문 금액과 다르면 결제완료 처리하지 않는다
+  if (kakaoData.amount?.total !== order.final_amount) {
+    console.error('[kakao/approve] 승인 금액 불일치:', kakaoData.amount?.total, order.final_amount);
+    return NextResponse.json({ error: '결제 금액이 일치하지 않습니다.' }, { status: 400 });
+  }
 
   const { error: updateError } = await supabaseAdmin
     .from('orders')

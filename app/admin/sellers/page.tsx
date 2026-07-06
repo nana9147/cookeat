@@ -84,6 +84,7 @@ export default function SellersPage() {
   const [loading, setLoading] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [editSeller, setEditSeller] = useState<Seller | null>(null);
+  const [editOriginalStatus, setEditOriginalStatus] = useState<AdminSellerStatus | null>(null);
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterStatus, setFilterStatus] = useState<AdminSellerStatus | 'all'>('all');
@@ -107,7 +108,7 @@ export default function SellersPage() {
         if (filterStatus !== 'all') params.set('status', filterStatus);
         if (filterCharge !== 'all') params.set('chargeRange', filterCharge);
         if (filterRating !== 'all') {
-          params.set('limit', '1000');
+          params.set('limit', '5000');
         } else {
           params.set('page', String(page));
           params.set('limit', String(PAGE_SIZE));
@@ -148,12 +149,20 @@ export default function SellersPage() {
   }
 
   const handleViewDetail = (seller: Seller) => setSelectedSeller(seller);
-  const handleEdit = (seller: Seller) => setEditSeller({ ...seller });
+  const handleEdit = (seller: Seller) => {
+    setEditSeller({ ...seller });
+    setEditOriginalStatus(seller.status);
+  };
+  const closeEditDialog = () => {
+    setEditSeller(null);
+    setEditOriginalStatus(null);
+  };
 
   const handleSaveEdit = async () => {
     if (!editSeller) return;
     try {
       const isSuspend = editSeller.status === '정지';
+      const wasSuspended = editOriginalStatus === '정지';
       const statusMap: Record<Exclude<AdminSellerStatus, '정지'>, string> = {
         승인: 'approved',
         대기: 'pending',
@@ -163,19 +172,22 @@ export default function SellersPage() {
       await api.patch(`/admin/sellers/${editSeller.id}/approve`, {
         ...(isSuspend
           ? { suspend: true }
-          : { status: statusMap[editSeller.status as Exclude<AdminSellerStatus, '정지'>] }),
+          : {
+              status: statusMap[editSeller.status as Exclude<AdminSellerStatus, '정지'>],
+              ...(wasSuspended ? { suspend: false } : {}),
+            }),
         ...(!isNaN(commissionRate) ? { commissionRate } : {}),
       });
       setSellerList((prev) => prev.map((s) => (s.id === editSeller.id ? editSeller : s)));
-      setEditSeller(null);
-    } catch (e) {
-      console.error('판매자 정보 수정 실패', e);
+      closeEditDialog();
+    } catch {
+      alert('판매자 정보 수정에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
   const filtered = sellerList.filter((s) => {
     if (filterRating === 'all') return true;
-    if (s.rating === null) return true;
+    if (s.rating === null) return false;
     if (filterRating === '4.5+') return s.rating >= 4.5;
     if (filterRating === '4.0+') return s.rating >= 4.0 && s.rating < 4.5;
     if (filterRating === 'low') return s.rating < 4.0;
@@ -407,7 +419,7 @@ export default function SellersPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editSeller} onOpenChange={() => setEditSeller(null)}>
+      <Dialog open={!!editSeller} onOpenChange={closeEditDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>판매자 정보 수정</DialogTitle>
@@ -442,7 +454,7 @@ export default function SellersPage() {
                 </Select>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => setEditSeller(null)}>
+                <Button variant="outline" size="sm" onClick={closeEditDialog}>
                   취소
                 </Button>
                 <Button size="sm" onClick={handleSaveEdit}>

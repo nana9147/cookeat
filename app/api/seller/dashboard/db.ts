@@ -37,19 +37,7 @@ async function getSellerOrderIds(sellerId: number): Promise<string[]> {
   return [...new Set((sellerItemRows ?? []).map((r) => r.order_id))];
 }
 
-/**
- * 통계 카드 6개
- * - 전체주문: 누적 전체 건수, diff는 오늘 신규 접수 건수
- * - 신규주문: 오늘(0시~현재) 생성된 주문 전체 건수 (생성일 기준 — 발주확인 등으로 status가 바뀌어도 줄어들지 않음),
- *   diff는 어제 같은 항목과 정확히 비교
- * - 배송준비중 / 배송중 / 배송완료 / 취소반품: "현재 상태" 기준 건수 (날짜 무관, 누적).
- *   상태 변경 이력(order_item_status_history)이 아직 모든 전이를 정확히 추적하지 못해
- *   "어제 시점" 값을 신뢰성 있게 복원할 수 없으므로, diff는 null로 두고 화면에 표시하지 않는다.
- *   (추후 상태 변경 이력이 정비되면 정확한 diff로 교체 예정)
- */
-export async function getSellerDashboardStats(sellerId: number) {
-  const sellerOrderIds = await getSellerOrderIds(sellerId);
-
+export async function getSellerDashboardStats(sellerId: number, sellerOrderIds: string[]) {
   const emptyStats = {
     totalOrders: { label: '전체 주문', count: 0, diff: 0 },
     newOrders: { label: '신규 주문', count: 0, diff: 0 },
@@ -129,9 +117,7 @@ export async function getSellerDashboardStats(sellerId: number) {
  * 최근 30일 주문 현황 (날짜별 주문 건수)
  * 화면에서는 7일/30일 토글로 부분집합을 잘라서 보여준다 (재조회 없이 클라이언트에서 필터링)
  */
-export async function getSellerDashboardOrderTrend(sellerId: number) {
-  const sellerOrderIds = await getSellerOrderIds(sellerId);
-
+export async function getSellerDashboardOrderTrend(sellerId: number, sellerOrderIds: string[]) {
   const today = startOfDay(new Date());
   const thirtyDaysAgo = addDays(today, -29);
 
@@ -169,9 +155,11 @@ export async function getSellerDashboardOrderTrend(sellerId: number) {
  * 대시보드 전체 데이터 조합
  */
 export async function getSellerDashboard(sellerId: number) {
+  const sellerOrderIds = await getSellerOrderIds(sellerId);
+
   const [stats, orderTrend, settlementSummary, reviewSummary] = await Promise.all([
-    getSellerDashboardStats(sellerId),
-    getSellerDashboardOrderTrend(sellerId),
+    getSellerDashboardStats(sellerId, sellerOrderIds),
+    getSellerDashboardOrderTrend(sellerId, sellerOrderIds),
     getSellerSettlementSummary(sellerId),
     getSellerReviewSummary(sellerId),
   ]);

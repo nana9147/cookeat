@@ -5,7 +5,7 @@ import { formatDateTime, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import { PaymentInfoTableProps, ShippingStatus } from '@/types/seller/shipping';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
@@ -34,13 +34,15 @@ export default function PaymentInfoTable({
 
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [prevOrders, setPrevOrders] = useState(orders);
 
   const uniqueOrderIds = [...new Set(orders.map((o) => o.orderId))];
   const selectedItemCount = orders.filter((o) => selectedOrderIds.includes(o.orderId)).length;
 
-  useEffect(() => {
+  if (orders !== prevOrders) {
+    setPrevOrders(orders);
     setSelectedOrderIds([]);
-  }, [orders]);
+  }
 
   const handleSelectAll = (checked: boolean) => {
     setSelectedOrderIds(checked ? uniqueOrderIds : []);
@@ -89,7 +91,7 @@ export default function PaymentInfoTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 max-mobile:flex-col max-mobile:items-start max-mobile:gap-2 max-mobile:px-3 max-mobile:py-3">
         <p className="text-sm text-gray-500">
   상품 <span className="font-semibold text-gray-800">{total}</span>개
 </p>
@@ -104,7 +106,7 @@ export default function PaymentInfoTable({
         )}
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto whitespace-nowrap">
         <Table>
           <TableHeader>
             <TableRow>
