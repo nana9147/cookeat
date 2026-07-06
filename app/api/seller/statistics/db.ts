@@ -19,6 +19,11 @@ function addDays(d: Date, days: number) {
 const EXCLUDED_STATUSES = ['취소', '환불'];
 const CLAIM_STATUSES = ['취소', '환불'];
 
+interface CustomerFirstOrderRow {
+  user_id: number;
+  first_order_at: string;
+}
+
 interface OrderItemRow {
   item_id: number;
   quantity: number;
@@ -197,20 +202,18 @@ export async function getSellerStatistics(sellerId: number, days: number) {
   let returningCustomerCount = 0;
 
   if (periodUserIds.size > 0) {
-    const { data: allUserOrders, error: userOrdersError } = await supabaseAdmin
-      .from('order_items')
-      .select('orders!inner(user_id, created_at)')
-      .eq('seller_id', sellerId)
-      .returns<{ orders: { user_id: number; created_at: string } }[]>();
+    const { data: firstOrders, error: userOrdersError } = await supabaseAdmin
+      .rpc('get_seller_customer_first_orders', { p_seller_id: sellerId })
+      .returns<CustomerFirstOrderRow[]>();
 
     if (userOrdersError) throw userOrdersError;
 
     const firstOrderMap = new Map<number, Date>();
-    for (const row of allUserOrders ?? []) {
-      const userId = row.orders.user_id;
-      const date = new Date(row.orders.created_at);
-      const existing = firstOrderMap.get(userId);
-      if (!existing || date < existing) firstOrderMap.set(userId, date);
+
+    if (firstOrders && Array.isArray(firstOrders)) {
+      for (const row of firstOrders) {
+        firstOrderMap.set(row.user_id, new Date(row.first_order_at));
+      }
     }
 
     for (const userId of periodUserIds) {
