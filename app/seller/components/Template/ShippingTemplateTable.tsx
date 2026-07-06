@@ -21,7 +21,7 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ShippingTemplateTableProps } from '@/types/seller/shipping';
 import { useAuthStore } from '@/store/authStore';
 
@@ -36,6 +36,12 @@ export default function ShippingTemplateTable({
   const defaultId = shippings.find((s) => s.isDefault)?.templateId ?? null;
   const [selectedId, setSelectedId] = useState<number | null>(defaultId);
   const [isDefaultConfirmOpen, setIsDefaultConfirmOpen] = useState(false);
+  const [prevShippings, setPrevShippings] = useState(shippings);
+
+  if (shippings !== prevShippings) {
+    setPrevShippings(shippings);
+    setSelectedId(defaultId);
+  }
 
   const feeDescription = (shipping: ShippingTemplateTableProps['shippings'][0]) => {
     if (shipping.feeType === '무료') return '무료';
@@ -43,11 +49,6 @@ export default function ShippingTemplateTable({
       return `${shipping.fee.toLocaleString()}원 (${(shipping.freeThreshold ?? 0).toLocaleString()}원 이상 무료)`;
     return `${shipping.fee.toLocaleString()}원`;
   };
-
-  useEffect(() => {
-    const newDefaultId = shippings.find((s) => s.isDefault)?.templateId ?? null;
-    setSelectedId(newDefaultId);
-  }, [shippings]);
 
   return (
     <>

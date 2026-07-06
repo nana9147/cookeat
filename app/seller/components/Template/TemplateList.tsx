@@ -63,21 +63,25 @@ export default function TemplateList() {
   useEffect(() => {
     let cancelled = false;
 
-    setIsShippingLoading(true);
-    api
-      .get('/seller/shipping/templates')
-      .then(({ data }) => {
-        if (!cancelled) setShippingTemplate(data.data);
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          const msg = e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.';
-          toast.error(msg, { id: msg });
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsShippingLoading(false);
-      });
+    const loadShippingTemplates = () => {
+      setIsShippingLoading(true);
+      api
+        .get('/seller/shipping/templates')
+        .then(({ data }) => {
+          if (!cancelled) setShippingTemplate(data.data);
+        })
+        .catch((e) => {
+          if (!cancelled) {
+            const msg = e instanceof Error ? e.message : '배송 템플릿을 불러오지 못했습니다.';
+            toast.error(msg, { id: msg });
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setIsShippingLoading(false);
+        });
+    };
+
+    loadShippingTemplates();
 
     return () => {
       cancelled = true;
@@ -141,21 +145,25 @@ export default function TemplateList() {
   useEffect(() => {
     let cancelled = false;
 
-    setIsReturnLoading(true);
-    api
-      .get('/seller/return-policy/templates')
-      .then(({ data }) => {
-        if (!cancelled) setReturnTemplate(data.data.map(mapReturnPolicyResponse));
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          const msg = e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.';
-          toast.error(msg, { id: msg });
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsReturnLoading(false);
-      });
+    const loadReturnPolicies = () => {
+      setIsReturnLoading(true);
+      api
+        .get('/seller/return-policy/templates')
+        .then(({ data }) => {
+          if (!cancelled) setReturnTemplate(data.data.map(mapReturnPolicyResponse));
+        })
+        .catch((e) => {
+          if (!cancelled) {
+            const msg = e instanceof Error ? e.message : '반품정책 템플릿을 불러오지 못했습니다.';
+            toast.error(msg, { id: msg });
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setIsReturnLoading(false);
+        });
+    };
+
+    loadReturnPolicies();
 
     return () => {
       cancelled = true;

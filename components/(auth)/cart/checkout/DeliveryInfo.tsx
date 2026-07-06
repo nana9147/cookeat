@@ -24,7 +24,9 @@ export default function DeliveryInfo({
   const [editTarget, setEditTarget] = useState<UserShippingAddress | undefined>(undefined);
 
   const onSelectRef = useRef(onAddressSelect);
-  onSelectRef.current = onAddressSelect;
+  useEffect(() => {
+    onSelectRef.current = onAddressSelect;
+  });
 
   const defaultId = addresses.find((a) => a.isDefault)?.addressId ?? addresses[0]?.addressId ?? null;
   const effectiveId = selectedId ?? defaultId;

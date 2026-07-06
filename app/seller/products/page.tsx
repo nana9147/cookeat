@@ -82,6 +82,8 @@ export default function ProductsPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isAllSelectedMode, setIsAllSelectedMode] = useState(false);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const selectionFilterKey = `${page}-${status}-${search}-${selectedParentId}-${selectedCategoryId}`;
+  const [prevSelectionFilterKey, setPrevSelectionFilterKey] = useState(selectionFilterKey);
 
   const [sortBy, setSortBy] = useState<ProductSortBy | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -96,9 +98,11 @@ export default function ProductsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  useEffect(() => {
+  const [prevUrlPage, setPrevUrlPage] = useState(urlPage);
+  if (urlPage !== prevUrlPage) {
+    setPrevUrlPage(urlPage);
     setPage(urlPage);
-  }, [urlPage]);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -282,10 +286,11 @@ export default function ProductsPage() {
     }
   };
 
-  useEffect(() => {
+  if (selectionFilterKey !== prevSelectionFilterKey) {
+    setPrevSelectionFilterKey(selectionFilterKey);
     setSelectedIds([]);
     setIsAllSelectedMode(false);
-  }, [page, status, search, selectedParentId, selectedCategoryId]);
+  }
 
   const handleBulkStatusChange = async (newStatus: '판매중' | '품절' | '판매종료' | '숨김') => {
     if (selectedIds.length === 0) {

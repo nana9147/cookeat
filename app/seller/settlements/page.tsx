@@ -55,6 +55,9 @@ export default function SettlementsPage() {
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isAllSelectedMode, setIsAllSelectedMode] = useState(false);
+  const selectionFilterKey = `${page}-${status}-${search}`;
+  const [prevSelectionFilterKey, setPrevSelectionFilterKey] = useState(selectionFilterKey);
+  const [prevStatus, setPrevStatus] = useState(status);
 
   const handleSelect = (settlementId: number, checked: boolean) => {
     setSelectedIds((prev) =>
@@ -73,10 +76,11 @@ export default function SettlementsPage() {
     }
   };
 
-  useEffect(() => {
+  if (selectionFilterKey !== prevSelectionFilterKey) {
+    setPrevSelectionFilterKey(selectionFilterKey);
     setSelectedIds([]);
     setIsAllSelectedMode(false);
-  }, [page, status, search]);
+  }
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -205,10 +209,11 @@ export default function SettlementsPage() {
 
   const totalPages = Math.ceil(total / LIMIT);
 
-  useEffect(() => {
+  if (status !== prevStatus) {
+    setPrevStatus(status);
     setSearch('');
     setPage(1);
-  }, [status]);
+  }
 
   return (
     <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">

@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, type Page } from "@playwright/test";
 import fs from "node:fs";
 
 // Cookeat 16차 delta E2E (2026-07-01) — 신규/변경 화면 스모크 캡처
@@ -10,12 +10,12 @@ const PASSWORD = "Review!2026";
 
 test.beforeAll(() => fs.mkdirSync(IMG, { recursive: true }));
 
-async function snap(page: any, name: string) {
+async function snap(page: Page, name: string) {
   await page.waitForTimeout(1800);
   await page.screenshot({ path: `${IMG}/Cookeat-${name}.png`, fullPage: false });
 }
 
-async function login(page: any) {
+async function login(page: Page) {
   await page.goto("/login", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1000);
   const emailInput = page.locator('input[type="email"], input[name="email"]').first();

@@ -39,7 +39,10 @@ export default function LowStockAlert() {
   const [seenIds, setSeenIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    setSeenIds(loadSeenIds());
+    const run = () => {
+      setSeenIds(loadSeenIds());
+    };
+    run();
   }, []);
 
   useEffect(() => {
