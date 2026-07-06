@@ -6,7 +6,7 @@ import type { ReviewImageModalProps } from '@/types/seller/review';
 export default function ReviewImageModal({ open, imageUrl, onClose }: ReviewImageModalProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl p-2 bg-black border-0">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-xl p-2 bg-black border-0">
         {imageUrl && (
           <img src={imageUrl} alt="리뷰 이미지 원본" className="w-full h-auto rounded-lg" />
         )}

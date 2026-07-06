@@ -89,6 +89,7 @@ export default function ProductTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden py-3">
+      <div className="overflow-x-auto whitespace-nowrap">
       <Table>
         <TableHeader>
           <TableRow className="border-b border-gray-100">
@@ -258,8 +259,9 @@ export default function ProductTable({
           )}
         </TableBody>
       </Table>
+      </div>
       <Dialog open={previewId !== null} onOpenChange={(open) => !open && setPreviewId(null)}>
-        <DialogContent className="max-w-6xl sm:max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-6xl sm:max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden max-mobile:w-full max-mobile:max-w-[calc(100%-2rem)] max-mobile:h-[85vh]">
           {previewId !== null && (
             <iframe
               src={`/seller-preview/${previewId}`}

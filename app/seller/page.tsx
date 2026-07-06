@@ -32,9 +32,9 @@ export default function SellerPage() {
 
   if (isLoading || !dashboard) {
     return (
-      <div className="bg-background p-8">
+      <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
         <div className="mb-8">
-          <h1 className="text-h2 font-bold text-dark-text">판매 현황</h1>
+          <h1 className="text-h2 font-bold text-dark-text max-mobile:text-h3">판매 현황</h1>
           <p className="text-sm text-light-gray mt-1">
             오늘의 판매 데이터와 주요 지표를 확인하세요
           </p>
@@ -45,10 +45,10 @@ export default function SellerPage() {
   }
 
   return (
-    <div className="bg-background p-8">
+    <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
       {/* 헤더 */}
       <div className="mb-8">
-        <h1 className="text-h2 font-bold text-dark-text">판매 현황</h1>
+        <h1 className="text-h2 font-bold text-dark-text max-mobile:text-h3">판매 현황</h1>
         <p className="text-sm text-light-gray mt-1">오늘의 판매 데이터와 주요 지표를 확인하세요</p>
       </div>
 
@@ -57,7 +57,7 @@ export default function SellerPage() {
         <DashboardStatCards stats={dashboard.stats} />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 max-desktop:grid-cols-1">
         {/* 주문 현황 차트 */}
         <div className="col-span-2">
           <DashboardOrderTrendChart data={dashboard.orderTrend} />

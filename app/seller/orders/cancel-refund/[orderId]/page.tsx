@@ -208,10 +208,12 @@ export default function RefundDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="bg-background p-8">
+      <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
         <div className="flex items-center gap-2 mb-6">
           <BackButton />
-          <h1 className="text-h2 font-bold text-dark-text">환불 상세내역</h1>
+          <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
+            환불 상세내역
+          </h1>
         </div>
         <div className="text-center py-20 text-gray-400 text-sm">불러오는 중...</div>
       </div>
@@ -220,10 +222,12 @@ export default function RefundDetailPage() {
 
   if (!order) {
     return (
-      <div className="bg-background p-8">
+      <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
         <div className="flex items-center gap-2 mb-6">
           <BackButton />
-          <h1 className="text-h2 font-bold text-dark-text">환불 상세내역</h1>
+          <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
+            환불 상세내역
+          </h1>
         </div>
         <div className="text-center py-20 text-gray-400 text-sm">환불 내역을 찾을 수 없습니다.</div>
       </div>
@@ -257,21 +261,23 @@ export default function RefundDetailPage() {
   const finalRefundAmount = totalRefundAmountBeforeShipping - totalBuyerShippingDeduction;
 
   return (
-    <div className="bg-background p-8">
+    <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
       <div className="flex items-center gap-2 mb-8">
         <BackButton />
-        <h1 className="text-h2 font-bold text-dark-text">환불 상세내역</h1>
+        <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
+          환불 상세내역
+        </h1>
       </div>
 
       {/* 주문 메타 정보 */}
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex items-end justify-between mb-6 max-mobile:flex-col max-mobile:items-start max-mobile:gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 tracking-wide">
               {order.id}
             </span>
           </div>
-          <p className="text-2xl font-bold text-dark-text tracking-tight">
+          <p className="text-2xl font-bold text-dark-text tracking-tight max-mobile:text-xl">
             {formatDateTime(order.orderDate)}
           </p>
           <p className="text-sm text-gray-400 mt-1">{order.customer}님의 주문</p>
@@ -286,7 +292,7 @@ export default function RefundDetailPage() {
       </div>
 
       {/* 전체 환불 요약 — 그라데이션 카드 */}
-      <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-white p-6 mb-10 shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-white p-6 mb-10 shadow-sm max-mobile:p-4">
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/5 blur-2xl" />
 
         <p className="text-xs font-semibold text-primary/70 tracking-wide uppercase mb-4">
@@ -347,7 +353,7 @@ export default function RefundDetailPage() {
 
           <div className="flex justify-between items-center pt-4 mt-1 border-t border-dashed border-primary/20">
             <span className="text-base font-semibold text-dark-text">최종 환불금액</span>
-            <span className="text-2xl font-bold text-primary tracking-tight">
+            <span className="text-2xl font-bold text-primary tracking-tight max-mobile:text-xl">
               {finalRefundAmount.toLocaleString()}원
             </span>
           </div>
@@ -520,7 +526,7 @@ function RefundItemRow({
       {/* 좌측 상태 강조바 */}
       <div className={`w-1 flex-shrink-0 ${style.bar}`} />
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 max-mobile:p-4">
         <div className="flex items-center justify-between mb-4">
           <span
             className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${style.badge}`}
@@ -530,9 +536,9 @@ function RefundItemRow({
           </span>
         </div>
 
-        <div className="flex items-start gap-8">
+        <div className="flex items-start gap-8 max-tablet:flex-col max-tablet:gap-4">
           {/* 상품 정보 */}
-          <div className="flex gap-3 w-64 flex-shrink-0">
+          <div className="flex gap-3 w-64 flex-shrink-0 max-tablet:w-full">
             <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 relative ring-1 ring-gray-100">
               {item.img && (
                 <Image src={item.img} alt={item.productName} fill className="object-cover" />
@@ -545,7 +551,7 @@ function RefundItemRow({
           </div>
 
           {/* 환불 금액 */}
-          <div className="w-48 flex-shrink-0">
+          <div className="w-48 flex-shrink-0 max-tablet:w-full">
             <p className="text-2xs font-semibold text-gray-400 tracking-wide uppercase mb-2.5">
               환불 금액
             </p>
@@ -587,7 +593,7 @@ function RefundItemRow({
           </div>
 
           {/* 신청 정보 */}
-          <div className="w-48 flex-shrink-0">
+          <div className="w-48 flex-shrink-0 max-tablet:w-full">
             <p className="text-2xs font-semibold text-gray-400 tracking-wide uppercase mb-2.5">
               신청 정보
             </p>
@@ -604,7 +610,7 @@ function RefundItemRow({
           </div>
 
           {/* 반송 정보 */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 max-tablet:w-full">
             <p className="text-2xs font-semibold text-gray-400 tracking-wide uppercase mb-2.5">
               반송 정보
             </p>
@@ -656,7 +662,7 @@ function RefundItemRow({
           </div>
 
           {/* 관리 */}
-          <div className="w-40 flex-shrink-0 flex justify-end gap-2">
+          <div className="w-40 flex-shrink-0 flex justify-end gap-2 max-tablet:w-full max-tablet:justify-start">
             {!isAdmin && isPending && (
               <>
                 <Button size="sm" onClick={onApprove}>

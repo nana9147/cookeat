@@ -49,6 +49,7 @@ const menuItems = [
   },
   { label: '리뷰관리', href: '/seller/reviews' },
   { label: '정산관리', href: '/seller/settlements' },
+  { label: '통계', href: '/seller/statistics' },
   { label: '판매자정보', href: '/seller/info' },
 ];
 
@@ -94,7 +95,7 @@ export default function SellerSidebar() {
   };
 
   return (
-    <Sidebar collapsible="none" className="hidden md:flex bg-primary text-white">
+    <Sidebar collapsible="none" className="hidden desktop:flex bg-primary text-white">
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>

@@ -72,7 +72,7 @@ export default function ProductEditPage() {
 
   if (error) {
     return (
-      <div className="bg-background p-8">
+      <div className="bg-background p-8 max-tablet:p-4">
         <p className="text-red-500">{error}</p>
       </div>
     );
@@ -80,16 +80,16 @@ export default function ProductEditPage() {
 
   if (!initialData) {
     return (
-      <div className="bg-background p-8">
+      <div className="bg-background p-8 max-tablet:p-4">
         <p className="text-sm text-gray-400">불러오는 중...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-background p-8">
+    <div className="bg-background p-8 max-tablet:p-4">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-h2 font-bold text-dark-text">상품 수정</h1>
+        <h1 className="text-h2 font-bold text-dark-text max-mobile:text-h3">상품 수정</h1>
       </div>
       <ProductForm mode="edit" initialData={initialData} />
     </div>

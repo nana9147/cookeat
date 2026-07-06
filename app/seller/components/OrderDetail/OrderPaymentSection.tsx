@@ -51,8 +51,8 @@ export default function OrderPaymentSection({ payment }: OrderPaymentSectionProp
           )}
 
           {payment.couponDiscount > 0 && (
-            <div className="flex justify-between items-center">
-              <dt className="text-sm text-gray-500 flex items-center gap-2">
+            <div className="flex justify-between items-center max-mobile:flex-col max-mobile:items-start max-mobile:gap-1">
+              <dt className="text-sm text-gray-500 flex items-center gap-2 max-mobile:flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <Ticket className="w-3.5 h-3.5" />
                   쿠폰 할인

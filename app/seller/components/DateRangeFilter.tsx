@@ -21,9 +21,9 @@ export default function DateRangeFilter({
   onEndDateChange,
 }: DateRangeFilterProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 max-tablet:flex-wrap max-mobile:flex-col max-mobile:items-stretch">
       <Select value={datePreset} onValueChange={(v) => onDatePresetChange(v as DateRangePreset)}>
-        <SelectTrigger size="sm" className="w-28">
+        <SelectTrigger size="sm" className="w-28 max-mobile:w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -36,19 +36,19 @@ export default function DateRangeFilter({
       </Select>
 
       {datePreset !== '전체' && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 max-mobile:w-full">
           <Input
             type="date"
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
-            className="w-36"
+            className="w-36 max-mobile:w-full"
           />
           <span className="text-gray-400 text-sm">~</span>
           <Input
             type="date"
             value={endDate}
             onChange={(e) => onEndDateChange(e.target.value)}
-            className="w-36"
+            className="w-36 max-mobile:w-full"
           />
         </div>
       )}

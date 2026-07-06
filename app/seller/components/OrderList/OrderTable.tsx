@@ -47,6 +47,7 @@ export default function OrderTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden py-3">
+      <div className="overflow-x-auto whitespace-nowrap">
       <Table>
         <TableHeader>
           <TableRow>
@@ -150,6 +151,7 @@ export default function OrderTable({
           )}
         </TableBody>
       </Table>
+      </div>
       <Pagination
         currentPage={page}
         totalPages={totalPages}

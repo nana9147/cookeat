@@ -371,11 +371,11 @@ export default function ProductsPage() {
   ];
 
   return (
-    <div className="bg-background p-8">
-      <div className="mb-8 pr-5 flex items-center justify-between">
-        <h1 className="text-h2 font-bold text-dark-text">상품 관리</h1>
+    <div className="bg-background p-8 max-tablet:p-4">
+      <div className="mb-8 pr-5 flex items-center justify-between max-tablet:flex-col max-tablet:items-start max-tablet:gap-3 max-tablet:pr-0">
+        <h1 className="text-h2 font-bold text-dark-text max-mobile:text-h3">상품 관리</h1>
         {!isAdmin && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-mobile:flex-wrap max-mobile:w-full">
             <Button variant="outline" size="lg" onClick={handleTemplateDownload}>
               양식 다운로드
             </Button>
@@ -498,7 +498,7 @@ export default function ProductsPage() {
         )}
 
         {selectedIds.length > 0 && (
-          <div className="flex items-center gap-2 bg-beige/40 border border-border rounded-lg px-4 py-2.5">
+          <div className="flex items-center gap-2 bg-beige/40 border border-border rounded-lg px-4 py-2.5 max-tablet:flex-wrap max-tablet:gap-y-2">
             <p className="text-sm text-gray-700 mr-auto">{selectedIds.length}개 선택됨</p>
             <Button
               size="sm"

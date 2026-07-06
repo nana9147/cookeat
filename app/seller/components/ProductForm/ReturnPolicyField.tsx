@@ -65,7 +65,7 @@ export default function ReturnPolicyField({
           </Button>
 
           {selectedTemplate ? (
-            <dl className="grid grid-cols-2 gap-y-2 text-sm bg-gray-50 rounded-md p-4">
+            <dl className="grid grid-cols-2 gap-y-2 text-sm bg-gray-50 rounded-md p-4 max-mobile:grid-cols-1">
               <dt className="text-gray-500">반품 가능 기간</dt>
               <dd className="text-gray-800">{selectedTemplate.returnPeriod}일</dd>
               <dt className="text-gray-500">환불 처리 기간</dt>

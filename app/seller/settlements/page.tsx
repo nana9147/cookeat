@@ -211,10 +211,10 @@ export default function SettlementsPage() {
   }, [status]);
 
   return (
-    <div className="bg-background p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
+      <div className="mb-8 flex items-center justify-between max-tablet:flex-col max-tablet:items-start max-tablet:gap-3">
         <h1 className="text-h2 font-bold text-dark-text">정산 관리</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 max-mobile:w-full max-mobile:flex-col max-mobile:items-stretch">
           {summary.nextSettlementDate && (
             <p className="text-sm text-gray-500">
               다음 정산일{' '}
@@ -222,7 +222,11 @@ export default function SettlementsPage() {
             </p>
           )}
           {!isAdmin && (
-            <Button onClick={handleExcelDownload} disabled={isExporting}>
+            <Button
+              onClick={handleExcelDownload}
+              disabled={isExporting}
+              className="max-mobile:w-full"
+            >
               <Download />
               {isExporting ? '다운로드 중...' : '엑셀 다운로드'}
             </Button>
@@ -242,7 +246,7 @@ export default function SettlementsPage() {
         unit="원"
       />
 
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-5 max-tablet:flex-col max-tablet:items-stretch">
         <Input
           value={search}
           onChange={(e) => {
@@ -250,7 +254,7 @@ export default function SettlementsPage() {
             setPage(1);
           }}
           placeholder="정산 기간으로 검색 (예: 2026-06)"
-          className="flex-1 py-5 bg-card"
+          className="flex-1 py-5 bg-card max-tablet:w-full"
         />
         <Select
           value={status}
@@ -259,7 +263,7 @@ export default function SettlementsPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-32 max-tablet:w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

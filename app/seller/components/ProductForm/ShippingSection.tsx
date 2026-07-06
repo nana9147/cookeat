@@ -58,7 +58,7 @@ export default function ShippingSection({
           </Button>
 
           {selectedTemplate ? (
-            <dl className="grid grid-cols-2 gap-y-2 text-sm bg-gray-50 rounded-md p-4">
+            <dl className="grid grid-cols-2 gap-y-2 text-sm bg-gray-50 rounded-md p-4 max-mobile:grid-cols-1">
               <dt className="text-gray-500">배송비 유형</dt>
               <dd className="text-gray-800">{selectedTemplate.feeType}</dd>
               <dt className="text-gray-500">배송비</dt>

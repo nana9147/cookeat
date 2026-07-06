@@ -24,10 +24,10 @@ export default function AddressCard({ address, onEdit, onDelete }: AddressCardPr
 
   return (
     <>
-      <Card className="p-5 mb-3">
+      <Card className="p-5 mb-3 max-mobile:p-3">
         <div className="flex items-start gap-3">
           <MapPin className="text-emerald-500 mt-1 shrink-0" />
-          <CardContent className="flex justify-between flex-1 p-0">
+          <CardContent className="flex justify-between flex-1 p-0 max-mobile:flex-col max-mobile:gap-3">
             <div className="flex flex-col gap-3">
               <div className="flex gap-3">
                 <p className="text-h5 font-medium">{address.name}</p>
@@ -35,12 +35,12 @@ export default function AddressCard({ address, onEdit, onDelete }: AddressCardPr
                   <StatusBadge status={address.type === '출고지' ? '기본출고지' : '기본반품지'} />
                 )}
               </div>
-              <div className="flex gap-3 text-sm text-gray-600">
+              <div className="flex gap-3 text-sm text-gray-600 max-mobile:flex-wrap">
                 ({address.zipCode}) {address.baseAddress}, {address.detailAddress}
               </div>
             </div>
             {!isAdmin && (
-              <div className="flex">
+              <div className="flex max-mobile:justify-end">
                 <Button variant="ghost" onClick={onEdit}>
                   <Pencil />
                 </Button>

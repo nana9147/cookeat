@@ -19,14 +19,14 @@ export default function DashboardReviewSummaryCard({ review }: DashboardReviewSu
           </Link>
         </div>
       </CardHeader>
-      <CardContent className="pt-6">
-        <div className="flex items-center gap-2 mb-5">
+      <CardContent className="pt-6 max-mobile:pt-4">
+        <div className="flex items-center gap-2 mb-5 max-mobile:mb-4">
           <Star size={18} className="text-yellow fill-yellow" />
           <p className="text-2xl font-bold text-dark-text">{averageRating.toFixed(1)}</p>
           <p className="text-xs text-light-gray">전체 {totalCount}건</p>
         </div>
 
-        <div className="rounded-xl bg-beige/50 p-4 border border-border">
+        <div className="rounded-xl bg-beige/50 p-4 max-mobile:p-3 border border-border">
           <p className="text-xs text-light-gray mb-1">답글 미작성</p>
           <p className="text-xl font-bold text-dark-text">{pendingReplyCount}건</p>
         </div>
