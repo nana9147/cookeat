@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-
-const VALID_CATEGORIES = ['주문문의', '상품문의', '배송문의', '기타'] as const;
+import { GENERAL_CATEGORIES, VALID_CATEGORIES } from '@/lib/inquiryCategories';
 
 export async function GET(req: NextRequest) {
   const authed = await requireAuth(req);
@@ -33,18 +32,30 @@ export async function POST(req: NextRequest) {
   if (authed instanceof NextResponse) return authed;
 
   const body = await req.json();
-  const { category, title, content } = body as { category: string; title: string; content: string };
+  const { category, title, content } = body as {
+    category: string;
+    title: string;
+    content: string;
+  };
 
-  if (!VALID_CATEGORIES.includes(category as (typeof VALID_CATEGORIES)[number])) {
+  if (!VALID_CATEGORIES.includes(category)) {
     return NextResponse.json({ error: '유효하지 않은 문의 유형입니다.' }, { status: 400 });
   }
   if (!title?.trim() || !content?.trim()) {
     return NextResponse.json({ error: '제목과 내용은 필수입니다.' }, { status: 400 });
   }
+  if (!(GENERAL_CATEGORIES as readonly string[]).includes(category)) {
+    return NextResponse.json({ error: '유효하지 않은 문의 유형입니다.' }, { status: 400 });
+  }
 
   const { data, error } = await supabaseAdmin
     .from('inquiries')
-    .insert({ user_id: authed.userId, category, title: title.trim(), content: content.trim() })
+    .insert({
+      user_id: authed.userId,
+      category,
+      title: title.trim(),
+      content: content.trim(),
+    })
     .select('inquiry_id, created_at')
     .single();
 
