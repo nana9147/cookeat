@@ -126,8 +126,10 @@ export default function ReviewsPage() {
   };
 
   return (
-    <div className="bg-background p-8">
-      <h1 className="text-h2 font-bold text-dark-text mb-6">리뷰 관리</h1>
+    <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
+      <h1 className="text-h2 max-tablet:text-h3 font-bold text-dark-text mb-6 max-mobile:mb-4">
+        리뷰 관리
+      </h1>
       <ReviewSummaryCards
         summary={summary}
         filter={filter}

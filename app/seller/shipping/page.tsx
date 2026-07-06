@@ -293,9 +293,9 @@ export default function ShippingPage() {
   };
 
   return (
-    <div className="bg-background p-8">
-      <div className="mb-8">
-        <h1 className="text-h2 font-bold text-dark-text">
+    <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
+      <div className="mb-8 max-mobile:mb-5">
+        <h1 className="text-h2 font-bold text-dark-text max-mobile:text-h3">
           배송 관리
           <span className="text-light-gray font-normal mx-2">/</span>
           <span className="text-h4 font-medium">배송 처리</span>
@@ -312,7 +312,7 @@ export default function ShippingPage() {
         cols={5}
       />
 
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-5 max-tablet:flex-col max-tablet:items-stretch">
         <Input
           value={search}
           onChange={(e) => {
@@ -320,7 +320,7 @@ export default function ShippingPage() {
             setPage(1);
           }}
           placeholder="주문번호, 주문자로 검색"
-          className="flex-1 py-5 bg-card"
+          className="flex-1 py-5 bg-card max-tablet:w-full"
         />
         <DateRangeFilter
           datePreset={datePreset}

@@ -10,11 +10,11 @@ export default function SellerBusinessInfo({ data, isEditing, onChange }: Seller
       </CardHeader>
       <CardContent className="pt-5">
         <dl className="flex flex-col gap-4">
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">사업자 등록번호</dt>
             <dd className="text-sm text-gray-800">{data.business_number}</dd>
           </div>
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">대표자명</dt>
             <dd className="text-sm text-gray-800">
               {isEditing ? (
@@ -29,13 +29,13 @@ export default function SellerBusinessInfo({ data, isEditing, onChange }: Seller
             </dd>
           </div>
 
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">공동대표 여부</dt>
             <dd className="text-sm text-gray-800">
               {data.is_co_representative ? '공동대표' : '단독대표'}
             </dd>
           </div>
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">사업장 주소</dt>
             <dd className="text-sm text-gray-800">
               {isEditing ? (

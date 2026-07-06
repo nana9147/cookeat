@@ -31,12 +31,12 @@ export default function ReviewFilterTabs({
       </div>
 
       {/* 별점 필터 */}
-      <div className="flex gap-1.5">
+      <div className="flex gap-1.5 max-mobile:flex-wrap">
         {RATING_OPTIONS.map((rating) => (
           <button
             key={rating}
             onClick={() => onRatingChange(ratingFilter === rating ? undefined : rating)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 max-mobile:px-2 rounded-full text-sm font-medium transition-colors ${
               ratingFilter === rating
                 ? 'bg-yellow-400 text-white border-yellow-400'
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'

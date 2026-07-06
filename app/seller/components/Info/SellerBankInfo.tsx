@@ -10,7 +10,7 @@ export default function SellerBankInfo({ data, isEditing, onChange }: SellerAppl
       </CardHeader>
       <CardContent className="pt-5">
         <dl className="flex flex-col gap-4">
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">은행명</dt>
             <dd className="text-sm text-gray-800">
               {isEditing ? (
@@ -24,7 +24,7 @@ export default function SellerBankInfo({ data, isEditing, onChange }: SellerAppl
               )}
             </dd>
           </div>
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">계좌번호</dt>
             <dd className="text-sm text-gray-800">
               {isEditing ? (
@@ -38,7 +38,7 @@ export default function SellerBankInfo({ data, isEditing, onChange }: SellerAppl
               )}
             </dd>
           </div>
-          <div className="grid grid-cols-[160px_1fr] items-center">
+          <div className="grid grid-cols-[160px_1fr] items-center max-mobile:grid-cols-1 max-mobile:gap-1">
             <dt className="text-sm text-gray-400">수수료율</dt>
             <dd className="text-sm text-gray-800">{data.commission_rate}%</dd>
           </div>

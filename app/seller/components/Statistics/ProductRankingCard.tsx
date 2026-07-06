@@ -14,7 +14,7 @@ export default function ProductRankingCard({ items }: ProductRankingCardProps) {
         ) : (
           <div className="flex flex-col gap-3">
             {items.map((item, idx) => (
-              <div key={item.productId} className="flex items-center gap-3">
+              <div key={item.productId} className="flex items-center gap-3 max-mobile:gap-2">
                 <span className="w-5 text-sm font-semibold text-light-gray flex-shrink-0">
                   {idx + 1}
                 </span>

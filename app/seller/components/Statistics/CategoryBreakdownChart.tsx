@@ -25,7 +25,7 @@ export default function CategoryBreakdownChart({ items }: CategoryBreakdownChart
           <p className="text-sm text-light-gray text-center py-10">판매 데이터가 없습니다.</p>
         ) : (
           <>
-            <ChartContainer config={chartConfig} className="h-52 w-full">
+            <ChartContainer config={chartConfig} className="h-52 w-full max-mobile:h-44">
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Pie

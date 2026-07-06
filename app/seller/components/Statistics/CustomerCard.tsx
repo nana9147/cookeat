@@ -10,7 +10,9 @@ export default function CustomerCard({ customer }: CustomerCardProps) {
         <CardTitle className="text-h5 font-semibold text-dark-text">신규·재구매 고객</CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
-        <p className="text-h3 font-bold text-dark-text">재구매율 {customer.returningRate}%</p>
+        <p className="text-h3 font-bold text-dark-text max-mobile:text-h4">
+          재구매율 {customer.returningRate}%
+        </p>
         <div className="flex flex-col gap-2 mt-5">
           <div className="flex items-center justify-between text-sm">
             <span className="flex items-center gap-1.5 text-gray-text">

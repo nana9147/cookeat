@@ -104,8 +104,8 @@ export default function AddressForm({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               우편번호 <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-2">
-              <Input value={form.zipCode} readOnly className="w-32" />
+            <div className="flex gap-2 max-mobile:flex-wrap">
+              <Input value={form.zipCode} readOnly className="w-32 max-mobile:w-full" />
               <Button
                 type="button"
                 variant="outline"

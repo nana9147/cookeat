@@ -36,19 +36,23 @@ export default function SettlementDetailPage() {
   }, [settlementId]);
 
   if (isLoading) {
-    return <div className="bg-background p-8 text-center text-gray-400">불러오는 중...</div>;
+    return (
+      <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4 text-center text-gray-400">
+        불러오는 중...
+      </div>
+    );
   }
 
   if (!detail) {
     return (
-      <div className="bg-background p-8 text-center text-gray-400">
+      <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4 text-center text-gray-400">
         정산 내역을 찾을 수 없습니다.
       </div>
     );
   }
 
   return (
-    <div className="bg-background p-8">
+    <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
       <div className="flex flex-row justify-between items-center mb-8">
         <div className="flex items-center gap-2">
           <BackButton />

@@ -14,7 +14,7 @@ export default function OrderCustomerSection({
   delivery,
 }: OrderCustomerSectionProps) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-2 gap-4 max-tablet:grid-cols-1">
       <Card>
         <CardHeader className="border-b">
           <CardTitle className="text-sm flex items-center gap-1.5">

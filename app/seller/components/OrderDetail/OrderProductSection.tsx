@@ -21,6 +21,7 @@ export default function OrderProductSection({ products, refundTotal }: OrderProd
         </CardTitle>
       </CardHeader>
       <CardContent className="px-0 py-0">
+        <div className="overflow-x-auto whitespace-nowrap">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 border-b-2 border-gray-200">
@@ -107,6 +108,7 @@ export default function OrderProductSection({ products, refundTotal }: OrderProd
             })}
           </tbody>
         </table>
+        </div>
 
         {refundingProducts.length > 0 && (
           <div className="m-5 p-4 bg-amber-50 border border-amber-200 rounded-lg">

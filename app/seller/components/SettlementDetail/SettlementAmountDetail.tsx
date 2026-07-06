@@ -11,7 +11,7 @@ export default function SettlementAmountDetail({ detail }: SettlementDetailProps
 
   return (
     <Card className="border-border shadow-sm mb-4">
-      <CardContent className="p-6">
+      <CardContent className="p-6 max-tablet:p-5 max-mobile:p-4">
         <h2 className="text-base font-semibold text-dark-text mb-4">정산 금액 상세</h2>
         <dl className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -37,7 +37,7 @@ export default function SettlementAmountDetail({ detail }: SettlementDetailProps
           <Separator className="my-1" />
           <div className="flex items-center justify-between">
             <dt className="text-base font-semibold text-dark-text">최종 정산 금액</dt>
-            <dd className="text-xl font-bold text-dark-text">
+            <dd className="text-xl font-bold text-dark-text max-mobile:text-lg">
               {detail.amountDetail.finalAmount.toLocaleString()}원
             </dd>
           </div>

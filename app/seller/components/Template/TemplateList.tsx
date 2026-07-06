@@ -215,7 +215,7 @@ export default function TemplateList() {
 
   return (
     <>
-      <div className="flex justify-between items-center bg-white border border-border rounded-lg p-5 mb-5">
+      <div className="flex justify-between items-center bg-white border border-border rounded-lg p-5 mb-5 max-tablet:flex-col max-tablet:items-start max-tablet:gap-3">
         <div>
           <p className="text-h4 font-medium">배송 템플릿</p>
           <span className="text-sm text-light-gray">

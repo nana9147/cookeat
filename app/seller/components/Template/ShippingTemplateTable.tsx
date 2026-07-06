@@ -56,81 +56,83 @@ export default function ShippingTemplateTable({
           value={selectedId !== null ? String(selectedId) : ''}
           onValueChange={(value) => setSelectedId(Number(value))}
         >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16 text-center">기본</TableHead>
-                <TableHead>템플릿명</TableHead>
-                <TableHead className="text-center">배송 유형</TableHead>
-                <TableHead className="text-center">배송비</TableHead>
-                <TableHead className="text-center">반품/교환</TableHead>
-                <TableHead>출고지</TableHead>
-                <TableHead className="w-20 text-center">관리</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {shippings.length === 0 ? (
+          <div className="overflow-x-auto whitespace-nowrap">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
-                    등록된 배송 템플릿이 없어요
-                  </TableCell>
+                  <TableHead className="w-16 text-center">기본</TableHead>
+                  <TableHead>템플릿명</TableHead>
+                  <TableHead className="text-center">배송 유형</TableHead>
+                  <TableHead className="text-center">배송비</TableHead>
+                  <TableHead className="text-center">반품/교환</TableHead>
+                  <TableHead>출고지</TableHead>
+                  <TableHead className="w-20 text-center">관리</TableHead>
                 </TableRow>
-              ) : (
-                shippings.map((shipping) => (
-                  <TableRow
-                    key={shipping.templateId}
-                    className="cursor-pointer"
-                    onClick={() => setSelectedId(shipping.templateId)}
-                  >
-                    <TableCell className="text-center">
-                      <div className="flex justify-center">
-                        <RadioGroupItem value={String(shipping.templateId)} />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium text-gray-800">{shipping.name}</TableCell>
-                    <TableCell className="text-center text-gray-700">{shipping.feeType}</TableCell>
-                    <TableCell className="text-center text-gray-700">
-                      {feeDescription(shipping)}
-                    </TableCell>
-                    <TableCell className="text-center text-gray-700">
-                      {shipping.returnFee.toLocaleString()}원
-                    </TableCell>
-                    <TableCell className="text-gray-500 text-sm max-w-48 truncate">
-                      {shipping.originAddress || '—'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {!isAdmin ? (
-                        <div className="flex justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(shipping);
-                            }}
-                          >
-                            <Pencil size={15} className="text-gray-400" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTarget(shipping.templateId);
-                            }}
-                          >
-                            <Trash2 size={15} className="text-red-400" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-sm">-</span>
-                      )}
+              </TableHeader>
+              <TableBody>
+                {shippings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-16 text-gray-400 text-sm">
+                      등록된 배송 템플릿이 없어요
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  shippings.map((shipping) => (
+                    <TableRow
+                      key={shipping.templateId}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedId(shipping.templateId)}
+                    >
+                      <TableCell className="text-center">
+                        <div className="flex justify-center">
+                          <RadioGroupItem value={String(shipping.templateId)} />
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium text-gray-800">{shipping.name}</TableCell>
+                      <TableCell className="text-center text-gray-700">{shipping.feeType}</TableCell>
+                      <TableCell className="text-center text-gray-700">
+                        {feeDescription(shipping)}
+                      </TableCell>
+                      <TableCell className="text-center text-gray-700">
+                        {shipping.returnFee.toLocaleString()}원
+                      </TableCell>
+                      <TableCell className="text-gray-500 text-sm max-w-48 truncate">
+                        {shipping.originAddress || '—'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {!isAdmin ? (
+                          <div className="flex justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(shipping);
+                              }}
+                            >
+                              <Pencil size={15} className="text-gray-400" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget(shipping.templateId);
+                              }}
+                            >
+                              <Trash2 size={15} className="text-red-400" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </RadioGroup>
         {!isAdmin && (
           <div className="flex justify-end px-4 pt-3">

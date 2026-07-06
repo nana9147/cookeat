@@ -95,7 +95,7 @@ export default function SellerSidebar() {
   };
 
   return (
-    <Sidebar collapsible="none" className="hidden md:flex bg-primary text-white">
+    <Sidebar collapsible="none" className="hidden desktop:flex bg-primary text-white">
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>

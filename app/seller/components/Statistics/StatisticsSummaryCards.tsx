@@ -10,7 +10,7 @@ export default function StatisticsSummaryCards({ summary }: StatisticsSummaryCar
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-4 gap-4 max-desktop:grid-cols-2 max-mobile:grid-cols-1">
       {cards.map((c) => (
         <Card key={c.label} className="border-border shadow-sm">
           <CardContent className="p-5">

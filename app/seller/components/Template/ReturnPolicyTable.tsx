@@ -49,74 +49,76 @@ export default function ReturnPolicyTable({
           value={selectedId !== null ? String(selectedId) : ''}
           onValueChange={(value) => setSelectedId(Number(value))}
         >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16 text-center">기본</TableHead>
-                <TableHead className="text-center">템플릿명</TableHead>
-                <TableHead className="text-center">반품 가능 기간</TableHead>
-                <TableHead className="text-center">환불 처리</TableHead>
-                <TableHead className="w-20 text-center">관리</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {policies.length === 0 ? (
+          <div className="overflow-x-auto whitespace-nowrap">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell>등록된 교환/환불 규정 템플릿이 없습니다.</TableCell>
+                  <TableHead className="w-16 text-center">기본</TableHead>
+                  <TableHead className="text-center">템플릿명</TableHead>
+                  <TableHead className="text-center">반품 가능 기간</TableHead>
+                  <TableHead className="text-center">환불 처리</TableHead>
+                  <TableHead className="w-20 text-center">관리</TableHead>
                 </TableRow>
-              ) : (
-                policies.map((policy) => (
-                  <TableRow
-                    key={policy.returnId}
-                    className="cursor-pointer"
-                    onClick={() => setSelectedId(policy.returnId)}
-                  >
-                    <TableCell className="text-center">
-                      <div className="flex justify-center">
-                        <RadioGroupItem value={String(policy.returnId)} />
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center text-gray-700">{policy.name}</TableCell>
-                    <TableCell className="text-center text-gray-700">
-                      {policy.content.returnPeriod}일
-                    </TableCell>
-
-                    <TableCell className="text-center text-gray-700">
-                      {policy.content.refundPeriod}일
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {!isAdmin ? (
-                        <div className="flex justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(policy);
-                            }}
-                          >
-                            <Pencil size={15} className="text-gray-400" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTarget(policy.returnId);
-                            }}
-                          >
-                            <Trash2 size={15} className="text-red-400" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-sm">-</span>
-                      )}
-                    </TableCell>
+              </TableHeader>
+              <TableBody>
+                {policies.length === 0 ? (
+                  <TableRow>
+                    <TableCell>등록된 교환/환불 규정 템플릿이 없습니다.</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  policies.map((policy) => (
+                    <TableRow
+                      key={policy.returnId}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedId(policy.returnId)}
+                    >
+                      <TableCell className="text-center">
+                        <div className="flex justify-center">
+                          <RadioGroupItem value={String(policy.returnId)} />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center text-gray-700">{policy.name}</TableCell>
+                      <TableCell className="text-center text-gray-700">
+                        {policy.content.returnPeriod}일
+                      </TableCell>
+
+                      <TableCell className="text-center text-gray-700">
+                        {policy.content.refundPeriod}일
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {!isAdmin ? (
+                          <div className="flex justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(policy);
+                              }}
+                            >
+                              <Pencil size={15} className="text-gray-400" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget(policy.returnId);
+                              }}
+                            >
+                              <Trash2 size={15} className="text-red-400" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </RadioGroup>
         {!isAdmin && (
           <div className="flex justify-end px-4 pt-3">

@@ -26,7 +26,7 @@ export default function RevenueTrendChart({ data }: RevenueTrendChartProps) {
         <CardTitle className="text-h5 font-semibold text-dark-text">기간별 매출 추이</CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
-        <ChartContainer config={chartConfig} className="h-64 w-full">
+        <ChartContainer config={chartConfig} className="h-64 w-full max-mobile:h-52">
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="revenueTrendFill" x1="0" y1="0" x2="0" y2="1">

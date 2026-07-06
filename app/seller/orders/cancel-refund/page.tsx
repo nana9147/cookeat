@@ -256,9 +256,9 @@ export default function CancelRefundPage() {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="bg-background p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-h2 font-bold text-dark-text">
+    <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
+      <div className="mb-8 flex items-center justify-between max-mobile:flex-col max-mobile:items-start max-mobile:gap-3">
+        <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
           주문 관리
           <span className="text-light-gray font-normal mx-2">/</span>
           <span className="text-h4 font-medium">취소·환불 관리</span>
@@ -290,7 +290,7 @@ export default function CancelRefundPage() {
         cols={5}
       />
 
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-5 max-tablet:flex-col max-tablet:items-stretch">
         <Input
           value={search}
           onChange={(e) => {

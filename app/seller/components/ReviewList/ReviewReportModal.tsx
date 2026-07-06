@@ -41,7 +41,7 @@ export default function ReviewReportModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>리뷰 신고</DialogTitle>
         </DialogHeader>
