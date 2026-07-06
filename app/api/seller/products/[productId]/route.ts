@@ -72,9 +72,29 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     .getAll('subImages_files')
     .filter((f): f is File => f instanceof File);
 
-  if (!name || !origin || !categoryId || !status || !price || !stock) {
+  const requiredFields: { key: string; value: string | null; label: string }[] = [
+    { key: 'name', value: name, label: '상품명' },
+    { key: 'origin', value: origin, label: '원산지' },
+    { key: 'categoryId', value: categoryId, label: '카테고리' },
+    { key: 'status', value: status, label: '판매 상태' },
+    { key: 'price', value: price, label: '가격' },
+    { key: 'stock', value: stock, label: '재고 수량' },
+    { key: 'shippingTemplateId', value: shippingTemplateId, label: '배송 템플릿' },
+    { key: 'returnPolicyTemplateId', value: returnPolicyTemplateId, label: '반품정책' },
+  ];
+
+  const missingLabels = requiredFields
+    .filter(
+      (field) => !field.value || (typeof field.value === 'string' && field.value.trim() === '')
+    )
+    .map((field) => field.label);
+
+  if (missingLabels.length > 0) {
     return NextResponse.json(
-      { success: false, error: '필수 항목이 누락되었습니다.' },
+      {
+        success: false,
+        error: `다음 필수 항목이 누락되었습니다: ${missingLabels.join(', ')}`,
+      },
       { status: 400 }
     );
   }
