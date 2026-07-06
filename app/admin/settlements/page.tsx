@@ -91,15 +91,15 @@ export default function SettlementsPage() {
 
   async function handleBulkSettle() {
     const { data } = await api.get('/admin/settlements', {
-      params: { status: '대기', limit: 100 },
+      params: { bulkIds: true },
     });
-    const pending = data.settlements as AdminSettlement[];
-    if (pending.length === 0) return;
-    if (!window.confirm(`대기 중인 정산 ${pending.length}건을 일괄 처리합니다. 계속하시겠습니까?`))
+    const pendingIds = data.settlementIds as number[];
+    if (pendingIds.length === 0) return;
+    if (!window.confirm(`대기 중인 정산 ${pendingIds.length}건을 일괄 처리합니다. 계속하시겠습니까?`))
       return;
 
     const results = await Promise.allSettled(
-      pending.map((s) => api.patch(`/admin/settlements/${s.settlementId}`, { status: '완료' }))
+      pendingIds.map((id) => api.patch(`/admin/settlements/${id}`, { status: '완료' }))
     );
 
     const failCount = results.filter((r) => r.status === 'rejected').length;
