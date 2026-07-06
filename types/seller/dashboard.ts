@@ -29,6 +29,7 @@ export interface DashboardData {
   orderTrend: DashboardOrderTrendPoint[];
   settlement: {
     scheduledTotal: number;
+    pendingTotal: number;
     nextSettlementDate: string | null;
   };
   review: DashboardReviewSummary;

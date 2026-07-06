@@ -233,15 +233,20 @@ export async function getSellerSettlementSummary(sellerId: number) {
   for (const s of settlements ?? []) {
     if (s.status === '완료') {
       completedTotal += s.amount;
-    } else if (s.status === '예정') {
+      continue;
+    }
+
+    if (s.status === '예정') {
       scheduledTotal += s.amount;
-      const settlementDate = addDays(new Date(s.period_end), 7);
-      const dateStr = toDateStr(settlementDate);
-      if (!nextSettlementDate || dateStr < nextSettlementDate) {
-        nextSettlementDate = dateStr;
-      }
     } else if (s.status === '대기') {
       pendingTotal += s.amount;
+    }
+
+    // '대기'·'예정' 모두 아직 지급되지 않은 정산 건 — 다음 정산일 계산 대상
+    const settlementDate = addDays(new Date(s.period_end), 7);
+    const dateStr = toDateStr(settlementDate);
+    if (!nextSettlementDate || dateStr < nextSettlementDate) {
+      nextSettlementDate = dateStr;
     }
   }
 
@@ -249,6 +254,7 @@ export async function getSellerSettlementSummary(sellerId: number) {
     completedTotal,
     scheduledTotal,
     pendingTotal,
+    upcomingTotal: scheduledTotal + pendingTotal,
     nextSettlementDate,
   };
 }
