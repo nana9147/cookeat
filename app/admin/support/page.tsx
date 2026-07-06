@@ -31,12 +31,12 @@ export default function SupportPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data } = await api.get('/admin/inquiries', { params: { limit: 10 } });
+        const { data } = await api.get('/admin/faqs', { params: { limit: 10 } });
         setInquiries(data.inquiries ?? []);
 
         const [waitingRes, answeredRes] = await Promise.all([
-          api.get('/admin/inquiries', { params: { answered: 'false', limit: 1 } }),
-          api.get('/admin/inquiries', { params: { answered: 'true', limit: 1 } }),
+          api.get('/admin/faqs', { params: { answered: 'false', limit: 1 } }),
+          api.get('/admin/faqs', { params: { answered: 'true', limit: 1 } }),
         ]);
         setStats({
           waiting: waitingRes.data.pagination?.total ?? 0,
@@ -62,20 +62,14 @@ export default function SupportPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">고객센터 관리</h1>
-          <p className="text-sm text-muted-foreground">미처리: {stats.waiting}건</p>
+          <p className="text-sm text-muted-foreground">레시피·쿠폰·계정 문의 · 미처리: {stats.waiting}건</p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/admin/support/inquiry"
             className="px-5 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
           >
-            1:1 문의
-          </Link>
-          <Link
-            href="/admin/support/faq"
-            className="px-5 py-2 text-sm font-medium rounded-lg border border-primary text-primary hover:bg-beige transition-colors"
-          >
-            FAQ
+            고객 문의
           </Link>
         </div>
       </div>
