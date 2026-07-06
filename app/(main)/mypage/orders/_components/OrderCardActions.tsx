@@ -4,13 +4,25 @@ import { useState } from 'react';
 import type { Order } from './types';
 import OrderReviewModal from './OrderReviewModal';
 import OrderCancelModal from './OrderCancelModal';
+import OrderRefundModal from './OrderRefundModal';
 import OrderInquiryModal from './OrderInquiryModal';
 
-type Props = { order: Order; onDetailClick: () => void; onCancelRequested?: () => void };
+type Props = {
+  order: Order;
+  onDetailClick: () => void;
+  onCancelRequested?: () => void;
+  onRefundRequested?: () => void;
+};
 
-export default function OrderCardActions({ order, onDetailClick, onCancelRequested }: Props) {
+export default function OrderCardActions({
+  order,
+  onDetailClick,
+  onCancelRequested,
+  onRefundRequested,
+}: Props) {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
 
   return (
@@ -34,6 +46,15 @@ export default function OrderCardActions({ order, onDetailClick, onCancelRequest
             className="flex-1 h-9 flex items-center justify-center rounded-xl border border-primary text-sm text-primary font-medium hover:bg-primary/5 transition-colors"
           >
             리뷰 작성
+          </button>
+        )}
+        {order.status === '배송완료' && (
+          <button
+            onClick={() => setShowRefundModal(true)}
+            disabled={order.hasPendingRefundRequest}
+            className="flex-1 h-9 flex items-center justify-center rounded-xl border border-red/20 text-sm text-red font-medium hover:bg-red/5 transition-colors disabled:text-red/40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+          >
+            {order.hasPendingRefundRequest ? '환불 신청됨' : '환불 신청'}
           </button>
         )}
         {(order.status === '결제완료' || order.status === '주문확인') && (
@@ -61,6 +82,17 @@ export default function OrderCardActions({ order, onDetailClick, onCancelRequest
           onSuccess={() => {
             setShowCancelModal(false);
             onCancelRequested?.();
+          }}
+        />
+      )}
+
+      {showRefundModal && (
+        <OrderRefundModal
+          orderId={order.orderId}
+          onClose={() => setShowRefundModal(false)}
+          onSuccess={() => {
+            setShowRefundModal(false);
+            onRefundRequested?.();
           }}
         />
       )}

@@ -12,6 +12,7 @@
 | GET    | `/orders`                 | 주문 목록 조회        | ✓    |
 | GET    | `/orders/:orderId`        | 주문 상세 조회        | ✓    |
 | POST   | `/orders/:orderId/cancel` | 주문 취소             | ✓    |
+| POST   | `/orders/:orderId/refund` | 배송완료 주문 환불 신청 | ✓    |
 
 ### POST `/orders`
 

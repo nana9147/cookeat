@@ -26,21 +26,28 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  // 판매자 승인 전(취소요청 접수 상태)인 주문 ID — 취소 탭에는 포함시키고, 그 외 탭에서는 제외한다
+  // 판매자 승인 전(취소요청/환불요청 접수 상태)인 주문 ID — 각 탭에는 포함시키고, 그 외 탭에서는 제외한다
   const { data: pendingRows, error: pendingRowsError } = await supabaseAdmin
     .from('refund_requests')
-    .select('order_items!inner(order_id, orders!inner(user_id))')
-    .eq('status', '취소요청')
+    .select('status, order_items!inner(order_id, orders!inner(user_id))')
+    .in('status', ['취소요청', '환불요청'])
     .is('reject_reason', null)
     .eq('order_items.orders.user_id', authed.userId);
 
   if (pendingRowsError) return NextResponse.json({ error: pendingRowsError.message }, { status: 500 });
 
-  const pendingOrderIds = [
+  const pendingCancelOrderIds = [
     ...new Set(
-      (pendingRows ?? []).map(
-        (r) => (r.order_items as unknown as { order_id: string }).order_id
-      )
+      (pendingRows ?? [])
+        .filter((r) => r.status === '취소요청')
+        .map((r) => (r.order_items as unknown as { order_id: string }).order_id)
+    ),
+  ];
+  const pendingRefundOrderIds = [
+    ...new Set(
+      (pendingRows ?? [])
+        .filter((r) => r.status === '환불요청')
+        .map((r) => (r.order_items as unknown as { order_id: string }).order_id)
     ),
   ];
 
@@ -48,18 +55,25 @@ export async function GET(req: NextRequest) {
     // 탭 '배송중'은 UX상 '배송준비' 포함 — 사용자 관점에서 같은 진행 단계
     query = query.in('status', ['배송준비', '배송중']);
   } else if (status === '취소') {
-    query = pendingOrderIds.length > 0
-      ? query.or(`status.eq.취소,order_id.in.(${pendingOrderIds.join(',')})`)
+    query = pendingCancelOrderIds.length > 0
+      ? query.or(`status.eq.취소,order_id.in.(${pendingCancelOrderIds.join(',')})`)
       : query.eq('status', '취소');
+  } else if (status === '환불') {
+    query = pendingRefundOrderIds.length > 0
+      ? query.or(`status.eq.환불,order_id.in.(${pendingRefundOrderIds.join(',')})`)
+      : query.eq('status', '환불');
   } else if (status && VALID_STATUSES.includes(status)) {
     query = query.eq('status', status);
   } else if (status) {
     return NextResponse.json({ error: '유효하지 않은 상태값입니다.' }, { status: 400 });
   }
 
-  // 취소 탭이 아니면 취소 신청 접수된 주문은 주문/배송내역에서 숨긴다
-  if (status !== '취소' && pendingOrderIds.length > 0) {
-    query = query.not('order_id', 'in', `(${pendingOrderIds.join(',')})`);
+  // 취소/환불 탭이 아니면 해당 신청 접수된 주문은 주문/배송내역에서 숨긴다
+  if (status !== '취소' && pendingCancelOrderIds.length > 0) {
+    query = query.not('order_id', 'in', `(${pendingCancelOrderIds.join(',')})`);
+  }
+  if (status !== '환불' && pendingRefundOrderIds.length > 0) {
+    query = query.not('order_id', 'in', `(${pendingRefundOrderIds.join(',')})`);
   }
 
   type OrderItemNested = {
@@ -87,17 +101,21 @@ export async function GET(req: NextRequest) {
   const orderRows = (rawOrders as unknown as OrderRow[]) ?? [];
   const allItemIds = orderRows.flatMap((o) => (o.order_items ?? []).map((i) => i.item_id));
 
-  let pendingItemIds = new Set<number>();
+  const pendingCancelItemIds = new Set<number>();
+  const pendingRefundItemIds = new Set<number>();
   if (allItemIds.length > 0) {
     const { data: pendingRefunds, error: pendingError } = await supabaseAdmin
       .from('refund_requests')
-      .select('item_id')
+      .select('item_id, status')
       .in('item_id', allItemIds)
-      .eq('status', '취소요청')
+      .in('status', ['취소요청', '환불요청'])
       .is('reject_reason', null);
 
     if (pendingError) return NextResponse.json({ error: pendingError.message }, { status: 500 });
-    pendingItemIds = new Set((pendingRefunds ?? []).map((r) => r.item_id));
+    for (const r of pendingRefunds ?? []) {
+      if (r.status === '취소요청') pendingCancelItemIds.add(r.item_id);
+      else pendingRefundItemIds.add(r.item_id);
+    }
   }
 
   const mapped = orderRows.map((o) => {
@@ -111,7 +129,8 @@ export async function GET(req: NextRequest) {
       paymentMethod: o.payment_method,
       createdAt: o.created_at,
       itemCount: items.length,
-      hasPendingCancelRequest: items.some((i) => pendingItemIds.has(i.item_id)),
+      hasPendingCancelRequest: items.some((i) => pendingCancelItemIds.has(i.item_id)),
+      hasPendingRefundRequest: items.some((i) => pendingRefundItemIds.has(i.item_id)),
       previewItems: items.slice(0, 3).map((i) => ({
         itemId: i.item_id,
         name: i.products?.name ?? '',
