@@ -4,12 +4,14 @@ import { useState } from 'react';
 import type { Order } from './types';
 import OrderReviewModal from './OrderReviewModal';
 import OrderCancelModal from './OrderCancelModal';
+import OrderInquiryModal from './OrderInquiryModal';
 
 type Props = { order: Order; onDetailClick: () => void; onCancelRequested?: () => void };
 
 export default function OrderCardActions({ order, onDetailClick, onCancelRequested }: Props) {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
 
   return (
     <>
@@ -19,6 +21,12 @@ export default function OrderCardActions({ order, onDetailClick, onCancelRequest
           className="flex-1 h-9 flex items-center justify-center rounded-xl border border-border text-sm text-gray-text font-medium hover:bg-hover transition-colors"
         >
           주문 상세
+        </button>
+        <button
+          onClick={() => setShowInquiryModal(true)}
+          className="flex-1 h-9 flex items-center justify-center rounded-xl border border-border text-sm text-gray-text font-medium hover:bg-hover transition-colors"
+        >
+          문의하기
         </button>
         {order.status === '배송완료' && (
           <button
@@ -54,6 +62,13 @@ export default function OrderCardActions({ order, onDetailClick, onCancelRequest
             setShowCancelModal(false);
             onCancelRequested?.();
           }}
+        />
+      )}
+
+      {showInquiryModal && (
+        <OrderInquiryModal
+          orderId={order.orderId}
+          onClose={() => setShowInquiryModal(false)}
         />
       )}
     </>

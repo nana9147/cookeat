@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import api from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 
@@ -9,6 +10,7 @@ type InquiryDetail = {
   inquiryId: number; category: string; title: string; content: string;
   createdAt: string; isAnswered: boolean;
   reply: { content: string; createdAt: string } | null;
+  images: string[];
 };
 
 export default function InquiryDetailPage({ params }: { params: Promise<{ inquiryId: string }> }) {
@@ -69,6 +71,15 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ inquir
           <div className="max-w-[80%] bg-primary text-white rounded-2xl rounded-tr-sm px-4 py-3">
             <p className="text-sm whitespace-pre-wrap leading-relaxed">{inquiry.content}</p>
           </div>
+          {inquiry.images.length > 0 && (
+            <div className="flex flex-wrap justify-end gap-2 max-w-[80%]">
+              {inquiry.images.map((url) => (
+                <div key={url} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border shrink-0">
+                  <Image src={url} alt="첨부 이미지" fill className="object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
           <span className="text-[11px] text-gray-text pr-1">{formatDateTime(inquiry.createdAt)}</span>
         </div>
 
