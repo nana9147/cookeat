@@ -97,7 +97,7 @@ export default function ReturnPolicyForm({
           {/* 반품 기간 */}
           <div className="flex flex-col gap-3">
             <p className="text-sm font-medium text-gray-500">반품 기간</p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 max-mobile:grid-cols-1">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">
                   반품 가능 기간 <span className="text-red-500">*</span>
@@ -151,7 +151,7 @@ export default function ReturnPolicyForm({
           {/* 반품 불가 사유 */}
           <div className="flex flex-col gap-3">
             <p className="text-sm font-medium text-gray-500">반품 불가 사유</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 max-mobile:grid-cols-1">
               {NON_RETURN_REASONS.map((reason) => (
                 <label
                   key={reason}

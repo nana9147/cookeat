@@ -28,7 +28,7 @@ export default function PricingField({ data, onChange }: PricingFieldProps) {
       </CardHeader>
       <CardContent className="flex flex-col gap-5 pt-5">
         {/* 판매가 + 재고 */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 max-tablet:grid-cols-1">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               판매가 <span className="text-red-500">*</span>

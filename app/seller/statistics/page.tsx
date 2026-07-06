@@ -40,10 +40,10 @@ export default function StatisticsPage() {
   }, [days]);
 
   return (
-    <div className="bg-background p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
+      <div className="mb-8 flex items-center justify-between max-tablet:flex-col max-tablet:items-start max-tablet:gap-3">
         <div>
-          <h1 className="text-h2 font-bold text-dark-text">판매 통계</h1>
+          <h1 className="text-h2 font-bold text-dark-text max-mobile:text-h3">판매 통계</h1>
           <p className="text-sm text-light-gray mt-1">상품·카테고리별 판매 데이터를 확인하세요</p>
         </div>
         <div className="flex items-center gap-1 rounded-lg bg-beige/50 p-1">
@@ -67,16 +67,16 @@ export default function StatisticsPage() {
       {isLoading || !data ? (
         <p className="text-sm text-light-gray">불러오는 중...</p>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 max-mobile:gap-4">
           <StatisticsSummaryCards summary={data.summary} />
           <RevenueTrendChart data={data.revenueTrend} />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 max-desktop:grid-cols-1">
             <div className="col-span-2">
               <ProductRankingCard items={data.productRanking} />
             </div>
             <CategoryBreakdownChart items={data.categoryBreakdown} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 max-tablet:grid-cols-1">
             <ClaimRateCard claimRate={data.claimRate} />
             <CustomerCard customer={data.customer} />
           </div>

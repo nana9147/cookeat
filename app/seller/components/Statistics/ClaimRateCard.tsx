@@ -8,7 +8,7 @@ export default function ClaimRateCard({ claimRate }: ClaimRateCardProps) {
         <CardTitle className="text-h5 font-semibold text-dark-text">취소·환불율</CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
-        <p className="text-h3 font-bold text-dark-text">
+        <p className="text-h3 font-bold text-dark-text max-mobile:text-h4">
           {claimRate.claimRate}%
           <span className="text-sm font-normal text-light-gray ml-2">
             ({claimRate.claimCount}건 / {claimRate.totalCount}건)

@@ -32,7 +32,7 @@ export default function ReviewReplyModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>답글 작성</DialogTitle>
         </DialogHeader>

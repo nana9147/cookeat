@@ -22,12 +22,12 @@ export default function ShippingSearchFilter({
   onEndDateChange,
 }: ShippingSearchFilterProps) {
   return (
-    <div className="flex items-center gap-2 flex-1">
+    <div className="flex items-center gap-2 flex-1 max-tablet:flex-col max-tablet:items-stretch">
       <Input
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder={placeholder}
-        className="flex-1 py-5 bg-card"
+        className="flex-1 py-5 bg-card max-tablet:w-full"
       />
       <DateRangeFilter
         datePreset={datePreset}

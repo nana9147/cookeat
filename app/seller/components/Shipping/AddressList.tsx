@@ -119,7 +119,7 @@ export default function AddressList() {
 
   return (
     <>
-      <div className="flex justify-between items-center bg-white border border-border rounded-lg p-5 mb-5">
+      <div className="flex justify-between items-center bg-white border border-border rounded-lg p-5 mb-5 max-mobile:flex-col max-mobile:items-start max-mobile:gap-3 max-mobile:p-4">
         <div>
           <p className="text-h4 font-medium">주소 관리</p>
           <span className="text-sm text-light-gray">
@@ -129,7 +129,7 @@ export default function AddressList() {
         {!isAdmin && (
           <Button
             variant="outline"
-            className="p-5"
+            className="p-5 max-mobile:self-end"
             onClick={() => {
               setFormMode('등록');
               setSelectedAddress(undefined);

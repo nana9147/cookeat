@@ -31,7 +31,7 @@ export default function RefundTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto whitespace-nowrap">
         <Table>
           <TableHeader>
             <TableRow>

@@ -271,9 +271,11 @@ export default function OrdersPage() {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="bg-background p-8">
-      <div className="flex flex-row justify-between items-center mb-8">
-        <h1 className="text-h2 font-bold text-dark-text">주문 관리</h1>
+    <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
+      <div className="flex flex-row justify-between items-center mb-8 max-mobile:flex-col max-mobile:items-start max-mobile:gap-3">
+        <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
+          주문 관리
+        </h1>
         {!isAdmin && (
           <Button onClick={handleExcelDownload} disabled={isExporting}>
             <Download />

@@ -326,12 +326,12 @@ export default function TrackingTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 max-mobile:flex-col max-mobile:items-start max-mobile:gap-3 max-mobile:px-3 max-mobile:py-3">
         <p className="text-sm text-gray-500">
           상품 <span className="font-semibold text-gray-800">{total}</span>개
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-tablet:flex-wrap">
           {isEditable && (
             <>
               <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
@@ -384,7 +384,7 @@ export default function TrackingTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto whitespace-nowrap">
         <Table>
           <TableHeader>
             <TableRow>

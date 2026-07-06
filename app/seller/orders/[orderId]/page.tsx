@@ -59,10 +59,12 @@ export default function OrderDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="bg-background p-8">
+      <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
         <div className="flex items-center gap-2 mb-8">
           <BackButton />
-          <h1 className="text-h2 font-bold text-dark-text">주문 상세내역</h1>
+          <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
+            주문 상세내역
+          </h1>
         </div>
         <div className="text-center py-16 text-gray-400 text-sm">주문 정보를 불러오는 중...</div>
       </div>
@@ -71,10 +73,12 @@ export default function OrderDetailPage() {
 
   if (error || !order) {
     return (
-      <div className="bg-background p-8">
+      <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
         <div className="flex items-center gap-2 mb-8">
           <BackButton />
-          <h1 className="text-h2 font-bold text-dark-text">주문 상세내역</h1>
+          <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
+            주문 상세내역
+          </h1>
         </div>
         <div className="text-center py-16 text-gray-400 text-sm">
           {error ?? '주문 정보를 찾을 수 없습니다.'}
@@ -90,15 +94,17 @@ export default function OrderDetailPage() {
   const hasActiveClaim = claimProducts.length > 0;
 
   return (
-    <div className="bg-background p-8">
+    <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
       <div className="flex items-center gap-2 mb-6">
         <BackButton />
-        <h1 className="text-h2 font-bold text-dark-text">주문 상세내역</h1>
+        <h1 className="text-h2 font-bold text-dark-text max-tablet:text-h3 max-mobile:text-h4">
+          주문 상세내역
+        </h1>
       </div>
       <OrderDetailHeader info={order.info} paymentMethod={order.payment.paymentMethod} />
       <div className="flex flex-col gap-6">
         {hasActiveClaim && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-center justify-between">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-center justify-between max-mobile:flex-col max-mobile:items-start max-mobile:gap-2">
             <p className="text-sm text-amber-800 flex items-center gap-1.5">
               <RotateCcw className="w-4 h-4" />이 주문에 처리 중인 취소·환불 요청이 있어요.
             </p>

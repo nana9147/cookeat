@@ -50,7 +50,7 @@ const CARD_META = [
 
 export default function DashboardStatCards({ stats }: DashboardStatCardsProps) {
   return (
-    <div className="grid grid-cols-6 gap-4">
+    <div className="grid grid-cols-6 gap-4 max-desktop:grid-cols-3 max-tablet:grid-cols-2 max-mobile:grid-cols-1 max-mobile:gap-3">
       {CARD_META.map(({ key, icon: Icon, iconColor, href, noDiffLabel }) => {
         const card = stats[key];
         const hasDiff = card.diff !== null;
