@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/serverAuth';
+import { escapeOrValue } from '@/lib/utils';
 
 const VALID_STATUSES = ['판매중', '품절', '숨김'] as const;
 type ProductStatus = (typeof VALID_STATUSES)[number];
@@ -58,7 +59,8 @@ export async function GET(req: NextRequest) {
 
   if (keyword) {
     if (matchingSellerIds.length > 0) {
-      query = query.or(`name.ilike.%${keyword}%,seller_id.in.(${matchingSellerIds.join(',')})`);
+      const pattern = escapeOrValue(`%${keyword}%`);
+      query = query.or(`name.ilike.${pattern},seller_id.in.(${matchingSellerIds.join(',')})`);
     } else {
       query = query.ilike('name', `%${keyword}%`);
     }
