@@ -8,6 +8,7 @@ interface RecipeIngredientsProps {
 
 export default function RecipeIngredients({ ingredients }: RecipeIngredientsProps) {
   const total = ingredients.reduce((sum, i) => sum + (i.product?.price ?? 0), 0);
+  const hasPurchasable = ingredients.some((i) => i.product !== null);
 
   return (
     <section className="mb-10">
@@ -15,16 +16,18 @@ export default function RecipeIngredients({ ingredients }: RecipeIngredientsProp
         <h2 className="text-base font-semibold text-dark-text">
           재료 <span className="text-gray-text font-normal text-sm">{ingredients.length}</span>
         </h2>
-        <div className="flex items-center gap-2 text-xs text-gray-text">
-          <button className="hover:text-dark-text transition-colors">직접 구매하기</button>
-          <span className="text-border">|</span>
-          <button className="hover:text-dark-text transition-colors">재료 묶음 추가</button>
-        </div>
+        {hasPurchasable && (
+          <div className="flex items-center gap-2 text-xs text-gray-text">
+            <button className="hover:text-dark-text transition-colors">직접 구매하기</button>
+            <span className="text-border">|</span>
+            <button className="hover:text-dark-text transition-colors">재료 묶음 추가</button>
+          </div>
+        )}
       </div>
 
-      <div className="border border-border rounded-xl overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden bg-card-bg">
         {ingredients.map((item) => (
-          <RecipeIngredientItem key={item.ingredientId} ingredient={item} />
+          <RecipeIngredientItem key={item.id} ingredient={item} />
         ))}
       </div>
 

@@ -23,14 +23,19 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function OrderDetailContent({ detail }: { detail: OrderDetail }) {
+  const displayStatus = detail.hasPendingCancelRequest ? '취소 신청됨' : detail.status;
+  const statusStyle = detail.hasPendingCancelRequest
+    ? STATUS_STYLE['취소']
+    : STATUS_STYLE[detail.status] ?? 'bg-muted/30 text-gray-text';
+
   return (
     <>
       {/* 주문 기본 정보 */}
       <section className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-text">{formatDate(detail.createdAt)}</span>
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_STYLE[detail.status] ?? 'bg-muted/30 text-gray-text'}`}>
-            {detail.status}
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusStyle}`}>
+            {displayStatus}
           </span>
         </div>
         <p className="text-xs text-muted">{detail.orderId}</p>

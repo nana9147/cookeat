@@ -1,7 +1,9 @@
 import { defineConfig } from 'portfolio-shot';
 
+const baseUrl = 'http://localhost:3000';
+
 export default defineConfig({
-  url: 'http://localhost:3000',
+  url: baseUrl,
 
   output: './public/screenshots',
 
@@ -23,8 +25,16 @@ export default defineConfig({
       name: 'main/recipes',
     },
     {
-      path: '/recipes/6',
+      path: '/recipes/12',
       name: 'main/recipe-detail',
+    },
+    {
+      path: '/recipes/write',
+      name: 'main/recipe-write',
+    },
+    {
+      path: '/recipes/12/edit',
+      name: 'main/recipe-edit',
     },
     {
       path: '/shopping',
@@ -51,4 +61,15 @@ export default defineConfig({
   fullPage: true,
 
   waitUntil: 'networkidle',
+
+  auth: {
+    login: {
+      url: `${baseUrl}/login`,
+      fields: [
+        { selector: 'input[type="email"]', value: process.env.user! },
+        { selector: 'input[type="password"]', value: process.env.password! },
+      ],
+      submitSelector: 'button[type="submit"]',
+    },
+  },
 });

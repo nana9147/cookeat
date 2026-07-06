@@ -26,28 +26,28 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
+  // 판매자 승인 전(취소요청 접수 상태)인 주문 ID — 취소 탭에는 포함시키고, 그 외 탭에서는 제외한다
+  const { data: pendingRows, error: pendingRowsError } = await supabaseAdmin
+    .from('refund_requests')
+    .select('order_items!inner(order_id, orders!inner(user_id))')
+    .eq('status', '취소요청')
+    .is('reject_reason', null)
+    .eq('order_items.orders.user_id', authed.userId);
+
+  if (pendingRowsError) return NextResponse.json({ error: pendingRowsError.message }, { status: 500 });
+
+  const pendingOrderIds = [
+    ...new Set(
+      (pendingRows ?? []).map(
+        (r) => (r.order_items as unknown as { order_id: string }).order_id
+      )
+    ),
+  ];
+
   if (status === '배송중') {
     // 탭 '배송중'은 UX상 '배송준비' 포함 — 사용자 관점에서 같은 진행 단계
     query = query.in('status', ['배송준비', '배송중']);
   } else if (status === '취소') {
-    // 판매자 승인 전(취소요청 접수 상태)에도 마이페이지에서 바로 보이도록 포함
-    const { data: pendingRows, error: pendingRowsError } = await supabaseAdmin
-      .from('refund_requests')
-      .select('order_items!inner(order_id, orders!inner(user_id))')
-      .eq('status', '취소요청')
-      .is('reject_reason', null)
-      .eq('order_items.orders.user_id', authed.userId);
-
-    if (pendingRowsError) return NextResponse.json({ error: pendingRowsError.message }, { status: 500 });
-
-    const pendingOrderIds = [
-      ...new Set(
-        (pendingRows ?? []).map(
-          (r) => (r.order_items as unknown as { order_id: string }).order_id
-        )
-      ),
-    ];
-
     query = pendingOrderIds.length > 0
       ? query.or(`status.eq.취소,order_id.in.(${pendingOrderIds.join(',')})`)
       : query.eq('status', '취소');
@@ -55,6 +55,11 @@ export async function GET(req: NextRequest) {
     query = query.eq('status', status);
   } else if (status) {
     return NextResponse.json({ error: '유효하지 않은 상태값입니다.' }, { status: 400 });
+  }
+
+  // 취소 탭이 아니면 취소 신청 접수된 주문은 주문/배송내역에서 숨긴다
+  if (status !== '취소' && pendingOrderIds.length > 0) {
+    query = query.not('order_id', 'in', `(${pendingOrderIds.join(',')})`);
   }
 
   type OrderItemNested = {

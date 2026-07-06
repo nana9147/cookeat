@@ -29,6 +29,7 @@ export type Pagination = {
 export type OrderDetail = {
   orderId: string;
   status: string;
+  hasPendingCancelRequest: boolean;
   createdAt: string;
   totalAmount: number;
   shippingFee: number;
