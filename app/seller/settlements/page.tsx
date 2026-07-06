@@ -50,6 +50,7 @@ export default function SettlementsPage() {
     completedTotal: 0,
     scheduledTotal: 0,
     pendingTotal: 0,
+    upcomingTotal: 0,
     nextSettlementDate: null,
   });
 

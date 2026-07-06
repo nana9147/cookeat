@@ -25,6 +25,7 @@ export interface SettlementSummary {
   completedTotal: number;
   scheduledTotal: number;
   pendingTotal: number;
+  upcomingTotal: number;
   nextSettlementDate: string | null;
 }
 

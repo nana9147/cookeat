@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { DashboardSettlementCardProps } from '@/types/seller/dashboard';
 
 export default function DashboardSettlementCard({ settlement }: DashboardSettlementCardProps) {
-  const { scheduledTotal, nextSettlementDate } = settlement;
+  const { scheduledTotal, pendingTotal, nextSettlementDate } = settlement;
 
   return (
     <Card className="border-border shadow-sm">
@@ -25,6 +25,18 @@ export default function DashboardSettlementCard({ settlement }: DashboardSettlem
             {scheduledTotal.toLocaleString()}원
           </p>
         </div>
+
+        {pendingTotal > 0 && (
+          <div>
+            <p className="text-xs text-light-gray mb-1">정산대기 금액</p>
+            <p className="text-base font-semibold text-amber-500 leading-none">
+              {pendingTotal.toLocaleString()}원
+            </p>
+            <p className="text-[11px] text-light-gray mt-1">
+              구매확정 및 반품/교환 기간 종료 후 정산예정으로 전환됩니다
+            </p>
+          </div>
+        )}
 
         <div className="h-px bg-border" />
 

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { getSellerSettlementSummary } from '@/app/api/seller/settlements/db';
+import { ensureSettlements, getSellerSettlementSummary } from '@/app/api/seller/settlements/db';
 import { getSellerReviewSummary } from '@/app/api/seller/reviews/db';
 
 function toDateStr(d: Date) {
@@ -37,7 +37,7 @@ async function getSellerOrderIds(sellerId: number): Promise<string[]> {
   return [...new Set((sellerItemRows ?? []).map((r) => r.order_id))];
 }
 
-export async function getSellerDashboardStats(sellerId: number, sellerOrderIds: string[]) {
+export async function getSellerDashboardStats(sellerOrderIds: string[]) {
   const emptyStats = {
     totalOrders: { label: '전체 주문', count: 0, diff: 0 },
     newOrders: { label: '신규 주문', count: 0, diff: 0 },
@@ -77,7 +77,6 @@ export async function getSellerDashboardStats(sellerId: number, sellerOrderIds: 
     CANCEL_OR_REFUND_PENDING_STATUSES.includes(o.status)
   ).length;
 
-  // 신규주문: 오늘 / 어제 생성된 주문 건수 (상태 무관 — 발주확인해도 줄어들지 않음)
   const todayOrders = (allOrders ?? []).filter((o) => new Date(o.created_at) >= todayStart);
   const yesterdayOrders = (allOrders ?? []).filter(
     (o) => new Date(o.created_at) >= yesterdayStart && new Date(o.created_at) < todayStart
@@ -113,41 +112,49 @@ export async function getSellerDashboardStats(sellerId: number, sellerOrderIds: 
   };
 }
 
-/**
- * 최근 30일 주문 현황 (날짜별 주문 건수)
- * 화면에서는 7일/30일 토글로 부분집합을 잘라서 보여준다 (재조회 없이 클라이언트에서 필터링)
- */
-export async function getSellerDashboardOrderTrend(sellerId: number, sellerOrderIds: string[]) {
+type DashboardTrendRow = {
+  order_id: string;
+  quantity: number;
+  unit_price: number;
+  orders: { created_at: string } | null;
+};
+
+export async function getSellerDashboardOrderTrend(sellerId: number) {
   const today = startOfDay(new Date());
   const thirtyDaysAgo = addDays(today, -29);
 
-  const days: { date: string; count: number }[] = [];
+  const days: { date: string; count: number; amount: number }[] = [];
   for (let i = 0; i < 30; i++) {
     const d = addDays(thirtyDaysAgo, i);
-    days.push({ date: toDateStr(d), count: 0 });
+    days.push({ date: toDateStr(d), count: 0, amount: 0 });
   }
 
-  if (sellerOrderIds.length === 0) {
-    return days.map((d) => ({ date: d.date, count: 0 }));
-  }
-
-  const { data: orders, error } = await supabaseAdmin
-    .from('orders')
-    .select('order_id, created_at')
-    .in('order_id', sellerOrderIds)
-    .gte('created_at', thirtyDaysAgo.toISOString());
+  const { data: rows, error } = await supabaseAdmin
+    .from('order_items')
+    .select('order_id, quantity, unit_price, orders!inner(created_at)')
+    .eq('seller_id', sellerId)
+    .gte('orders.created_at', thirtyDaysAgo.toISOString())
+    .returns<DashboardTrendRow[]>();
 
   if (error) throw error;
 
-  const countByDate = new Map<string, number>();
-  for (const o of orders ?? []) {
-    const dateStr = toDateStr(new Date(o.created_at));
-    countByDate.set(dateStr, (countByDate.get(dateStr) ?? 0) + 1);
+  const orderIdsByDate = new Map<string, Set<string>>();
+  const amountByDate = new Map<string, number>();
+
+  for (const row of rows ?? []) {
+    if (!row.orders?.created_at) continue;
+    const dateStr = toDateStr(new Date(row.orders.created_at));
+
+    if (!orderIdsByDate.has(dateStr)) orderIdsByDate.set(dateStr, new Set());
+    orderIdsByDate.get(dateStr)!.add(row.order_id);
+
+    amountByDate.set(dateStr, (amountByDate.get(dateStr) ?? 0) + row.quantity * row.unit_price);
   }
 
   return days.map((d) => ({
     date: d.date,
-    count: countByDate.get(d.date) ?? 0,
+    count: orderIdsByDate.get(d.date)?.size ?? 0,
+    amount: amountByDate.get(d.date) ?? 0,
   }));
 }
 
@@ -155,11 +162,12 @@ export async function getSellerDashboardOrderTrend(sellerId: number, sellerOrder
  * 대시보드 전체 데이터 조합
  */
 export async function getSellerDashboard(sellerId: number) {
+  await ensureSettlements(sellerId);
   const sellerOrderIds = await getSellerOrderIds(sellerId);
 
   const [stats, orderTrend, settlementSummary, reviewSummary] = await Promise.all([
-    getSellerDashboardStats(sellerId, sellerOrderIds),
-    getSellerDashboardOrderTrend(sellerId, sellerOrderIds),
+    getSellerDashboardStats(sellerOrderIds),
+    getSellerDashboardOrderTrend(sellerId),
     getSellerSettlementSummary(sellerId),
     getSellerReviewSummary(sellerId),
   ]);
@@ -169,6 +177,7 @@ export async function getSellerDashboard(sellerId: number) {
     orderTrend,
     settlement: {
       scheduledTotal: settlementSummary.scheduledTotal,
+      pendingTotal: settlementSummary.pendingTotal,
       nextSettlementDate: settlementSummary.nextSettlementDate,
     },
     review: {

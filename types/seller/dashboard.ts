@@ -16,6 +16,7 @@ export interface DashboardStats {
 export interface DashboardOrderTrendPoint {
   date: string; // 'YYYY-MM-DD'
   count: number;
+  amount: number;
 }
 
 export interface DashboardReviewSummary {
@@ -29,6 +30,7 @@ export interface DashboardData {
   orderTrend: DashboardOrderTrendPoint[];
   settlement: {
     scheduledTotal: number;
+    pendingTotal: number;
     nextSettlementDate: string | null;
   };
   review: DashboardReviewSummary;
