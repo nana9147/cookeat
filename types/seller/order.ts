@@ -205,10 +205,19 @@ export interface RefundItem {
   itemId: number;
   refundId: number;
   productName: string;
+  img: string | null;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number; // 할인 적용 후 단가
+  originalUnitPrice: number; // 할인 전 정상 단가
+  productDiscount: number; // 상품할인 총액
+  couponDiscount: number; // 이 상품에 분배된 쿠폰할인액
+  allocatedPoint: number; // 이 상품에 사용된 포인트
+  refundAmount: number; // 결제수단으로 환급되는 금액 (수량*단가 - 쿠폰할인)
+  faultType: '구매자귀책' | '판매자귀책' | null;
+  shippingFeeCharged: number;
   itemStatus: OrderStatus;
   refundRequestReason: string | null;
+  refundRequestDetail: string | null; // 상세내용 (선택 입력) — 신규
   refundRejectReason: string | null;
   requestedAt: string;
   processedAt: string | null;
@@ -228,10 +237,6 @@ export interface OrderWithRefunds {
 
 export interface RefundTableProps {
   orders: OrderWithRefunds[];
-  onApprove: (refundId: number) => void;
-  onReject: (refundId: number) => void;
-  onProcess: (refundId: number) => void;
-  onSaveTracking: (refundId: number, courier: string, trackingNumber: string) => void;
   selectedIds: number[];
   isAllSelectedMode: boolean;
   onSelect: (refundId: number, checked: boolean) => void;
@@ -288,3 +293,47 @@ export interface OrderProductSectionProps {
   products: OrderProduct[];
   refundTotal: number;
 }
+// 주문취소 사유 (배송 전 — 결제완료~배송준비 단계)
+export type CancelReason =
+  | '단순 변심'
+  | '주문 실수 (상품/옵션/수량 잘못 선택)'
+  | '배송지 정보 오류'
+  | '재고 부족/품절'
+  | '상품 정보 상이 (원산지·중량·가격 등)'
+  | '배송 준비 지연';
+
+// 환불신청 사유 (배송 후 — 배송중~배송완료 단계)
+export type RefundReason =
+  | '단순 변심'
+  | '신선도 불량 (상함·무름·변색 등)'
+  | '부적절한 보관 상태로 배송됨'
+  | '파손/훼손된 상태로 배송'
+  | '오배송 (다른 상품/수량)'
+  | '이물질 혼입'
+  | '포장 불량으로 인한 손상'
+  | '소비기한 임박/경과 상품 배송'
+  | '배송 지연으로 인한 신선도 저하';
+
+export type FaultType = '구매자귀책' | '판매자귀책';
+
+// 사유 → 귀책 자동 매핑
+export const CANCEL_REASON_FAULT: Record<CancelReason, FaultType> = {
+  '단순 변심': '구매자귀책',
+  '주문 실수 (상품/옵션/수량 잘못 선택)': '구매자귀책',
+  '배송지 정보 오류': '구매자귀책',
+  '재고 부족/품절': '판매자귀책',
+  '상품 정보 상이 (원산지·중량·가격 등)': '판매자귀책',
+  '배송 준비 지연': '판매자귀책',
+};
+
+export const REFUND_REASON_FAULT: Record<RefundReason, FaultType> = {
+  '단순 변심': '구매자귀책',
+  '신선도 불량 (상함·무름·변색 등)': '판매자귀책',
+  '부적절한 보관 상태로 배송됨': '판매자귀책',
+  '파손/훼손된 상태로 배송': '판매자귀책',
+  '오배송 (다른 상품/수량)': '판매자귀책',
+  '이물질 혼입': '판매자귀책',
+  '포장 불량으로 인한 손상': '판매자귀책',
+  '소비기한 임박/경과 상품 배송': '판매자귀책',
+  '배송 지연으로 인한 신선도 저하': '판매자귀책',
+};

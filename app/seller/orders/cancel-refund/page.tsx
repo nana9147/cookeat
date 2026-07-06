@@ -18,7 +18,7 @@ import StatusCards from '@/components/ui/StatusCards';
 import DateRangeFilter from '../../components/DateRangeFilter';
 import type { OrderWithRefunds } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
-import { toDateStr, getDateRange } from '@/lib/dateRange';
+import { getDateRange } from '@/lib/dateRange';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Download } from 'lucide-react';
@@ -320,10 +320,6 @@ export default function CancelRefundPage() {
 
       <RefundTable
         orders={orders}
-        onApprove={handleApprove}
-        onProcess={handleProcess}
-        onReject={handleRejectClick}
-        onSaveTracking={handleSaveTracking}
         selectedIds={selectedIds}
         isAllSelectedMode={isAllSelectedMode}
         onSelect={handleSelect}

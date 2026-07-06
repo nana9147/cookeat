@@ -36,7 +36,7 @@ const menuItems = [
 ];
 
 interface SellerMe {
-  storeName: string;
+  store_name: string;
   email: string;
 }
 
@@ -55,7 +55,7 @@ export default function SellerMobileNav() {
     const fetchMe = async () => {
       try {
         const { data } = await api.get('/seller/me');
-        setSellerInfo({ storeName: data.data.storeName, email: data.data.email });
+        setSellerInfo({ store_name: data.data.store_name, email: data.data.email });
       } catch (e) {
         const msg = e instanceof Error ? e.message : '판매자 정보를 불러오지 못했습니다.';
         toast.error(msg, { id: msg });
@@ -136,7 +136,7 @@ export default function SellerMobileNav() {
 
           <div className="border-t mt-1 pt-2 pb-1 px-4">
             <p className="text-sm font-medium text-dark-text truncate">
-              {sellerInfo?.storeName ?? '불러오는 중...'}
+              {sellerInfo?.store_name ?? '불러오는 중...'}
             </p>
             <p className="text-xs text-gray-500 truncate mb-2">{sellerInfo?.email ?? ''}</p>
             <div className="flex flex-col">

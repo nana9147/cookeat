@@ -17,7 +17,6 @@ export async function getSellerOrders(
   const { page, limit, keyword, status, startDate, endDate, sortBy, sortOrder = 'desc' } = options;
   const offset = (page - 1) * limit;
 
-  // 키워드는 여러 테이블에 걸쳐 있어서 미리 order_id 목록으로 좁혀둠 (기존 로직 그대로)
   let keywordOrderIds: string[] | null = null;
   if (keyword) {
     const { data: userRows } = await supabaseAdmin
@@ -127,6 +126,7 @@ export async function getSellerOrderCounts(
     배송준비: 0,
     배송중: 0,
     배송완료: 0,
+    구매확정: 0,
   };
 
   if (sellerOrderIds.length === 0) {
