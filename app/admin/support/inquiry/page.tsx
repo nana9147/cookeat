@@ -24,6 +24,9 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 const PAGE_SIZE = 20;
 
+type Category = '전체' | '레시피' | '쿠폰' | '계정';
+const CATEGORIES: Category[] = ['전체', '레시피', '쿠폰', '계정'];
+
 interface Reply {
   content: string;
   createdAt: string;
@@ -47,9 +50,11 @@ export default function InquiryPage() {
   const [stats, setStats] = useState({ waiting: 0, answered: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [category, setCategory] = useState<Category>('전체');
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
   const prevSearchRef = useRef(debouncedSearch);
+  const prevCategoryRef = useRef(category);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -58,12 +63,20 @@ export default function InquiryPage() {
 
   const fetchInquiries = async () => {
     try {
+      const categoryParam = category === '전체' ? undefined : category;
       const [{ data }, waitingRes, answeredRes] = await Promise.all([
-        api.get('/admin/inquiries', {
-          params: { keyword: debouncedSearch || undefined, page, limit: PAGE_SIZE },
+        api.get('/admin/faqs', {
+          params: {
+            keyword: debouncedSearch || undefined,
+            category: categoryParam,
+            page,
+            limit: PAGE_SIZE,
+          },
         }),
-        api.get('/admin/inquiries', { params: { answered: 'false', limit: 1 } }),
-        api.get('/admin/inquiries', { params: { answered: 'true', limit: 1 } }),
+        api.get('/admin/faqs', {
+          params: { category: categoryParam, answered: 'false', limit: 1 },
+        }),
+        api.get('/admin/faqs', { params: { category: categoryParam, answered: 'true', limit: 1 } }),
       ]);
       if (!cancelledRef.current) {
         setInquiries(data.inquiries ?? []);
@@ -86,8 +99,10 @@ export default function InquiryPage() {
 
   useEffect(() => {
     cancelledRef.current = false;
-    const isNewSearch = prevSearchRef.current !== debouncedSearch;
+    const isNewSearch =
+      prevSearchRef.current !== debouncedSearch || prevCategoryRef.current !== category;
     prevSearchRef.current = debouncedSearch;
+    prevCategoryRef.current = category;
 
     if (isNewSearch && page !== 1) {
       setPage(1);
@@ -99,7 +114,7 @@ export default function InquiryPage() {
       cancelledRef.current = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, page]);
+  }, [debouncedSearch, category, page]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const selectedInquiry = inquiries.find((i) => i.inquiryId === selectedId) ?? null;
@@ -116,7 +131,7 @@ export default function InquiryPage() {
 
     setSending(true);
     try {
-      await api.post(`/admin/inquiries/${selectedId}/reply`, { content: text });
+      await api.post(`/admin/faqs/${selectedId}/reply`, { content: text });
       setInputText('');
       await fetchInquiries();
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
@@ -146,8 +161,8 @@ export default function InquiryPage() {
           <ChevronLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">1:1 문의 관리</h1>
-          <p className="text-sm text-muted-foreground">전체: {total}개</p>
+          <h1 className="text-2xl font-bold">고객 문의 관리</h1>
+          <p className="text-sm text-muted-foreground">레시피·쿠폰·계정 문의 · 전체: {total}개</p>
         </div>
       </div>
 
@@ -164,6 +179,22 @@ export default function InquiryPage() {
             <p className="text-3xl font-bold mt-1">{stats.answered}건</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex gap-2 flex-wrap p-4 bg-white rounded-md border">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setCategory(cat)}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              category === cat
+                ? 'bg-primary text-white'
+                : 'bg-beige text-foreground hover:bg-primary/10'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
 
       <div className="relative">
