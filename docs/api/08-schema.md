@@ -358,6 +358,7 @@ faqs (자주 묻는 질문, 셀러/사용자 도메인과 직접 연결 없음)
 
 > 답변 상태는 `inquiry_replies`와 LEFT JOIN해서 파생합니다.
 > `inquiry_replies.inquiry_id`가 존재하면 `isAnswered: true`, 없으면 `false`.
+> 상품/주문 연결(판매자 응대)은 이후 PR에서 `product_id`/`order_item_id` 컬럼과 함께 추가될 예정입니다.
 
 | 컬럼         | 타입           | 제약                 | 설명         |
 | ------------ | -------------- | -------------------- | ------------ |

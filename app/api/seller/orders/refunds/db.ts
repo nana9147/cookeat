@@ -204,7 +204,7 @@ export async function approveRefund(
   const { data: refund, error: refundError } = await supabaseAdmin
     .from('refund_requests')
     .select(
-      'status, item_id, order_items!inner(seller_id, order_id, unit_price, quantity, orders!inner(payment_method, payment_key))'
+      'status, item_id, order_items!inner(seller_id, order_id, unit_price, quantity, allocated_coupon_discount, orders!inner(payment_method, payment_key))'
     )
     .eq('refund_id', refundId)
     .maybeSingle();
@@ -219,6 +219,7 @@ export async function approveRefund(
     order_id: string;
     unit_price: number;
     quantity: number;
+    allocated_coupon_discount: number | null;
     orders: { payment_method: string; payment_key: string | null };
   };
   if (orderItem.seller_id !== sellerId) {
@@ -249,6 +250,12 @@ export async function approveRefund(
   if (currentItemError) throw currentItemError;
   const originalShippingStatus = currentItem.shipping_status;
 
+  // refund_requests.status 체크만으로는 동일 아이템에 대해 새로 생성된 요청 row와
+  // 과거에 이미 종결된 shipping_status 간의 불일치를 막지 못한다 (이중 환불 방지)
+  if (originalShippingStatus === '취소' || originalShippingStatus === '환불') {
+    throw new Error('이미 취소/환불 처리된 주문 상품입니다.');
+  }
+
   const isCancel = refund.status === '취소요청';
   const approvedStatus = isCancel ? '취소' : '환불진행중';
   const originalStatus = refund.status;
@@ -260,30 +267,33 @@ export async function approveRefund(
     refund.item_id
   );
 
+  let pgCancelExecuted = false;
   if (isCancel) {
     const { payment_method, payment_key } = orderItem.orders;
     if (payment_key) {
-      let cancelAmount = orderItem.unit_price * orderItem.quantity;
+      let cancelAmount =
+        orderItem.unit_price * orderItem.quantity - (orderItem.allocated_coupon_discount ?? 0);
       if (shippingFeeCharged > 0 && faultType === '구매자귀책') {
         cancelAmount = Math.max(0, cancelAmount - shippingFeeCharged);
       }
-      await cancelPayment(payment_method, payment_key, cancelAmount);
+      await cancelPayment(payment_method, payment_key, Math.max(0, cancelAmount));
+      pgCancelExecuted = true;
     }
   }
 
-  const { error: updateError } = await supabaseAdmin
-    .from('refund_requests')
-    .update({
-      status: approvedStatus,
-      processed_at: isCancel ? processedAt : null,
-      fault_type: faultType,
-      shipping_fee_charged: shippingFeeCharged,
-    })
-    .eq('refund_id', refundId);
-
-  if (updateError) throw updateError;
-
   try {
+    const { error: updateError } = await supabaseAdmin
+      .from('refund_requests')
+      .update({
+        status: approvedStatus,
+        processed_at: isCancel ? processedAt : null,
+        fault_type: faultType,
+        shipping_fee_charged: shippingFeeCharged,
+      })
+      .eq('refund_id', refundId);
+
+    if (updateError) throw updateError;
+
     const { error: shippingStatusError } = await supabaseAdmin
       .from('order_items')
       .update({ shipping_status: approvedStatus })
@@ -296,6 +306,19 @@ export async function approveRefund(
       await restoreOrderBenefitsForItem(orderItem.order_id, refund.item_id);
     }
   } catch (err) {
+    if (pgCancelExecuted) {
+      // PG 결제 취소는 이미 성공했으므로 되돌릴 수 없다 — 상태를 롤백하면
+      // 재승인 클릭 시 동일 payment_key로 취소가 재요청되어 이중 환불 위험이 생긴다.
+      // 따라서 상태는 그대로 두고 수동 확인이 필요함을 알린다.
+      console.error(
+        `[approveRefund] PG 결제 취소는 성공했지만 후속 DB 반영에 실패했습니다. refundId=${refundId}, itemId=${refund.item_id}. 수동 확인이 필요합니다.`,
+        err
+      );
+      throw new Error(
+        '결제 취소는 완료되었으나 후속 처리 중 오류가 발생했습니다. 다시 승인하지 말고 관리자에게 문의해 주세요.'
+      );
+    }
+
     await supabaseAdmin
       .from('refund_requests')
       .update({ status: originalStatus, processed_at: null })
@@ -489,7 +512,7 @@ export async function processRefund(sellerId: number, refundId: number) {
   const { data: refund, error: refundError } = await supabaseAdmin
     .from('refund_requests')
     .select(
-      'status, item_id, fault_type, shipping_fee_charged, order_items!inner(seller_id, order_id, unit_price, quantity, orders!inner(payment_method, payment_key))'
+      'status, item_id, fault_type, shipping_fee_charged, order_items!inner(seller_id, order_id, unit_price, quantity, allocated_coupon_discount, orders!inner(payment_method, payment_key))'
     )
     .eq('refund_id', refundId)
     .maybeSingle();
@@ -504,6 +527,7 @@ export async function processRefund(sellerId: number, refundId: number) {
     order_id: string;
     unit_price: number;
     quantity: number;
+    allocated_coupon_discount: number | null;
     orders: { payment_method: string; payment_key: string | null };
   };
   if (orderItem.seller_id !== sellerId) {
@@ -522,27 +546,34 @@ export async function processRefund(sellerId: number, refundId: number) {
   if (currentItemError) throw currentItemError;
   const originalShippingStatus = currentItem.shipping_status;
 
+  if (originalShippingStatus === '취소' || originalShippingStatus === '환불') {
+    throw new Error('이미 취소/환불 처리된 주문 상품입니다.');
+  }
+
   const processedAt = new Date().toISOString();
   const faultType = refund.fault_type as '구매자귀책' | '판매자귀책' | null;
   const shippingFeeCharged = refund.shipping_fee_charged ?? 0;
 
   const { payment_method, payment_key } = orderItem.orders;
+  let pgCancelExecuted = false;
   if (payment_key) {
-    let cancelAmount = orderItem.unit_price * orderItem.quantity;
+    let cancelAmount =
+      orderItem.unit_price * orderItem.quantity - (orderItem.allocated_coupon_discount ?? 0);
     if (shippingFeeCharged > 0 && faultType === '구매자귀책') {
       cancelAmount = Math.max(0, cancelAmount - shippingFeeCharged);
     }
-    await cancelPayment(payment_method, payment_key, cancelAmount);
+    await cancelPayment(payment_method, payment_key, Math.max(0, cancelAmount));
+    pgCancelExecuted = true;
   }
 
-  const { error: updateError } = await supabaseAdmin
-    .from('refund_requests')
-    .update({ status: '환불', processed_at: processedAt })
-    .eq('refund_id', refundId);
-
-  if (updateError) throw updateError;
-
   try {
+    const { error: updateError } = await supabaseAdmin
+      .from('refund_requests')
+      .update({ status: '환불', processed_at: processedAt })
+      .eq('refund_id', refundId);
+
+    if (updateError) throw updateError;
+
     const { error: shippingStatusError } = await supabaseAdmin
       .from('order_items')
       .update({ shipping_status: '환불' })
@@ -553,6 +584,16 @@ export async function processRefund(sellerId: number, refundId: number) {
     await logOrderItemStatusHistory(refund.item_id, '환불');
     await restoreOrderBenefitsForItem(orderItem.order_id, refund.item_id);
   } catch (err) {
+    if (pgCancelExecuted) {
+      console.error(
+        `[processRefund] PG 결제 취소는 성공했지만 후속 DB 반영에 실패했습니다. refundId=${refundId}, itemId=${refund.item_id}. 수동 확인이 필요합니다.`,
+        err
+      );
+      throw new Error(
+        '결제 취소는 완료되었으나 후속 처리 중 오류가 발생했습니다. 다시 처리하지 말고 관리자에게 문의해 주세요.'
+      );
+    }
+
     await supabaseAdmin
       .from('refund_requests')
       .update({ status: '환불진행중', processed_at: null })

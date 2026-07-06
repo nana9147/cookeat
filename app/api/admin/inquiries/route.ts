@@ -26,6 +26,10 @@ export async function GET(req: NextRequest) {
        inquiry_replies(reply_id, content, created_at)`,
       { count: 'exact' }
     )
+    // product_id/order_item_id가 연결된 문의는 판매자 응대 대상이라 관리자 큐에서 제외
+    // (카테고리 이름이 아니라 연결값 유무로 판단 — 상품 상세에서 올라온 '기타'도 product_id가 있으면 제외됨)
+    .is('product_id', null)
+    .is('order_item_id', null)
     .order('created_at', { ascending: false });
 
   if (keyword) query = query.ilike('title', `%${keyword}%`);

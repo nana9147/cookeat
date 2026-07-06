@@ -45,6 +45,13 @@ export async function requireAuth(req: NextRequest): Promise<AuthedUser | NextRe
   return user
 }
 
+/** 로그인 여부가 응답에 영향을 줄 뿐 필수는 아닌 공개 라우트용 — 실패해도 401 없이 null 반환 */
+export async function getOptionalAuthedUser(req: NextRequest): Promise<AuthedUser | null> {
+  const token = req.headers.get('authorization')?.replace('Bearer ', '')
+  if (!token) return null
+  return await getAuthedUser(token)
+}
+
 /** role: seller 또는 admin 만 허용 */
 export async function requireSeller(req: NextRequest): Promise<AuthedUser | NextResponse> {
   const result = await requireAuth(req)

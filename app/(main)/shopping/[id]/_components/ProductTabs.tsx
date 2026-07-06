@@ -65,7 +65,7 @@ export default function ProductTabs({
           />
         )}
         {activeTab === '배송·교환' && <DeliveryTab />}
-        {activeTab === '상품 문의' && <QnaTab />}
+        {activeTab === '상품 문의' && <QnaTab productId={productId} productName={productName} />}
       </div>
     </div>
   );
