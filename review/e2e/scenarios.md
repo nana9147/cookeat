@@ -17,6 +17,19 @@
 | C6-admin | `/admin` 가드 | 비로그인→`/admin/login`, 일반회원→`/` | pass · 비로그인·일반회원 모두 진입 차단됨 |
 | C6-seller | `/seller/*` 가드 | 비로그인/일반회원 접근 차단 기대 | **fail** — 비로그인으로도 `/seller/products/new` 전체 폼이 열림(가드 없음) |
 
+## 2026-07-06 신규 엔드포인트 (19차) — 레시피 작성/수정 + 판매 통계
+
+| ID | 시나리오 | 단계 → 기대 | 최근결과 (2026-07-06) |
+|----|----------|-------------|------------------------|
+| S02 | 레시피 목록 | `/recipes` → 카드 그리드 | pass · 링크 8개 렌더 |
+| S03 | 레시피 상세 | 카드 클릭 → 상세 SSR | pass(상세는 공개 SSR). 단 목록 첫 링크가 '작성' CTA라 비로그인 시 `/login`으로 감(테스트 셀렉터 이슈) |
+| S04 | 레시피 작성 비로그인 가드 | 비로그인 `/recipes/write` → `/login` | pass · MypageGuard가 `/login`으로 보냄(단 서버 진입 200 후 클라 리다이렉트) |
+| S05 | 레시피 작성 폼 렌더 | 로그인 후 `/recipes/write` | pass · 대표이미지/제목/카테고리/조리시간/인분/난이도 폼 정상 |
+| S06 | 레시피 수정 권한 | 본인(r3) → 폼 프리필 / 타인(r6) → `/recipes/6` 리다이렉트 | pass · 본인 폼(불고기/한식/40분) 프리필, 타인 차단. 서버 PATCH도 403 |
+| S06-404 | 없는 레시피 수정 | `/recipes/1/edit`(미존재) → notFound | pass · 404 정상 |
+| S07 | 판매 통계 비-판매자 가드 | user롤 `/seller/statistics` → `/` | pass · RoleGuard가 홈으로 리다이렉트 |
+| S08 | 마이페이지 주문내역 | `/mypage/orders` → 취소/환불 분리 | pass · 렌더 정상(주문 없음) |
+
 ## 역할 모델 (2026-06-25 확인)
 
 - 역할 3종: `user` / `seller` / `admin` — `users.role`(enum, 기본 `user`). API 가드 `lib/serverAuth.ts`의 `requireAuth`/`requireSeller`(seller·admin 통과)/`requireAdmin`.
