@@ -22,18 +22,23 @@ export default function SearchClient({ keyword }: { keyword: string }) {
   useEffect(() => {
     if (!keyword.trim()) return;
     let cancelled = false;
-    setLoading(true);
-    Promise.all([
-      fetch(`/api/recipes?keyword=${encodeURIComponent(keyword)}&limit=8`).then((r) => r.json()),
-      fetch(`/api/products?keyword=${encodeURIComponent(keyword)}&limit=8`).then((r) => r.json()),
-    ])
-      .then(([recipeJson, productJson]) => {
-        if (cancelled) return;
-        setRecipes(recipeJson?.data?.recipes ?? []);
-        setProducts(productJson?.data?.products ?? []);
-      })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false); });
+
+    const fetchResults = () => {
+      setLoading(true);
+      Promise.all([
+        fetch(`/api/recipes?keyword=${encodeURIComponent(keyword)}&limit=8`).then((r) => r.json()),
+        fetch(`/api/products?keyword=${encodeURIComponent(keyword)}&limit=8`).then((r) => r.json()),
+      ])
+        .then(([recipeJson, productJson]) => {
+          if (cancelled) return;
+          setRecipes(recipeJson?.data?.recipes ?? []);
+          setProducts(productJson?.data?.products ?? []);
+        })
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setLoading(false); });
+    };
+
+    fetchResults();
     return () => { cancelled = true; };
   }, [keyword]);
 

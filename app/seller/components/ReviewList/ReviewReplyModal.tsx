@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,10 +19,12 @@ export default function ReviewReplyModal({
   onSubmit,
 }: ReviewReplyModalProps) {
   const [reply, setReply] = useState('');
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) setReply(review?.reply?.content ?? '');
-  }, [open, review]);
+  }
 
   const handleSubmit = () => {
     if (!review || !reply.trim()) return;

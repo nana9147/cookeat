@@ -1,7 +1,7 @@
 'use client';
 
 import { NonReturnReason, ReturnPolicy, ReturnPolicyFormProps } from '@/types/seller/shipping';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,10 +35,12 @@ export default function ReturnPolicyForm({
   onSubmit,
 }: ReturnPolicyFormProps) {
   const [form, setForm] = useState<Omit<ReturnPolicy, 'returnId'>>(EMPTY_RETURN_POLICY);
+  const [prevPolicy, setPrevPolicy] = useState(policy);
 
-  useEffect(() => {
+  if (policy !== prevPolicy) {
+    setPrevPolicy(policy);
     setForm(policy ?? EMPTY_RETURN_POLICY);
-  }, [policy]);
+  }
 
   const updateContent = (fields: Partial<ReturnPolicy['content']>) => {
     setForm((prev) => ({ ...prev, content: { ...prev.content, ...fields } }));

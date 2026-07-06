@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import api from '@/lib/api';
@@ -20,18 +20,27 @@ export default function InquiryList() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<InquiryTarget>('admin');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchInquiries = useCallback(() => {
-    setLoading(true);
-    api.get<{ inquiries: Inquiry[] }>('/inquiries')
-      .then(({ data }) => setInquiries(data.inquiries))
-      .catch(() => setInquiries([]))
-      .finally(() => setLoading(false));
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
 
-  useEffect(() => { fetchInquiries(); }, [fetchInquiries]);
+    const fetchInquiries = () => {
+      setLoading(true);
+      api.get<{ inquiries: Inquiry[] }>('/inquiries')
+        .then(({ data }) => { if (!cancelled) setInquiries(data.inquiries); })
+        .catch(() => { if (!cancelled) setInquiries([]); })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    };
 
-  const handleSubmitted = () => { setShowForm(false); fetchInquiries(); };
+    fetchInquiries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
+
+  const handleSubmitted = () => { setShowForm(false); setRefreshKey((k) => k + 1); };
   const filteredInquiries = inquiries.filter((inq) => inq.target === activeTab);
 
   return (

@@ -110,7 +110,10 @@ export default function CancelRefundPage() {
   }, []);
 
   useEffect(() => {
-    fetchCounts();
+    const run = () => {
+      fetchCounts();
+    };
+    run();
   }, [fetchCounts]);
 
   const fetchOrders = async () => {
@@ -137,7 +140,10 @@ export default function CancelRefundPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    const run = () => {
+      fetchOrders();
+    };
+    run();
   }, [page, tab, search, startDate, endDate]);
 
   const handleSelect = (refundId: number, checked: boolean) => {

@@ -22,11 +22,16 @@ export default function MyRecipeList() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    api.get<{ recipes: MyRecipe[]; pagination: Pagination }>(`/users/me/recipes?page=${page}`)
-      .then(({ data }) => { if (!cancelled) { setRecipes(data.recipes); setPagination(data.pagination); } })
-      .catch(() => { if (!cancelled) setRecipes([]); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+
+    const fetchRecipes = () => {
+      setLoading(true);
+      api.get<{ recipes: MyRecipe[]; pagination: Pagination }>(`/users/me/recipes?page=${page}`)
+        .then(({ data }) => { if (!cancelled) { setRecipes(data.recipes); setPagination(data.pagination); } })
+        .catch(() => { if (!cancelled) setRecipes([]); })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    };
+
+    fetchRecipes();
     return () => { cancelled = true; };
   }, [page]);
 

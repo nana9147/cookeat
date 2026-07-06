@@ -96,6 +96,8 @@ export default function OrdersPage() {
   const [endDate, setEndDate] = useState(
     searchParams.get('endDate') || getDateRange('전체').endDate
   );
+  const selectionFilterKey = `${page}-${status}-${search}-${startDate}-${endDate}`;
+  const [prevSelectionFilterKey, setPrevSelectionFilterKey] = useState(selectionFilterKey);
 
   const [counts, setCounts] = useState({
     전체: 0,
@@ -126,7 +128,7 @@ export default function OrdersPage() {
     if (endDate) params.set('endDate', endDate);
 
     router.replace(`/seller/orders?${params.toString()}`, { scroll: false });
-  }, [page, status, search, sortBy, sortOrder, datePreset, startDate, endDate]);
+  }, [page, status, search, sortBy, sortOrder, datePreset, startDate, endDate, router]);
 
   const handleDatePresetChange = (preset: DateRangePreset) => {
     setDatePreset(preset);
@@ -138,20 +140,28 @@ export default function OrdersPage() {
     }
   };
 
-  const fetchCounts = async () => {
-    try {
-      const res = await api.get('/seller/orders/counts', {
-        params: { startDate, endDate },
-      });
-      setCounts(res.data.data);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
-      toast.error(msg, { id: msg });
-    }
-  };
-
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchCounts = async () => {
+      try {
+        const res = await api.get('/seller/orders/counts', {
+          params: { startDate, endDate },
+        });
+        if (!cancelled) setCounts(res.data.data);
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
+        }
+      }
+    };
+
     fetchCounts();
+
+    return () => {
+      cancelled = true;
+    };
   }, [startDate, endDate]);
 
   useEffect(() => {
@@ -245,10 +255,11 @@ export default function OrdersPage() {
     }
   };
 
-  useEffect(() => {
+  if (selectionFilterKey !== prevSelectionFilterKey) {
+    setPrevSelectionFilterKey(selectionFilterKey);
     setSelectedIds([]);
     setIsAllSelectedMode(false);
-  }, [page, status, search, startDate, endDate]);
+  }
 
   const handleExcelDownload = () => {
     if (!isAllSelectedMode && selectedIds.length === 0) {

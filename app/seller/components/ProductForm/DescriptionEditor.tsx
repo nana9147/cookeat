@@ -147,6 +147,7 @@ const ResizableImage = Image.extend({
 
 export default function DescriptionEditor({ data, onChange }: DescriptionEditorProps) {
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const handleImageButtonClick = () => imageInputRef.current?.click();
 
   const [activeFontSize, setActiveFontSize] = useState('');
   const [activeColor, setActiveColor] = useState('#000000');
@@ -347,12 +348,6 @@ export default function DescriptionEditor({ data, onChange }: DescriptionEditorP
       isActive: editor.isActive('link'),
       title: '링크 삽입',
     },
-    {
-      icon: <ImageIcon size={14} />,
-      action: () => imageInputRef.current?.click(),
-      isActive: false,
-      title: '이미지 삽입',
-    },
   ];
 
   return (
@@ -428,6 +423,15 @@ export default function DescriptionEditor({ data, onChange }: DescriptionEditorP
                 </Button>
               )
             )}
+            <Button
+              type="button"
+              title="이미지 삽입"
+              onClick={handleImageButtonClick}
+              variant="ghost"
+              size="icon-sm"
+            >
+              <ImageIcon size={14} />
+            </Button>
           </div>
 
           {/* 에디터 */}

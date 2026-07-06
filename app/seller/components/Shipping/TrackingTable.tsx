@@ -21,7 +21,7 @@ import {
   ShippingInputState,
   TrackingTableProps,
 } from '@/types/seller/shipping';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import StatusBadge from '../StatusBadge';
 import { useAuthStore } from '@/store/authStore';
@@ -71,25 +71,31 @@ export default function TrackingTable({
   const isShipping = status === '배송중';
   const hasActionColumn = isEditable || isShipping;
 
-  useEffect(() => {
-    if (!defaultCourier || !isEditable) return;
-
-    setInputs((prev) => {
-      const next = { ...prev };
-      orders.forEach((order) => {
-        const current = next[order.itemId];
-        if (!current?.courier || current.isAutoFilledCourier) {
-          next[order.itemId] = {
-            courier: defaultCourier,
-            trackingNumber: current?.trackingNumber ?? '',
-            isEditing: current?.isEditing ?? false,
-            isAutoFilledCourier: true,
-          };
-        }
+  const [prevAutoFillTrigger, setPrevAutoFillTrigger] = useState({ defaultCourier, isEditable, orders });
+  if (
+    prevAutoFillTrigger.defaultCourier !== defaultCourier ||
+    prevAutoFillTrigger.isEditable !== isEditable ||
+    prevAutoFillTrigger.orders !== orders
+  ) {
+    setPrevAutoFillTrigger({ defaultCourier, isEditable, orders });
+    if (defaultCourier && isEditable) {
+      setInputs((prev) => {
+        const next = { ...prev };
+        orders.forEach((order) => {
+          const current = next[order.itemId];
+          if (!current?.courier || current.isAutoFilledCourier) {
+            next[order.itemId] = {
+              courier: defaultCourier,
+              trackingNumber: current?.trackingNumber ?? '',
+              isEditing: current?.isEditing ?? false,
+              isAutoFilledCourier: true,
+            };
+          }
+        });
+        return next;
       });
-      return next;
-    });
-  }, [defaultCourier, isEditable, orders]);
+    }
+  }
 
   const handleConfirm = (itemId: number) => {
     const input = inputs[itemId];
@@ -199,10 +205,12 @@ export default function TrackingTable({
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const isCompletable = status === '배송중' && !isAdmin;
+  const [prevOrdersForSelection, setPrevOrdersForSelection] = useState(orders);
 
-  useEffect(() => {
+  if (orders !== prevOrdersForSelection) {
+    setPrevOrdersForSelection(orders);
     setSelectedItemIds([]);
-  }, [orders]);
+  }
 
   const handleSelectAll = (checked: boolean) => {
     setSelectedItemIds(checked ? orders.map((o) => o.itemId) : []);

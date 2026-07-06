@@ -40,22 +40,32 @@ export default function LikesList() {
   useEffect(() => {
     if (activeTab !== '레시피') return;
     let cancelled = false;
-    setRecipeLoading(true);
-    api.get<{ recipes: BookmarkedRecipe[]; pagination: Pagination }>(`/users/me/bookmarks?page=${recipePage}`)
-      .then(({ data }) => { if (!cancelled) { setRecipeError(null); setRecipes(data.recipes); setRecipePagination(data.pagination); } })
-      .catch(() => { if (!cancelled) setRecipeError('북마크 목록을 불러오지 못했습니다.'); })
-      .finally(() => { if (!cancelled) setRecipeLoading(false); });
+
+    const fetchRecipes = () => {
+      setRecipeLoading(true);
+      api.get<{ recipes: BookmarkedRecipe[]; pagination: Pagination }>(`/users/me/bookmarks?page=${recipePage}`)
+        .then(({ data }) => { if (!cancelled) { setRecipeError(null); setRecipes(data.recipes); setRecipePagination(data.pagination); } })
+        .catch(() => { if (!cancelled) setRecipeError('북마크 목록을 불러오지 못했습니다.'); })
+        .finally(() => { if (!cancelled) setRecipeLoading(false); });
+    };
+
+    fetchRecipes();
     return () => { cancelled = true; };
   }, [recipePage, activeTab]);
 
   useEffect(() => {
     if (activeTab !== '재료쇼핑') return;
     let cancelled = false;
-    setProductLoading(true);
-    api.get<{ products: WishlistProduct[]; pagination: Pagination }>(`/users/me/wishlists?page=${productPage}`)
-      .then(({ data }) => { if (!cancelled) { setProductError(null); setProducts(data.products); setProductPagination(data.pagination); } })
-      .catch((e) => { if (!cancelled) { console.error('[wishlists]', e); setProductError('찜 목록을 불러오지 못했습니다.'); } })
-      .finally(() => { if (!cancelled) setProductLoading(false); });
+
+    const fetchProducts = () => {
+      setProductLoading(true);
+      api.get<{ products: WishlistProduct[]; pagination: Pagination }>(`/users/me/wishlists?page=${productPage}`)
+        .then(({ data }) => { if (!cancelled) { setProductError(null); setProducts(data.products); setProductPagination(data.pagination); } })
+        .catch((e) => { if (!cancelled) { console.error('[wishlists]', e); setProductError('찜 목록을 불러오지 못했습니다.'); } })
+        .finally(() => { if (!cancelled) setProductLoading(false); });
+    };
+
+    fetchProducts();
     return () => { cancelled = true; };
   }, [productPage, activeTab]);
 

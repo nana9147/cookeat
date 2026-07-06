@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ReturnPolicyTableProps } from '@/types/seller/shipping';
 import { Pencil, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
 export default function ReturnPolicyTable({
@@ -36,11 +36,12 @@ export default function ReturnPolicyTable({
   const [selectedId, setSelectedId] = useState<number | null>(defaultId);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [isDefaultConfirmOpen, setIsDefaultConfirmOpen] = useState(false);
+  const [prevPolicies, setPrevPolicies] = useState(policies);
 
-  useEffect(() => {
-    const newDefaultId = policies.find((s) => s.isDefault)?.returnId ?? null;
-    setSelectedId(newDefaultId);
-  }, [policies]);
+  if (policies !== prevPolicies) {
+    setPrevPolicies(policies);
+    setSelectedId(defaultId);
+  }
 
   return (
     <>

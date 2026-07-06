@@ -36,7 +36,9 @@ export default function ShippingTemplateForm({
     isDefault: false,
   });
 
-  useEffect(() => {
+  const [prevFormSync, setPrevFormSync] = useState({ template, isOpen });
+  if (prevFormSync.template !== template || prevFormSync.isOpen !== isOpen) {
+    setPrevFormSync({ template, isOpen });
     setForm({
       name: template?.name ?? '',
       feeType: template?.feeType ?? '무료',
@@ -47,7 +49,7 @@ export default function ShippingTemplateForm({
       returnAddress: template?.returnAddress ?? '',
       isDefault: template?.isDefault ?? false,
     });
-  }, [template, isOpen]);
+  }
 
   useEffect(() => {
     if (!isOpen) return;

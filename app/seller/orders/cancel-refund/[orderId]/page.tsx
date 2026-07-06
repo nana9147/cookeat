@@ -114,7 +114,10 @@ export default function RefundDetailPage() {
   };
 
   useEffect(() => {
-    fetchDetail();
+    const run = () => {
+      fetchDetail();
+    };
+    run();
   }, [orderId]);
 
   const handleApprove = async (refundId: number, faultType: '구매자귀책' | '판매자귀책') => {

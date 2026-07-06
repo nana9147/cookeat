@@ -5,7 +5,7 @@ import { formatDateTime, getPageNumbers } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import { PaymentInfoTableProps, ShippingStatus } from '@/types/seller/shipping';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
@@ -34,13 +34,15 @@ export default function PaymentInfoTable({
 
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [prevOrders, setPrevOrders] = useState(orders);
 
   const uniqueOrderIds = [...new Set(orders.map((o) => o.orderId))];
   const selectedItemCount = orders.filter((o) => selectedOrderIds.includes(o.orderId)).length;
 
-  useEffect(() => {
+  if (orders !== prevOrders) {
+    setPrevOrders(orders);
     setSelectedOrderIds([]);
-  }, [orders]);
+  }
 
   const handleSelectAll = (checked: boolean) => {
     setSelectedOrderIds(checked ? uniqueOrderIds : []);

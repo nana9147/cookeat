@@ -47,9 +47,12 @@ export default function ProductForm({ mode, initialData, fromPage }: ProductForm
   };
 
   useEffect(() => {
-    api.get('/categories').then(({ data }) => setCategories(data.data));
-    fetchShippingTemplates(true);
-    fetchReturnPolicyTemplates(true);
+    const run = () => {
+      api.get('/categories').then(({ data }) => setCategories(data.data));
+      fetchShippingTemplates(true);
+      fetchReturnPolicyTemplates(true);
+    };
+    run();
   }, [mode]);
 
   const handleChange = <S extends 'basicInfo' | 'pricingInfo', K extends keyof ProductFormData[S]>(

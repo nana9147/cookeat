@@ -30,8 +30,11 @@ export default function OrderList() {
   }, [page, activeTab]);
 
   useEffect(() => {
-    setLoading(true);
-    fetchOrders();
+    const run = () => {
+      setLoading(true);
+      fetchOrders();
+    };
+    run();
   }, [fetchOrders]);
 
   const handleTabChange = (tab: StatusTab) => { setLoading(true); setActiveTab(tab); setPage(1); };

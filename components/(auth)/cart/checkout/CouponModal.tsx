@@ -39,13 +39,28 @@ export default function CouponModal({ open, orderTotal, onClose, onSelect }: Cou
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    setError(null);
-    api
-      .get<{ coupons: CouponItem[] }>('/coupons/mine', { params: { amount: orderTotal } })
-      .then(({ data }) => setCoupons(data.coupons))
-      .catch(() => setError('쿠폰 목록을 불러오지 못했습니다.'))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    const fetchCoupons = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data } = await api.get<{ coupons: CouponItem[] }>('/coupons/mine', {
+          params: { amount: orderTotal },
+        });
+        if (!cancelled) setCoupons(data.coupons);
+      } catch {
+        if (!cancelled) setError('쿠폰 목록을 불러오지 못했습니다.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchCoupons();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, orderTotal]);
 
   function handleSelect(c: CouponItem) {

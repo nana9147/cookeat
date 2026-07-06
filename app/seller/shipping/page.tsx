@@ -57,6 +57,7 @@ export default function ShippingPage() {
   const [endDate, setEndDate] = useState(() => getDateRange('전체').endDate);
   const isAllStage = status === '전체';
   const isPaymentInfoStage = status === '결제완료';
+  const [prevStatus, setPrevStatus] = useState(status);
 
   const handleDatePresetChange = (preset: DateRangePreset) => {
     setDatePreset(preset);
@@ -90,13 +91,34 @@ export default function ShippingPage() {
     fetchCounts();
   };
 
-  useEffect(() => {
+  if (status !== prevStatus) {
+    setPrevStatus(status);
     setSearch('');
     setPage(1);
-  }, [status]);
+  }
 
   useEffect(() => {
-    fetchCounts();
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const res = await api.get('/seller/shipping/orders/counts', {
+          params: { startDate, endDate },
+        });
+        if (!cancelled) setCounts(res.data.data);
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : '상태별 건수를 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
+        }
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
   }, [startDate, endDate]);
 
   useEffect(() => {
