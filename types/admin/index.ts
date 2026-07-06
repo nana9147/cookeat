@@ -56,7 +56,7 @@ export interface AdminOrder {
   totalAmount: number;
   shippingFee: number;
   usedPoint: number;
-  couponId: number | null;
+  userCouponId: number | null;
   couponDiscount: number;
   finalAmount: number;
   paymentMethod: string;
