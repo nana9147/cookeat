@@ -1,15 +1,13 @@
 'use client';
 
 import * as XLSX from 'xlsx';
-import { Upload } from 'lucide-react';
 import { useRef } from 'react';
 import { useExcelExport } from '@/hooks/useExcelExport';
-import { Download } from 'lucide-react';
 import type { ProductExportRow } from '@/types/seller/product';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Filter, Plus } from 'lucide-react';
+import { Upload, Download, Filter, Plus } from 'lucide-react';
 import ProductTable from '@/app/seller/components/ProductTable';
 import FilterTabs from '@/app/seller/components/FilterTabs';
 import Pagination from '@/components/ui/Pagination';
@@ -336,7 +334,8 @@ export default function ProductsPage() {
         const { data } = await api.get('/categories');
         setCategories(data.data);
       } catch (e) {
-        console.error(e);
+        const msg = e instanceof Error ? e.message : '실시간 재고 알림 갱신에 실패했습니다.';
+        toast.error(msg, { id: msg });
       }
     }
     loadCategories();

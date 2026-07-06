@@ -47,11 +47,11 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const formData = await req.formData();
 
-  const name = formData.get('name') as string | null;
+  const name = formData.get('name') as string;
   const brand = (formData.get('brand') as string | null) ?? '';
-  const origin = formData.get('origin') as string | null;
+  const origin = formData.get('origin') as string;
   const categoryId = formData.get('categoryId') as string | null;
-  const status = formData.get('status') as string | null;
+  const status = formData.get('status') as string;
   const price = formData.get('price') as string | null;
   const stock = formData.get('stock') as string | null;
   const description = (formData.get('description') as string | null) ?? '';
@@ -95,12 +95,6 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         success: false,
         error: `다음 필수 항목이 누락되었습니다: ${missingLabels.join(', ')}`,
       },
-      { status: 400 }
-    );
-  }
-  if (!shippingTemplateId || !returnPolicyTemplateId) {
-    return NextResponse.json(
-      { success: false, error: '배송 템플릿과 반품정책을 선택해주세요.' },
       { status: 400 }
     );
   }

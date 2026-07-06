@@ -62,8 +62,24 @@ export default function LowStockAlert() {
     };
   }, []);
 
-  const handleOpenChange = (open: boolean) => {
+  const handleOpenChange = async (open: boolean) => {
     if (!open) return;
+
+    try {
+      const { data } = await api.get('/seller/products/low-stock');
+      setProducts(data.data);
+
+      const next = new Set(seenIds);
+      for (const p of data.data) {
+        // 💡 기존 products 대신 새로 가져온 data.data 기반으로 체크
+        next.add(p.productId);
+      }
+      setSeenIds(next);
+      saveSeenIds(next);
+    } catch (error) {
+      console.error('실시간 재고 알림 갱신 실패:', error);
+    }
+
     const next = new Set(seenIds);
     for (const p of products) next.add(p.productId);
     setSeenIds(next);

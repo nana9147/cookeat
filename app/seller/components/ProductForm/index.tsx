@@ -130,6 +130,8 @@ export default function ProductForm({ mode, initialData }: ProductFormProps) {
         await api.patch(`/seller/products/${form.productId}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+
+        window.dispatchEvent(new Event('product-stock-updated'));
         toast.success('상품이 수정되었습니다.');
         router.push('/seller/products');
       }
