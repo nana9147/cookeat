@@ -68,7 +68,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
       }
     }
     hasPendingCancelRequest = [...claimByItemId.values()].some((c) => c.status === '취소요청');
-    hasPendingRefundRequest = [...claimByItemId.values()].some((c) => c.status === '환불요청');
+    hasPendingRefundRequest = [...claimByItemId.values()].some(
+      (c) => c.status === '환불요청' || c.status === '환불진행중'
+    );
   }
 
   return NextResponse.json({

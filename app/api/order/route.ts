@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
     (i) => Number.isInteger(i.recipeId) && (i.recipeId as number) > 0
   );
   if (itemsWithRecipe.length > 0) {
-    await Promise.all(
+    const recipeBackfillResults = await Promise.all(
       itemsWithRecipe.map((i) =>
         supabaseAdmin
           .from('order_items')
@@ -254,6 +254,15 @@ export async function POST(req: NextRequest) {
           .eq('product_id', i.productId)
       )
     );
+    const failedBackfills = recipeBackfillResults.filter((r) => r.error);
+    if (failedBackfills.length > 0) {
+      // 주문 자체는 이미 성공했으므로 실패해도 응답은 그대로 반환하되, 추천 포인트 귀속이
+      // 누락된 채로 남지 않도록 로그를 남겨 추적할 수 있게 한다.
+      console.error(
+        `[POST /order] recipe_id 백필 실패 (orderId=${orderId}):`,
+        failedBackfills.map((r) => r.error?.message)
+      );
+    }
   }
 
   return NextResponse.json({ orderId, finalAmount });

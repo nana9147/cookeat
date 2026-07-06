@@ -45,7 +45,11 @@ export const useCartStore = create<CartStore>()(
           for (const item of newItems) {
             const idx = updated.findIndex((i) => i.productId === item.productId);
             if (idx >= 0) {
-              updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + item.quantity };
+              updated[idx] = {
+                ...updated[idx],
+                quantity: updated[idx].quantity + item.quantity,
+                recipeId: item.recipeId ?? updated[idx].recipeId,
+              };
             } else {
               updated.push(item);
             }

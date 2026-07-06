@@ -96,7 +96,11 @@ export async function ensurePurchaseConfirmations(userId: number) {
             .from('recipe_order_referrals')
             .insert({ order_id: orderId, recipe_id: recipeId, point_paid: pointPaid });
           if (referralError) {
-            console.error('[ensurePurchaseConfirmations] 추천 기록 실패:', referralError.message);
+            // recipe_order_referrals_order_recipe_unique — 동시 요청(다중 탭 등)으로 같은
+            // 주문/레시피 조합이 먼저 처리된 경우. 이미 지급된 것이므로 재지급하지 않고 넘어간다.
+            if (referralError.code !== '23505') {
+              console.error('[ensurePurchaseConfirmations] 추천 기록 실패:', referralError.message);
+            }
           } else {
             const { error: pointError } = await supabaseAdmin.rpc('award_review_point', {
               p_user_id: authorId,

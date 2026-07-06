@@ -30,11 +30,13 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  // 판매자 승인 전(취소요청/환불요청 접수 상태)인 주문 ID — 각 탭에는 포함시키고, 그 외 탭에서는 제외한다
+  // 판매자 승인 전/승인 후 처리 중(취소요청/환불요청/환불진행중)인 주문 ID — 각 탭에는 포함시키고,
+  // 그 외 탭에서는 제외한다. 환불은 판매자가 승인하면 '환불요청' -> '환불진행중'으로 넘어가고 나서도
+  // 최종 '환불' 완료 전까지는 계속 진행 중 상태로 취급해야 한다.
   const { data: pendingRows, error: pendingRowsError } = await supabaseAdmin
     .from('refund_requests')
     .select('status, order_items!inner(order_id, orders!inner(user_id))')
-    .in('status', ['취소요청', '환불요청'])
+    .in('status', ['취소요청', '환불요청', '환불진행중'])
     .is('reject_reason', null)
     .eq('order_items.orders.user_id', authed.userId);
 
@@ -50,7 +52,7 @@ export async function GET(req: NextRequest) {
   const pendingRefundOrderIds = [
     ...new Set(
       (pendingRows ?? [])
-        .filter((r) => r.status === '환불요청')
+        .filter((r) => r.status === '환불요청' || r.status === '환불진행중')
         .map((r) => (r.order_items as unknown as { order_id: string }).order_id)
     ),
   ];
@@ -112,7 +114,7 @@ export async function GET(req: NextRequest) {
       .from('refund_requests')
       .select('item_id, status')
       .in('item_id', allItemIds)
-      .in('status', ['취소요청', '환불요청'])
+      .in('status', ['취소요청', '환불요청', '환불진행중'])
       .is('reject_reason', null);
 
     if (pendingError) return NextResponse.json({ error: pendingError.message }, { status: 500 });
