@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/serverAuth';
+import { escapeOrValue } from '@/lib/utils';
 
 export async function GET(req: NextRequest) {
   const authed = await requireAdmin(req);
@@ -17,13 +18,16 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from('users')
-    .select('user_id, email, nickname, created_at, status, point, orders(count)', { count: 'exact' })
+    .select('user_id, email, nickname, created_at, status, point, orders(count)', {
+      count: 'exact',
+    })
     .eq('role', 'user')
     .order('created_at', { ascending: false })
     .range(from, to);
 
   if (keyword) {
-    query = query.or(`nickname.ilike.%${keyword}%,email.ilike.%${keyword}%`);
+    const pattern = escapeOrValue(`%${keyword}%`);
+    query = query.or(`nickname.ilike.${pattern},email.ilike.${pattern}`);
   }
   if (status) {
     query = query.eq('status', status);
@@ -32,7 +36,8 @@ export async function GET(req: NextRequest) {
   if (grade === 'VIP' || grade === '일반') {
     const { data: orderRows, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('user_id');
+      .select('user_id')
+      .not('status', 'in', '("취소","환불")');
     if (orderError) return NextResponse.json({ error: orderError.message }, { status: 500 });
 
     const orderCountMap = new Map<number, number>();
@@ -49,7 +54,7 @@ export async function GET(req: NextRequest) {
       query = query.not(
         'user_id',
         'in',
-        `(${vipUserIds.length > 0 ? vipUserIds.join(',') : '-1'})`,
+        `(${vipUserIds.length > 0 ? vipUserIds.join(',') : '-1'})`
       );
     }
   }
@@ -58,7 +63,9 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const users = (data ?? []).map((u) => {
-    const orderCount = Array.isArray(u.orders) ? ((u.orders[0] as { count: number })?.count ?? 0) : 0;
+    const orderCount = Array.isArray(u.orders)
+      ? ((u.orders[0] as { count: number })?.count ?? 0)
+      : 0;
     return {
       userId: u.user_id,
       email: u.email,

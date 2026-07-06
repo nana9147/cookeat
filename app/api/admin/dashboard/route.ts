@@ -17,7 +17,9 @@ export async function GET(req: NextRequest) {
 
   if (todayOrdersError) return NextResponse.json({ error: todayOrdersError.message }, { status: 500 });
 
-  const todayOrderIds = todayOrders?.map((o) => o.order_id) ?? [];
+  // 카테고리별 매출도 상단 매출(todayRevenue)과 동일하게 취소/환불 주문을 제외
+  const todayOrderIds =
+    todayOrders?.filter((o) => o.status !== '취소' && o.status !== '환불').map((o) => o.order_id) ?? [];
 
   const [
     orderCountResult,

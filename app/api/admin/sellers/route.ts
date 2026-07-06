@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/serverAuth';
+import { escapeOrValue } from '@/lib/utils';
 
 type ApproveStatus = 'pending' | 'approved' | 'rejected';
 type DisplayStatus = '승인' | '대기' | '거절' | '정지';
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status') ?? '';
   const keyword = searchParams.get('keyword') ?? '';
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
-  const limit = Math.max(1, Math.min(1000, parseInt(searchParams.get('limit') ?? '50')));
+  const limit = Math.max(1, Math.min(5000, parseInt(searchParams.get('limit') ?? '50')));
   const chargeRange = searchParams.get('chargeRange') ?? 'all';
   const from = (page - 1) * limit;
   const to = from + limit - 1;
@@ -38,7 +39,8 @@ export async function GET(req: NextRequest) {
     .range(from, to);
 
   if (keyword) {
-    query = query.or(`store_name.ilike.%${keyword}%,business_number.ilike.%${keyword}%`);
+    const pattern = escapeOrValue(`%${keyword}%`);
+    query = query.or(`store_name.ilike.${pattern},business_number.ilike.${pattern}`);
   }
 
   if (chargeRange === 'low') query = query.lte('commission_rate', 10);
