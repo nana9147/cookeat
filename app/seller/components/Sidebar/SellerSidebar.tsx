@@ -48,6 +48,7 @@ const menuItems = [
     ],
   },
   { label: '리뷰관리', href: '/seller/reviews' },
+  { label: '1:1 문의', href: '/seller/inquiries' },
   { label: '정산관리', href: '/seller/settlements' },
   { label: '통계', href: '/seller/statistics' },
   { label: '판매자정보', href: '/seller/info' },
