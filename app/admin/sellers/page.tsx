@@ -108,7 +108,7 @@ export default function SellersPage() {
         if (filterStatus !== 'all') params.set('status', filterStatus);
         if (filterCharge !== 'all') params.set('chargeRange', filterCharge);
         if (filterRating !== 'all') {
-          params.set('limit', '1000');
+          params.set('limit', '5000');
         } else {
           params.set('page', String(page));
           params.set('limit', String(PAGE_SIZE));
@@ -187,7 +187,7 @@ export default function SellersPage() {
 
   const filtered = sellerList.filter((s) => {
     if (filterRating === 'all') return true;
-    if (s.rating === null) return true;
+    if (s.rating === null) return false;
     if (filterRating === '4.5+') return s.rating >= 4.5;
     if (filterRating === '4.0+') return s.rating >= 4.0 && s.rating < 4.5;
     if (filterRating === 'low') return s.rating < 4.0;
