@@ -136,7 +136,8 @@ export async function getSellerOrderCounts(
   let orderQuery = supabaseAdmin
     .from('orders')
     .select('order_id, status')
-    .in('order_id', sellerOrderIds);
+    .in('order_id', sellerOrderIds)
+    .neq('status', '결제전');
 
   if (startDate) orderQuery = orderQuery.gte('created_at', `${startDate}T00:00:00`);
   if (endDate) orderQuery = orderQuery.lte('created_at', `${endDate}T23:59:59`);

@@ -243,6 +243,26 @@ export default function ShippingPage() {
     }
   };
 
+  const handleCorrectTracking = async (
+    itemId: number,
+    courier: CourierCode | '',
+    trackingNumber: string
+  ) => {
+    try {
+      await api.patch(`/seller/shipping/orders/${itemId}`, { courier, trackingNumber });
+      setOrders((prev) =>
+        prev.map((o) => (o.itemId === itemId ? { ...o, courier, trackingNumber } : o))
+      );
+      toast.success('운송장 정보가 수정되었습니다.');
+    } catch (e) {
+      const message =
+        e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      toast.error(message ?? '운송장 수정에 실패했습니다.');
+    }
+  };
+
   const handleBulkTrackingSuccess = () => {
     const fetchOrders = async () => {
       setIsLoading(true);
@@ -346,6 +366,7 @@ export default function ShippingPage() {
           orders={orders}
           total={total}
           onUpdate={handleUpdateInAllView}
+          onCorrect={handleCorrectTracking}
           onStatusChange={handleStatusChangeInAllView}
           onConfirmOrder={handleConfirmOrder}
           isLoading={isLoading}
@@ -370,6 +391,7 @@ export default function ShippingPage() {
           total={total}
           status={status as '배송준비' | '배송중' | '배송완료'}
           onUpdate={handleUpdate}
+          onCorrect={handleCorrectTracking}
           onStatusChange={handleStatusChange}
           onBulkTrackingSuccess={handleBulkTrackingSuccess}
           onBulkStatusSuccess={handleBulkSuccessByItemId}

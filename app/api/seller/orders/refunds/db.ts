@@ -355,8 +355,8 @@ export async function updateReturnTracking(
   if (orderItem.seller_id !== sellerId) {
     throw new Error('환불 요청을 찾을 수 없습니다.');
   }
-  if (refund.status !== '환불진행중') {
-    throw new Error('환불진행중 상태에서만 반송 운송장을 입력할 수 있습니다.');
+  if (refund.status !== '환불진행중' && refund.status !== '환불') {
+    throw new Error('환불진행중 또는 환불완료 상태에서만 반송 운송장을 입력할 수 있습니다.');
   }
 
   const { error: updateError } = await supabaseAdmin
