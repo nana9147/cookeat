@@ -291,16 +291,18 @@ export default function ShippingPage() {
         itemIds,
         status: '배송준비',
       });
-      const { successCount, failCount } = res.data.data;
+      const { successCount, failCount, results } = res.data.data;
 
       if (failCount > 0) {
-        toast.error(`${successCount}
-           처리 완료, ${failCount}건 실패했습니다.`);
+        toast.error(`${successCount}건 처리 완료, ${failCount}건 실패했습니다.`);
       } else {
         toast.success('발주확인되었습니다.');
       }
 
-      setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
+      const succeededIds = results
+        .filter((r: { itemId: number; success: boolean }) => r.success)
+        .map((r: { itemId: number }) => r.itemId);
+      setOrders((prev) => prev.filter((o) => !succeededIds.includes(o.itemId)));
       fetchCounts();
     } catch (e) {
       const message =

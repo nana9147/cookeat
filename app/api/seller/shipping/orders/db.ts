@@ -250,7 +250,11 @@ export async function updateShippingStatus(sellerId: number, itemId: number, new
 
   if (updateError) throw updateError;
 
-  await logOrderItemStatusHistory(itemId, newStatus);
+  try {
+    await logOrderItemStatusHistory(itemId, newStatus);
+  } catch (err) {
+    console.error('order_item_status_history insert 실패', { itemId, newStatus, err });
+  }
 
   if (newStatus === '배송완료') {
     const { error: deliveredAtError } = await supabaseAdmin
@@ -264,7 +268,7 @@ export async function updateShippingStatus(sellerId: number, itemId: number, new
 
   await syncOrderStatus(orderId);
 
-  return { status: newStatus };
+  return { status: newStatus, orderId };
 }
 
 export async function updateShippingTracking(
@@ -345,7 +349,11 @@ export async function updateShippingTracking(
 
   if (statusUpdateError) throw statusUpdateError;
 
-  await logOrderItemStatusHistory(itemId, '배송중');
+  try {
+    await logOrderItemStatusHistory(itemId, '배송중');
+  } catch (err) {
+    console.error('order_item_status_history insert 실패', { itemId, newStatus: '배송중', err });
+  }
 
   await syncOrderStatus(orderId);
 
@@ -358,15 +366,21 @@ export async function bulkUpdateShippingStatus(
   newStatus: string
 ) {
   const results: { itemId: number; success: boolean; error?: string }[] = [];
+  const affectedOrderIds = new Set<string>();
 
   for (const itemId of itemIds) {
     try {
-      await updateShippingStatus(sellerId, itemId, newStatus);
+      const { orderId } = await updateShippingStatus(sellerId, itemId, newStatus);
+      affectedOrderIds.add(orderId);
       results.push({ itemId, success: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : '상태 변경에 실패했습니다.';
       results.push({ itemId, success: false, error: message });
     }
+  }
+
+  for (const orderId of affectedOrderIds) {
+    await syncOrderStatus(orderId);
   }
 
   return results;
@@ -456,7 +470,15 @@ export async function bulkUpdateShippingTracking(
         .update({ shipping_status: '배송중' })
         .eq('item_id', item.item_id);
 
-      await logOrderItemStatusHistory(item.item_id, '배송중');
+      try {
+        await logOrderItemStatusHistory(item.item_id, '배송중');
+      } catch (err) {
+        console.error('order_item_status_history insert 실패', {
+          itemId: item.item_id,
+          newStatus: '배송중',
+          err,
+        });
+      }
     }
 
     await syncOrderStatus(orderId);
