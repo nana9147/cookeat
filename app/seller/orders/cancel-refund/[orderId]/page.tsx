@@ -39,21 +39,12 @@ import BackButton from '../../../components/BackButton';
 import { useAuthStore } from '@/store/authStore';
 import { formatDateTime } from '@/lib/utils';
 import { formatWon } from '@/lib/format';
+import { COURIERS, sanitizeTrackingNumber } from '@/lib/courier';
+import type { CourierCode } from '@/types/seller/shipping';
 import { ORDER_STATUS_LABEL } from '@/types/seller/order';
 import type { OrderWithRefunds, RefundItem } from '@/types/seller/order';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-
-const COURIERS = [
-  'CJ대한통운',
-  '로젠택배',
-  '한진택배',
-  '롯데택배',
-  '우체국택배',
-  'CU 편의점택배',
-  'GS25 편의점택배',
-  'ETC',
-];
 
 // 상태별 색 토큰 — 카드 좌측 강조바, 뱃지에 공통으로 사용
 const STATUS_STYLE: Record<
@@ -95,6 +86,7 @@ export default function RefundDetailPage() {
   const [trackingInputs, setTrackingInputs] = useState<
     Record<number, { courier: string; trackingNumber: string }>
   >({});
+  const [editingTrackingIds, setEditingTrackingIds] = useState<Set<number>>(new Set());
 
   const [approvingRefundId, setApprovingRefundId] = useState<number | null>(null);
   const [selectedFaultType, setSelectedFaultType] = useState<'구매자귀책' | '판매자귀책' | null>(
@@ -171,6 +163,11 @@ export default function RefundDetailPage() {
         trackingNumber: input.trackingNumber,
       });
       toast.success('반송 운송장이 저장되었습니다.');
+      setEditingTrackingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(refundId);
+        return next;
+      });
       fetchDetail();
     } catch (e) {
       const message =
@@ -179,6 +176,25 @@ export default function RefundDetailPage() {
           : undefined;
       toast.error(message ?? '저장에 실패했습니다.');
     }
+  };
+
+  const handleStartEditTracking = (item: RefundItem) => {
+    setTrackingInputs((prev) => ({
+      ...prev,
+      [item.refundId]: {
+        courier: item.returnCourier ?? '',
+        trackingNumber: item.returnTrackingNumber ?? '',
+      },
+    }));
+    setEditingTrackingIds((prev) => new Set(prev).add(item.refundId));
+  };
+
+  const handleCancelEditTracking = (refundId: number) => {
+    setEditingTrackingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(refundId);
+      return next;
+    });
   };
 
   const handleRejectSubmit = async () => {
@@ -385,6 +401,7 @@ export default function RefundDetailPage() {
             item={item}
             isAdmin={isAdmin}
             trackingInput={trackingInputs[item.refundId]}
+            isEditingTracking={editingTrackingIds.has(item.refundId)}
             onTrackingChange={(value) =>
               setTrackingInputs((prev) => ({ ...prev, [item.refundId]: value }))
             }
@@ -392,6 +409,8 @@ export default function RefundDetailPage() {
             onReject={() => setRejectingRefundId(item.refundId)}
             onProcess={() => handleProcess(item.refundId)}
             onSaveTracking={() => handleSaveTracking(item.refundId)}
+            onStartEditTracking={() => handleStartEditTracking(item)}
+            onCancelEditTracking={() => handleCancelEditTracking(item.refundId)}
           />
         ))}
       </div>
@@ -492,25 +511,33 @@ function RefundItemRow({
   item,
   isAdmin,
   trackingInput,
+  isEditingTracking,
   onTrackingChange,
   onApprove,
   onReject,
   onProcess,
   onSaveTracking,
+  onStartEditTracking,
+  onCancelEditTracking,
 }: {
   item: RefundItem;
   isAdmin: boolean;
   trackingInput?: { courier: string; trackingNumber: string };
+  isEditingTracking: boolean;
   onTrackingChange: (value: { courier: string; trackingNumber: string }) => void;
   onApprove: () => void;
   onReject: () => void;
   onProcess: () => void;
   onSaveTracking: () => void;
+  onStartEditTracking: () => void;
+  onCancelEditTracking: () => void;
 }) {
   const isRejected = Boolean(item.refundRejectReason);
   const isPending =
     (item.itemStatus === '환불요청' || item.itemStatus === '취소요청') && !isRejected;
   const isProcessing = item.itemStatus === '환불진행중';
+  const isDone = item.itemStatus === '환불';
+  const canEditTracking = (isProcessing || isDone) && !isAdmin;
   const statusKey = isPending
     ? 'pending'
     : isProcessing
@@ -618,19 +645,29 @@ function RefundItemRow({
             <p className="text-2xs font-semibold text-gray-400 tracking-wide uppercase mb-2.5">
               반송 정보
             </p>
-            {item.returnCourier && item.returnTrackingNumber ? (
-              <p className="text-sm text-gray-600 flex items-center gap-1.5">
-                <Truck className="w-3.5 h-3.5 text-gray-400" />
-                {item.returnCourier} / {item.returnTrackingNumber}
-              </p>
-            ) : isProcessing && !isAdmin ? (
+            {item.returnCourier && item.returnTrackingNumber && !isEditingTracking ? (
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-600 flex items-center gap-1.5">
+                  <Truck className="w-3.5 h-3.5 text-gray-400" />
+                  {item.returnCourier} / {item.returnTrackingNumber}
+                </p>
+                {canEditTracking && (
+                  <Button size="sm" variant="outline" onClick={onStartEditTracking}>
+                    수정
+                  </Button>
+                )}
+              </div>
+            ) : canEditTracking ? (
               <div className="flex items-center gap-1.5">
                 <Select
                   value={trackingInput?.courier ?? ''}
                   onValueChange={(value) =>
                     onTrackingChange({
                       courier: value,
-                      trackingNumber: trackingInput?.trackingNumber ?? '',
+                      trackingNumber: sanitizeTrackingNumber(
+                        trackingInput?.trackingNumber ?? '',
+                        value as CourierCode
+                      ),
                     })
                   }
                 >
@@ -646,11 +683,16 @@ function RefundItemRow({
                   </SelectContent>
                 </Select>
                 <Input
+                  type="text"
+                  inputMode="numeric"
                   value={trackingInput?.trackingNumber ?? ''}
                   onChange={(e) =>
                     onTrackingChange({
                       courier: trackingInput?.courier ?? '',
-                      trackingNumber: e.target.value,
+                      trackingNumber: sanitizeTrackingNumber(
+                        e.target.value,
+                        (trackingInput?.courier ?? '') as CourierCode
+                      ),
                     })
                   }
                   placeholder="운송장번호"
@@ -659,6 +701,11 @@ function RefundItemRow({
                 <Button size="sm" variant="outline" onClick={onSaveTracking}>
                   저장
                 </Button>
+                {isEditingTracking && (
+                  <Button size="sm" variant="ghost" onClick={onCancelEditTracking}>
+                    취소
+                  </Button>
+                )}
               </div>
             ) : (
               <p className="text-sm text-gray-300">-</p>

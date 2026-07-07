@@ -279,7 +279,7 @@ export async function updateShippingTracking(
     itemId
   );
 
-  if (currentStatus !== '배송준비') {
+  if (currentStatus !== '배송준비' && currentStatus !== '배송중' && currentStatus !== '배송완료') {
     throw new Error(`'${currentStatus}' 상태에서는 운송장 정보를 입력할 수 없습니다.`);
   }
 
@@ -291,6 +291,20 @@ export async function updateShippingTracking(
     .maybeSingle();
 
   if (existingError) throw existingError;
+
+  // 배송중/배송완료 건은 이미 등록된 운송장 정보를 정정하는 것 — 발송일/배송상태는 건드리지 않는다
+  if (currentStatus !== '배송준비') {
+    if (!existing) throw new Error('등록된 운송장 정보가 없습니다.');
+
+    const { error: correctionError } = await supabaseAdmin
+      .from('shippings')
+      .update({ carrier: courier, tracking_number: trackingNumber })
+      .eq('shipping_id', existing.shipping_id);
+
+    if (correctionError) throw correctionError;
+
+    return { newStatus: currentStatus };
+  }
 
   const shippingPayload = {
     carrier: courier,

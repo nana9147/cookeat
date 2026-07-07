@@ -255,6 +255,7 @@ export interface TrackingTableProps {
   total: number;
   status: '배송준비' | '배송중' | '배송완료';
   onUpdate: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
+  onCorrect: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
   onStatusChange: (itemId: number, newStatus: ShippingStatus) => void;
   onBulkTrackingSuccess?: () => void;
   onBulkStatusSuccess?: (processedIds: number[]) => void;
@@ -268,6 +269,7 @@ export interface AllOrdersTableProps {
   orders: ShippingRow[];
   total: number;
   onUpdate: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
+  onCorrect: (itemId: number, courier: CourierCode | '', trackingNumber: string) => void;
   onStatusChange: (itemId: number, newStatus: ShippingStatus) => void;
   onConfirmOrder: (orderId: string) => void;
   isLoading?: boolean;
