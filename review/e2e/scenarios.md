@@ -30,6 +30,23 @@
 | S07 | 판매 통계 비-판매자 가드 | user롤 `/seller/statistics` → `/` | pass · RoleGuard가 홈으로 리다이렉트 |
 | S08 | 마이페이지 주문내역 | `/mypage/orders` → 취소/환불 분리 | pass · 렌더 정상(주문 없음) |
 
+## 2026-07-07 신규 엔드포인트 (20차) — 판매자 대시보드/통계/문의관리 + 1:1 문의
+
+스펙: `tests/cookeat-daily.spec.ts`(2026-07-07 갱신). 판매자 화면은 리뷰계정 임시 seller 승격 후 원복.
+
+| ID | 시나리오 | 단계 → 기대 | 최근결과 (2026-07-07) |
+|----|----------|-------------|------------------------|
+| U01 | 홈 | `/` → 렌더 | pass · title=Cookeat |
+| U02 | 레시피 목록→상세 | `/recipes` → 카드 → 상세 | pass · 목록/상세 렌더(상세 SSR) |
+| U04 | 상품 목록→상세 | `/shopping` → 카드 → `/shopping/9` | pass · 상세 진입 |
+| S01 | 판매자 대시보드 비로그인 가드 | `/seller` → `/login?next=/seller` | pass · 리다이렉트 |
+| S02 | 판매자 대시보드(로그인) | seller 로그인 → `/seller` | pass · **판매금액 탭 신규**(주문건수/판매금액 전환 + 기간 드롭다운 분리) |
+| S03 | 판매 통계(신규) | `/seller/statistics` | pass · 7/30/90일 토글·총매출/판매수량/평균주문/상품종류·매출추이 차트 렌더 |
+| S04 | 셀러 문의관리(신규) | `/seller/inquiries` | pass · 전체/미답변/답변완료 카드·제목검색·유형필터·테이블 렌더 |
+
+- 인가 실측: 신규 판매자 API 전부 `requireSellerContext`, 문의 답변은 소유권(products/order_items.seller_id) 403 대조. anon RLS 회귀 0(inquiries/inquiry_replies/inquiry_images 0행, coupons 401).
+- 셋업: 리뷰계정 user_id=42 임시 seller 승격(users.role + app_metadata.role + sellers 행 seller_id=20) → 리뷰 후 전부 원복(seller 행 삭제·role=user).
+
 ## 역할 모델 (2026-06-25 확인)
 
 - 역할 3종: `user` / `seller` / `admin` — `users.role`(enum, 기본 `user`). API 가드 `lib/serverAuth.ts`의 `requireAuth`/`requireSeller`(seller·admin 통과)/`requireAdmin`.
