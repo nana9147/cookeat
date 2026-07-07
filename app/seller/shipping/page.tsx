@@ -223,11 +223,6 @@ export default function ShippingPage() {
     }
   };
 
-  const handleBulkSuccess = (processedItemIds: number[]) => {
-    setOrders((prev) => prev.filter((o) => !processedItemIds.includes(o.itemId)));
-    fetchCounts();
-  };
-
   const handleUpdate = async (
     itemId: number,
     courier: CourierCode | '',
@@ -296,23 +291,6 @@ export default function ShippingPage() {
   };
 
   const totalPages = Math.ceil(total / LIMIT);
-
-  const dateFilterProps = {
-    datePreset,
-    onDatePresetChange: handleDatePresetChange,
-    startDate,
-    endDate,
-    onStartDateChange: (v: string) => {
-      setStartDate(v);
-      setDatePreset('직접입력');
-      setPage(1);
-    },
-    onEndDateChange: (v: string) => {
-      setEndDate(v);
-      setDatePreset('직접입력');
-      setPage(1);
-    },
-  };
 
   return (
     <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
