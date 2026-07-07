@@ -38,6 +38,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import BackButton from '../../../components/BackButton';
 import { useAuthStore } from '@/store/authStore';
 import { formatDateTime } from '@/lib/utils';
+import { formatWon } from '@/lib/format';
 import { ORDER_STATUS_LABEL } from '@/types/seller/order';
 import type { OrderWithRefunds, RefundItem } from '@/types/seller/order';
 import api from '@/lib/api';
@@ -308,7 +309,7 @@ export default function RefundDetailPage() {
               <Package className="w-3.5 h-3.5 text-gray-400" />총 상품금액 (정상가)
             </span>
             <span className="text-gray-700 font-medium">
-              {totalOriginalAmount.toLocaleString()}원
+              {formatWon(totalOriginalAmount)}
             </span>
           </div>
 
@@ -318,7 +319,7 @@ export default function RefundDetailPage() {
                 <Percent className="w-3.5 h-3.5 text-red-400" />
                 상품할인
               </span>
-              <span className="text-red-500">-{totalProductDiscount.toLocaleString()}원</span>
+              <span className="text-red-500">-{formatWon(totalProductDiscount)}</span>
             </div>
           )}
 
@@ -328,7 +329,7 @@ export default function RefundDetailPage() {
                 <Ticket className="w-3.5 h-3.5 text-red-400" />
                 쿠폰할인
               </span>
-              <span className="text-red-500">-{totalCouponDiscount.toLocaleString()}원</span>
+              <span className="text-red-500">-{formatWon(totalCouponDiscount)}</span>
             </div>
           )}
 
@@ -339,7 +340,7 @@ export default function RefundDetailPage() {
                 배송비 차감 (구매자귀책)
               </span>
               <span className="text-red-500">
-                -{totalBuyerShippingDeduction.toLocaleString()}원
+                -{formatWon(totalBuyerShippingDeduction)}
               </span>
             </div>
           )}
@@ -357,14 +358,14 @@ export default function RefundDetailPage() {
           <div className="flex justify-between items-center pt-4 mt-1 border-t border-dashed border-primary/20">
             <span className="text-base font-semibold text-dark-text">최종 환불금액</span>
             <span className="text-2xl font-bold text-primary tracking-tight max-mobile:text-xl">
-              {finalRefundAmount.toLocaleString()}원
+              {formatWon(finalRefundAmount)}
             </span>
           </div>
 
           {totalSellerShippingBurden > 0 && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-1 flex items-start gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-              무료배송 기준 미달로 배송비 {totalSellerShippingBurden.toLocaleString()}원이
+              무료배송 기준 미달로 배송비 {formatWon(totalSellerShippingBurden)}이
               발생했지만, 판매자귀책이라 구매자에게 청구하지 않았어요.
             </p>
           )}
@@ -562,25 +563,25 @@ function RefundItemRow({
               <div className="flex justify-between">
                 <span className="text-gray-400">정상가</span>
                 <span className="text-gray-500">
-                  {(item.originalUnitPrice * item.quantity).toLocaleString()}원
+                  {formatWon(item.originalUnitPrice * item.quantity)}
                 </span>
               </div>
               {item.productDiscount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-400">상품할인</span>
-                  <span className="text-red-500">-{item.productDiscount.toLocaleString()}원</span>
+                  <span className="text-red-500">-{formatWon(item.productDiscount)}</span>
                 </div>
               )}
               {item.couponDiscount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-400">쿠폰할인</span>
-                  <span className="text-red-500">-{item.couponDiscount.toLocaleString()}원</span>
+                  <span className="text-red-500">-{formatWon(item.couponDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between pt-1.5 border-t border-gray-100">
                 <span className="text-gray-700 font-medium">환급액</span>
                 <span className="text-dark-text font-bold">
-                  {item.refundAmount.toLocaleString()}원
+                  {formatWon(item.refundAmount)}
                 </span>
               </div>
               {item.allocatedPoint > 0 && (

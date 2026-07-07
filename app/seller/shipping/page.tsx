@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CourierCode, ShippingRow, ShippingStatus } from '@/types/seller/shipping';
 import { DateRangePreset } from '@/types/seller/common';
 import StatusCards from '@/components/ui/StatusCards';
+import { getTotalPages } from '@/lib/utils';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -290,7 +291,7 @@ export default function ShippingPage() {
     }
   };
 
-  const totalPages = Math.ceil(total / LIMIT);
+  const totalPages = getTotalPages(total, LIMIT);
 
   return (
     <div className="bg-background p-8 max-tablet:p-5 max-mobile:p-4">
