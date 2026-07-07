@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -31,12 +31,14 @@ export default function InquiryReplyModal({
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [prevInquiryId, setPrevInquiryId] = useState(inquiry?.inquiryId);
 
-  useEffect(() => {
+  if (inquiry?.inquiryId !== prevInquiryId) {
+    setPrevInquiryId(inquiry?.inquiryId);
     setContent('');
     setIsEditing(false);
     setPreviewIndex(null);
-  }, [inquiry?.inquiryId]);
+  }
 
   if (!inquiry) return null;
 
