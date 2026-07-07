@@ -15,7 +15,6 @@ interface ProductTabsProps {
   productName: string;
   descriptionTitle: string;
   description: string;
-  descriptionImageUrl?: string;
   features: { title: string; desc: string }[];
   relatedRecipes: RelatedRecipe[];
 }
@@ -25,7 +24,6 @@ export default function ProductTabs({
   productName,
   descriptionTitle,
   description,
-  descriptionImageUrl,
   features,
   relatedRecipes,
 }: ProductTabsProps) {
@@ -55,7 +53,6 @@ export default function ProductTabs({
             productName={productName}
             title={descriptionTitle}
             description={description}
-            imageUrl={descriptionImageUrl}
             features={features}
             relatedRecipes={relatedRecipes}
             onViewAllReviews={() => setActiveTab('리뷰')}
