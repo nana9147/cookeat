@@ -5,6 +5,7 @@ import ReviewSectionClient from '@/components/common/ReviewSectionClient';
 import { ProductInfoTab } from './ProductInfoTab';
 import { DeliveryTab } from './DeliveryTab';
 import { QnaTab } from './QnaTab';
+import type { RelatedRecipe } from '@/types/ingredient';
 
 const TABS = ['상품 정보', '리뷰', '배송·교환', '상품 문의'] as const;
 type Tab = (typeof TABS)[number];
@@ -16,6 +17,7 @@ interface ProductTabsProps {
   description: string;
   descriptionImageUrl?: string;
   features: { title: string; desc: string }[];
+  relatedRecipes: RelatedRecipe[];
 }
 
 export default function ProductTabs({
@@ -25,6 +27,7 @@ export default function ProductTabs({
   description,
   descriptionImageUrl,
   features,
+  relatedRecipes,
 }: ProductTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('상품 정보');
 
@@ -54,6 +57,7 @@ export default function ProductTabs({
             description={description}
             imageUrl={descriptionImageUrl}
             features={features}
+            relatedRecipes={relatedRecipes}
             onViewAllReviews={() => setActiveTab('리뷰')}
           />
         )}
