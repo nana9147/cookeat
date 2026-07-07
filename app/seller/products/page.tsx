@@ -13,7 +13,7 @@ import FilterTabs from '@/app/seller/components/FilterTabs';
 import Pagination from '@/components/ui/Pagination';
 import StatusCards from '@/components/ui/StatusCards';
 import { useSearchParams } from 'next/navigation';
-import { getPageNumbers } from '@/lib/utils';
+import { getPageNumbers, getTotalPages } from '@/lib/utils';
 import type {
   ProductStatus,
   Product,
@@ -381,7 +381,7 @@ export default function ProductsPage() {
     loadProducts();
   }, [loadProducts]);
 
-  const totalPages = Math.ceil(total / LIMIT);
+  const totalPages = getTotalPages(total, LIMIT);
 
   const handleSelectParent = (parentId: number | null) => {
     setSelectedParentId(parentId);

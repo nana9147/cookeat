@@ -11,6 +11,7 @@ import DateRangeFilter from '../../components/DateRangeFilter';
 import type { OrderWithRefunds } from '@/types/seller/order';
 import type { DateRangePreset } from '@/types/seller/common';
 import { getDateRange } from '@/lib/dateRange';
+import { getTotalPages } from '@/lib/utils';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Download } from 'lucide-react';
@@ -162,7 +163,7 @@ export default function CancelRefundPage() {
     exportToExcel(params);
   };
 
-  const totalPages = Math.ceil(total / LIMIT);
+  const totalPages = getTotalPages(total, LIMIT);
 
   return (
     <div className="bg-background p-8 max-desktop:p-6 max-tablet:p-4">
