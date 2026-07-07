@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import {
 import StatusCards from '@/components/ui/StatusCards';
 import InquiryTable from '../components/Inquiry/InquiryTable';
 import InquiryReplyModal from '../components/Inquiry/InquiryReplyModal';
+import { useDebounce } from '@/hooks/useDebounce';
 import type {
   SellerInquiryRow,
   SellerInquiryStats,
@@ -49,50 +50,72 @@ export default function SellerInquiriesPage() {
     answeredCount: 0,
   });
   const [selectedInquiry, setSelectedInquiry] = useState<SellerInquiryRow | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  useEffect(() => {
+  const debouncedSearch = useDebounce(search, 400);
+
+  const filterKey = `${type}-${answered}-${debouncedSearch}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [type, answered, search]);
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await api.get('/seller/inquiries/stats');
-      setStats(res.data.data);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '문의 통계를 불러오지 못했습니다.';
-      toast.error(msg, { id: msg });
-    }
-  }, []);
-
-  const fetchInquiries = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await api.get('/seller/inquiries', {
-        params: {
-          type: type === '전체' ? undefined : type,
-          page,
-          limit: LIMIT,
-          answered: answered === '전체' ? undefined : answered,
-          keyword: search || undefined,
-        },
-      });
-      setInquiries(res.data.inquiries);
-      setTotal(res.data.pagination.total);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '문의 목록을 불러오지 못했습니다.';
-      toast.error(msg, { id: msg });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [type, answered, search, page]);
+  }
 
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchStats = async () => {
+      try {
+        const res = await api.get('/seller/inquiries/stats');
+        if (!cancelled) setStats(res.data.data);
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : '문의 통계를 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
+        }
+      }
+    };
+
     fetchStats();
-  }, [fetchStats]);
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshTrigger]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchInquiries = async () => {
+      setIsLoading(true);
+      try {
+        const res = await api.get('/seller/inquiries', {
+          params: {
+            type: type === '전체' ? undefined : type,
+            page,
+            limit: LIMIT,
+            answered: answered === '전체' ? undefined : answered,
+            keyword: debouncedSearch || undefined,
+          },
+        });
+        if (!cancelled) {
+          setInquiries(res.data.inquiries);
+          setTotal(res.data.pagination.total);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : '문의 목록을 불러오지 못했습니다.';
+          toast.error(msg, { id: msg });
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
     fetchInquiries();
-  }, [fetchInquiries]);
+    return () => {
+      cancelled = true;
+    };
+  }, [type, answered, debouncedSearch, page, refreshTrigger]);
 
   const totalPages = Math.ceil(total / LIMIT);
 
@@ -104,8 +127,7 @@ export default function SellerInquiriesPage() {
 
   const handleReplySubmitted = () => {
     setSelectedInquiry(null);
-    fetchInquiries();
-    fetchStats();
+    setRefreshTrigger((n) => n + 1);
   };
 
   return (
