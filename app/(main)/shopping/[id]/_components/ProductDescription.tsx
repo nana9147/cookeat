@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface Feature {
   title: string;
@@ -46,7 +47,10 @@ export default function ProductDescription({
       {/* 설명 텍스트 */}
       <div>
         <h2 className="text-base font-bold text-dark-text mb-2">{title}</h2>
-        <p className="text-sm text-gray-text leading-relaxed whitespace-pre-line">{description}</p>
+        <div
+          className="text-sm text-gray-text leading-relaxed prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description) }}
+        />
       </div>
 
       {/* 특징 카드 — 번호 원형 아이콘 */}

@@ -62,6 +62,15 @@ export interface ProductDetail {
   reviewCount: number;
 }
 
+export interface RelatedRecipe {
+  recipeId: number;
+  title: string;
+  image: string;
+  author: string;
+  rating: number;
+  reviewCount: number;
+}
+
 export interface ProductsResponse {
   success: boolean;
   data: {
