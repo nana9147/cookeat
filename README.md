@@ -32,15 +32,21 @@
 
 ### 홈
 
-![홈 화면](public/screenshots/main/home.webp)
+|                                      데스크탑                                       |                                      테블릿                                      |                                      모바일                                      |
+| :---------------------------------------------------------------------------------: | :------------------------------------------------------------------------------: | :------------------------------------------------------------------------------: |
+| <img src="public/screenshots/desktop/home/home.webp" width="260" alt="홈 데스크탑"> | <img src="public/screenshots/tablet/home/home.webp" width="200" alt="홈 테블릿"> | <img src="public/screenshots/mobile/home/home.webp" width="140" alt="홈 모바일"> |
 
 ### 레시피 목록
 
-![레시피 목록 화면](public/screenshots/main/recipes.webp)
+|                                            데스크탑                                             |                                            테블릿                                            |                                            모바일                                            |
+| :---------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: |
+| <img src="public/screenshots/desktop/home/recipes.webp" width="260" alt="레시피 목록 데스크탑"> | <img src="public/screenshots/tablet/home/recipes.webp" width="200" alt="레시피 목록 테블릿"> | <img src="public/screenshots/mobile/home/recipes.webp" width="140" alt="레시피 목록 모바일"> |
 
 ### 재료 구매 목록
 
-![재료 구매 목록 화면](public/screenshots/main/shopping.webp)
+|                                              데스크탑                                               |                                              테블릿                                              |                                              모바일                                              |
+| :-------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------: |
+| <img src="public/screenshots/desktop/home/shopping.webp" width="260" alt="재료 구매 목록 데스크탑"> | <img src="public/screenshots/tablet/home/shopping.webp" width="200" alt="재료 구매 목록 테블릿"> | <img src="public/screenshots/mobile/home/shopping.webp" width="140" alt="재료 구매 목록 모바일"> |
 
 ---
 
