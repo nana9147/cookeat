@@ -31,7 +31,7 @@ export default function AdminSidebar() {
   return (
     <Sidebar
       collapsible="none"
-      className="hidden md:flex bg-white"
+      className="hidden md:flex shrink-0 bg-white"
       style={{ minHeight: 'calc(100svh - 6.25rem)' }}
     >
       <SidebarContent>
