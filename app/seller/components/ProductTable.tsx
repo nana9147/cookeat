@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuthStore } from '@/store/authStore';
+import { formatWon } from '@/lib/format';
 import type { ProductSortBy, ProductStatus, ProductTableProps } from '@/types/seller/product';
 
 import {
@@ -186,7 +187,7 @@ export default function ProductTable({
                       {product.categories?.name ?? '-'}
                     </TableCell>
                     <TableCell className="text-sm text-gray-800 text-center">
-                      {product.price.toLocaleString()}원
+                      {formatWon(product.price)}
                     </TableCell>
                     <TableCell className="text-sm text-center">
                       <span

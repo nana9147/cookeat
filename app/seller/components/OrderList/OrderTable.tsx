@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Pagination from '@/components/ui/Pagination';
 import EmptyRows from '@/components/ui/EmptyRows';
 import { formatDateTime, getPageNumbers } from '@/lib/utils';
+import { formatWon } from '@/lib/format';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import {
   Table,
@@ -123,7 +124,7 @@ export default function OrderTable({
                     {order.quantity}
                   </TableCell>
                   <TableCell className="text-center text-sm font-medium text-gray-800">
-                    {order.itemTotalPrice.toLocaleString()}원
+                    {formatWon(order.itemTotalPrice)}
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1.5">
