@@ -1,0 +1,73 @@
+'use client';
+
+import { useState } from 'react';
+import { ProductOption, ProductPurchasePanelProps } from './types';
+import { ProductInfoSection } from './ProductInfoSection';
+import { PurchaseControls } from './PurchaseControls';
+import { PurchaseActionButtons } from './PurchaseActionButtons';
+import { useAddToCart } from '@/hooks/useAddToCart';
+import { useWishlist } from '@/hooks/user/useWishlist';
+
+export type { ProductOption };
+export type { ProductPurchasePanelProps };
+
+export default function ProductPurchasePanel({
+  productId,
+  name,
+  category,
+  rating,
+  reviewCount,
+  qnaCount,
+  price,
+  discountRate,
+  shippingInfo = '3만원 이상 무료배송 · 당일 출고',
+  details = [],
+  options = [],
+  stock,
+  onAddToCart,
+}: ProductPurchasePanelProps) {
+  const { isActive: liked, toggle: toggleLike } = useWishlist(productId);
+  const [selectedOption, setSelectedOption] = useState<ProductOption | null>(
+    options.length === 0 ? { label: name, price } : options.length === 1 ? options[0] : null
+  );
+  const [qty, setQty] = useState(1);
+  const addToCart = useAddToCart();
+
+  const discountedPrice = discountRate ? Math.round(price * (1 - discountRate / 100)) : price;
+  const unitPrice = selectedOption
+    ? discountRate
+      ? Math.round(selectedOption.price * (1 - discountRate / 100))
+      : selectedOption.price
+    : discountedPrice;
+  const totalPrice = selectedOption ? unitPrice * qty : 0;
+
+  const handleAddToCart = () => {
+    if (!selectedOption) return;
+    addToCart(productId, qty);
+    onAddToCart?.(selectedOption.label, qty);
+  };
+
+  return (
+    <div className="flex flex-col gap-4 bg-card rounded-2xl p-4 h-full">
+      <ProductInfoSection
+        name={name} category={category} rating={rating} reviewCount={reviewCount}
+        qnaCount={qnaCount} price={price} discountRate={discountRate}
+        discountedPrice={discountedPrice} shippingInfo={shippingInfo} details={details}
+      />
+      <PurchaseControls
+        options={options} selectedOption={selectedOption} qty={qty} stock={stock}
+        unitPrice={unitPrice} totalPrice={totalPrice}
+        onSelect={(opt) => { setSelectedOption(opt); setQty(1); }}
+        onDecrement={() => setQty((p) => Math.max(1, p - 1))}
+        onIncrement={() => setQty((p) => Math.min(stock, p + 1))}
+        onQtyChange={setQty}
+      />
+      <PurchaseActionButtons
+        liked={liked}
+        onToggleLike={toggleLike}
+        disabled={!selectedOption}
+        onAddToCart={handleAddToCart}
+      />
+    </div>
+  );
+}

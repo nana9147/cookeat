@@ -1,0 +1,68 @@
+'use client';
+
+import Link from 'next/link';
+import { ShoppingProduct } from '@/types/ingredient';
+import IngredientCardImage from './IngredientCardImage';
+import IngredientCartControl from './IngredientCartControl';
+import { useCartStore } from '@/store/cartStore';
+import { useAddToCart } from '@/hooks/useAddToCart';
+
+interface IngredientCardProps {
+  product: ShoppingProduct;
+}
+
+export default function IngredientCard({ product }: IngredientCardProps) {
+  const items = useCartStore((s) => s.items);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const addToCart = useAddToCart();
+
+  const productId = Number(product.id);
+  const cartItem = items.find((i) => i.productId === productId);
+  const qty = cartItem?.quantity ?? 0;
+
+  const handleAdd = () => addToCart(productId, 1);
+  const handleIncrement = () => {
+    if (qty >= product.stock) return;
+    updateQuantity(productId, qty + 1);
+  };
+  const handleDecrement = () => {
+    if (qty <= 1) removeItem(productId);
+    else updateQuantity(productId, qty - 1);
+  };
+
+  const discountedPrice = product.discountRate
+    ? Math.round(product.price * (1 - product.discountRate / 100))
+    : product.price;
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-border bg-white flex flex-col">
+      <Link href={`/shopping/${product.id}`} className="flex flex-col flex-1">
+        <IngredientCardImage product={product} />
+        <div className="flex flex-col flex-1 p-3 gap-1">
+          <p className="text-xs text-primary font-medium">{product.category}</p>
+          <p className="text-sm font-medium text-dark-text leading-snug line-clamp-2">{product.name}</p>
+          <div className="mt-0.5">
+            <p className={`text-xs line-through ${product.discountRate ? 'text-muted' : 'invisible'}`}>
+              {product.price.toLocaleString()}원
+            </p>
+            <p className="text-sm tablet:text-base font-bold text-dark-text">{discountedPrice.toLocaleString()}원</p>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-gray-text">
+            <span className="text-yellow">★</span>
+            <span>{product.rating.toFixed(1)}</span>
+            <span className="text-muted">({product.reviewCount.toLocaleString()})</span>
+          </div>
+          <p className="text-xs text-light-gray">{product.seller}</p>
+        </div>
+      </Link>
+      <IngredientCartControl
+        qty={qty}
+        stock={product.stock}
+        onAdd={handleAdd}
+        onIncrement={handleIncrement}
+        onDecrement={handleDecrement}
+      />
+    </div>
+  );
+}
