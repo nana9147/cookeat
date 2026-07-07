@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -100,7 +100,7 @@ export default function RefundDetailPage() {
     null
   );
 
-  const fetchDetail = async () => {
+  const fetchDetail = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await api.get(`/seller/orders/refunds/order/${orderId}`);
@@ -111,14 +111,14 @@ export default function RefundDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [orderId]);
 
   useEffect(() => {
     const run = () => {
       fetchDetail();
     };
     run();
-  }, [orderId]);
+  }, [fetchDetail]);
 
   const handleApprove = async (refundId: number, faultType: '구매자귀책' | '판매자귀책') => {
     try {

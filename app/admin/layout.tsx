@@ -17,12 +17,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminAuthGuard>
       <Header />
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-w-0">
         <SidebarProvider style={{ minHeight: '76px' }}>
           <AdminSidebar />
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col min-w-0">
             <AdminMobileNav />
-            <main className="flex flex-1 flex-col">{children}</main>
+            <main className="flex flex-1 flex-col min-w-0">{children}</main>
           </div>
         </SidebarProvider>
       </div>

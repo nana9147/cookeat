@@ -1,5 +1,4 @@
 import type { OrderProductItem } from './order';
-import type { DateRangeFilterProps } from './common';
 
 export type ShippingStatus = '결제완료' | '배송준비' | '배송중' | '배송완료' | '취소' | '환불';
 export type ShippingFeeType = '무료' | '유료' | '조건부 무료';
@@ -297,11 +296,3 @@ export interface ShippingRow {
   deliveredAt: string | null;
 }
 
-interface TrackingDownloadRow {
-  orderId: string;
-  recipient: string;
-  productName: string;
-  quantity: number;
-  courier: string;
-  trackingNumber: string;
-}

@@ -303,7 +303,7 @@ export async function approveRefund(
 
     await logOrderItemStatusHistory(refund.item_id, approvedStatus);
     if (isCancel) {
-      await restoreOrderBenefitsForItem(orderItem.order_id, refund.item_id);
+      await restoreOrderBenefitsForItem(orderItem.order_id);
     }
   } catch (err) {
     if (pgCancelExecuted) {
@@ -403,7 +403,7 @@ async function syncOrderStatusIfFullyClosed(orderId: string): Promise<boolean> {
   return allClosed;
 }
 
-async function restoreOrderBenefitsForItem(orderId: string, itemId: number) {
+async function restoreOrderBenefitsForItem(orderId: string) {
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
     .select('used_point, refunded_point, user_coupon_id, user_id')
@@ -582,7 +582,7 @@ export async function processRefund(sellerId: number, refundId: number) {
     if (shippingStatusError) throw shippingStatusError;
 
     await logOrderItemStatusHistory(refund.item_id, '환불');
-    await restoreOrderBenefitsForItem(orderItem.order_id, refund.item_id);
+    await restoreOrderBenefitsForItem(orderItem.order_id);
   } catch (err) {
     if (pgCancelExecuted) {
       console.error(

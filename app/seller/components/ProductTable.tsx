@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import StatusBadge from '@/app/seller/components/StatusBadge';
 import { SquarePen, Eye, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Star } from 'lucide-react';
 import Link from 'next/link';
@@ -175,11 +176,9 @@ export default function ProductTable({
                     </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-10 h-10 rounded-lg object-cover"
-                        />
+                        <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
+                          <Image src={product.image} alt={product.name} fill className="object-cover" />
+                        </div>
                         <span className="text-sm font-medium text-gray-800">{product.name}</span>
                       </div>
                     </TableCell>

@@ -105,7 +105,7 @@ export default function RecipesPage() {
             </div>
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">지급 기준</p>
-              <p className="text-sm font-medium">구매금액의 1%</p>
+              <p className="text-sm font-medium">100P × (선택 재료 수 / 전체 재료 수)</p>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">수혜자</p>
