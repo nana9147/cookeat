@@ -1,6 +1,6 @@
 'use client';
 
-import type { SellerOrderRow, OrderSortBy, SortOrder, OrderTableProps } from '@/types/seller/order';
+import type { OrderSortBy, OrderTableProps } from '@/types/seller/order';
 import StatusBadge from '@/app/seller/components/StatusBadge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';

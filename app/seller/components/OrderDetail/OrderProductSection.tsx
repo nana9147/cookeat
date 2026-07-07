@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OrderProductSectionProps } from '@/types/seller/order';
 import { ShoppingBag, RotateCcw } from 'lucide-react';
@@ -61,11 +62,9 @@ export default function OrderProductSection({ products, refundTotal }: OrderProd
                 >
                   <td className="px-5 py-4 max-w-0 w-56">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={p.img}
-                        alt={p.itemName}
-                        className="w-12 h-12 rounded-lg object-cover bg-gray-100 shrink-0"
-                      />
+                      <div className="relative w-12 h-12 rounded-lg bg-gray-100 shrink-0 overflow-hidden">
+                        <Image src={p.img} alt={p.itemName} fill className="object-cover" />
+                      </div>
                       <span
                         className={`text-sm font-medium truncate ${
                           isRefunding ? 'text-gray-400 line-through' : 'text-gray-800'

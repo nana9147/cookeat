@@ -1,5 +1,3 @@
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-
 export type CategoryName =
   | '채소'
   | '과일·견과·쌀'
