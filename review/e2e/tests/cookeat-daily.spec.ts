@@ -1,8 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 import fs from "node:fs";
 
-// Cookeat 데일리 E2E (2026-07-06, 19차) — 레시피 작성/수정 신규 페이지 + 판매 통계 신규 + 취소/환불 분리
-const DATE = "2026-07-06";
+// Cookeat 데일리 E2E (2026-07-07, 20차) — 신규 판매자 엔드포인트(대시보드 판매금액/통계/문의관리) + 사용자 여정
+const DATE = "2026-07-07";
 const IMG = `../images/${DATE}`;
 const EMAIL = "cookeat-review@example.com";
 const PASSWORD = "Review!2026";
@@ -10,7 +10,7 @@ const PASSWORD = "Review!2026";
 test.beforeAll(() => fs.mkdirSync(IMG, { recursive: true }));
 
 async function snap(page: Page, name: string) {
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1200);
   await page.screenshot({ path: `${IMG}/cookeat-${name}.png`, fullPage: false });
 }
 
@@ -23,79 +23,72 @@ async function login(page: Page) {
     await emailInput.fill(EMAIL);
     await pwInput.fill(PASSWORD);
     await page.locator('button[type="submit"]').first().click();
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(4000); // 쿠키+세션 정착 (seller 라우트 바운스 방지)
   }
 }
 
-test("S01 홈", async ({ page }) => {
+// ---------- 사용자 여정 ----------
+test("U01 홈", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await snap(page, "s01-home");
+  await snap(page, "u01-home");
   console.log("[홈] title:", await page.title());
 });
 
-test("S02 레시피 목록", async ({ page }) => {
+test("U02 레시피 목록 → 상세", async ({ page }) => {
   await page.goto("/recipes", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1800);
-  await snap(page, "s02-recipes");
-  const cards = page.locator('a[href*="/recipes/"]');
-  console.log("[레시피목록] 링크 수:", await cards.count());
-});
-
-test("S03 레시피 상세", async ({ page }) => {
-  await page.goto("/recipes", { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(1800);
+  await snap(page, "u02-recipes");
   const card = page.locator('a[href*="/recipes/"]').first();
   if (await card.isVisible().catch(() => false)) {
     await card.click().catch(() => {});
     await page.waitForTimeout(2000);
   }
-  await snap(page, "s03-recipe-detail");
+  await snap(page, "u03-recipe-detail");
   console.log("[레시피상세] url:", page.url());
 });
 
-test("S04 레시피 작성 페이지 (신규) — 비로그인 가드", async ({ page }) => {
-  const resp = await page.goto("/recipes/write", { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(2500);
-  await snap(page, "s04-write-guard");
-  console.log("[레시피작성 비로그인] HTTP", resp?.status(), "url:", page.url());
-});
-
-test("S05 레시피 작성 페이지 (신규) — 로그인 후 폼 렌더", async ({ page }) => {
-  await login(page);
-  await page.goto("/recipes/write", { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(2500);
-  await snap(page, "s05-write-form");
-  const titleInput = page.locator('input, textarea').first();
-  console.log("[레시피작성 로그인] url:", page.url(), "입력필드 존재:", await titleInput.count());
-});
-
-test("S06 레시피 수정 페이지 (신규) — 타인 레시피 접근 차단", async ({ page }) => {
-  await login(page);
-  // 목록 첫 레시피의 id를 얻어 수정 페이지 진입 (리뷰 계정은 대체로 작성자가 아님 → 차단 기대)
-  await page.goto("/recipes", { waitUntil: "domcontentloaded" });
+test("U04 상품 목록 → 상세", async ({ page }) => {
+  await page.goto("/shopping", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1800);
-  const href = await page.locator('a[href*="/recipes/"]').first().getAttribute("href").catch(() => null);
-  const m = href?.match(/\/recipes\/(\d+)/);
-  const id = m ? m[1] : "1";
-  page.on("dialog", (d) => d.accept().catch(() => {}));
-  await page.goto(`/recipes/${id}/edit`, { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(2500);
-  await snap(page, "s06-edit-guard");
-  console.log(`[레시피수정 id=${id}] 최종 url:`, page.url());
+  await snap(page, "u04-shopping");
+  const card = page.locator('a[href*="/shopping/"]').first();
+  if (await card.isVisible().catch(() => false)) {
+    await card.click().catch(() => {});
+    await page.waitForTimeout(2200);
+  }
+  await snap(page, "u05-product-detail");
+  console.log("[상품상세] url:", page.url());
 });
 
-test("S07 판매 통계 페이지 (신규) — 비-판매자 가드", async ({ page }) => {
+// ---------- 판매자 여정 (신규 엔드포인트) ----------
+test("S01 판매자 대시보드 — 비로그인 가드", async ({ page }) => {
+  const resp = await page.goto("/seller", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(1500);
+  await snap(page, "s01-dashboard-guard");
+  console.log("[대시보드 비로그인] HTTP", resp?.status(), "url:", page.url());
+  expect(page.url()).toContain("/login");
+});
+
+test("S02 판매자 대시보드 — 로그인 후 (판매금액 그래프)", async ({ page }) => {
+  await login(page);
+  await page.goto("/seller", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(3000);
+  await snap(page, "s02-dashboard");
+  console.log("[대시보드 로그인] url:", page.url());
+});
+
+test("S03 판매 통계 (신규)", async ({ page }) => {
   await login(page);
   await page.goto("/seller/statistics", { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(2500);
-  await snap(page, "s07-statistics-guard");
-  console.log("[판매통계 user롤] 최종 url:", page.url());
+  await page.waitForTimeout(3000);
+  await snap(page, "s03-statistics");
+  console.log("[통계] url:", page.url());
 });
 
-test("S08 마이페이지 주문내역 — 취소/환불 분리 노출", async ({ page }) => {
+test("S04 셀러 문의관리 (신규)", async ({ page }) => {
   await login(page);
-  await page.goto("/mypage/orders", { waitUntil: "domcontentloaded" }).catch(() => {});
-  await page.waitForTimeout(2000);
-  await snap(page, "s08-mypage-orders");
-  console.log("[마이페이지 주문] url:", page.url());
+  await page.goto("/seller/inquiries", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(3000);
+  await snap(page, "s04-inquiries");
+  console.log("[문의관리] url:", page.url());
 });
