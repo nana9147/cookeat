@@ -236,7 +236,7 @@ export default function ProductsPage() {
             ) : (
               productList.map((p) => (
                 <TableRow key={p.productId}>
-                  <TableCell className="font-medium">{p.name}</TableCell>
+                  <TableCell className="font-medium max-w-50 truncate">{p.name}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{p.sellerName}</TableCell>
                   <TableCell className="hidden lg:table-cell text-muted-foreground">{p.categoryName ?? '-'}</TableCell>
                   <TableCell className="hidden md:table-cell">{formatWon(p.price)}</TableCell>
